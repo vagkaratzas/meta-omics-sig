@@ -93,16 +93,20 @@ docs before generating any samplesheet or parameter file.
 
 Do not invent or guess SRA accessions. Only use these confirmed ones:
 
-| Dataset label | Accessions | Omics layers |
-|---------------|-----------|--------------|
-| Culture KS | PRJNA682552 | 16S amplicon, MG (Illumina+Nanopore), MT, MP |
-| Culture BP | PRJNA693457 | 16S amplicon (MiSeq+PacBio), MG (NovaSeq), MT, MP |
-| MetaGT Mock16 | SRR5947833, SRR5947907 | MG + MT |
-| MetaGT HumanGut | SRR10175815, SRR10175826 | MG + MT |
-| MetaGT SnailGut | SRR8397925, SRR8416101 | MG + MT |
+| Dataset label | Accessions | Omics layers | Host context |
+|---------------|-----------|--------------|--------------|
+| Culture KS | PRJNA682552 | 16S amplicon, MG (Illumina+Nanopore), MT, MP | Environmental enrichment |
+| Culture BP | PRJNA693457 | 16S amplicon (MiSeq+PacBio), MG (NovaSeq), MT, MP | Environmental enrichment |
+| MetaGT Mock16 | SRR5947833, SRR5947907 | MG + MT | Synthetic community |
+| MetaGT HumanGut | SRR10175815, SRR10175826 | MG + MT | Human gut |
+| MetaGT SnailGut | SRR8397925, SRR8416101 | MG + MT | Deep-sea snail gut |
+| Herold wastewater | PRJNA230567 (SRA) + PXD013655 (PRIDE) | 16S amplicon + MG + MT + MP — **only confirmed 4-omics public dataset** | Environmental (wastewater) |
+| Heintz-Buschart T1DM | PRJNA289586 (SRA) + PRIDE TBC | MG (WGS) + MT (RNA-Seq) + MP; no amplicon | Human gut, T1DM families |
+| Granata oral cancer | PRJNA700849 (SRA) + PXD022859 (PRIDE) | 16S amplicon + MP; no shotgun MG or MT | Human saliva, OSCC |
 
 If asked to find more datasets, search SRA/ENA directly or use the PubMed tool — do
-not fabricate accessions.
+not fabricate accessions. The iHMP (PRJNA398945) is a high-priority unverified candidate
+to investigate.
 
 ---
 

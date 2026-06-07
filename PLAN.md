@@ -85,21 +85,67 @@ therefore the gating decision.
 | Strengths | Host-related; diverse taxa; comparative amplicon vs shotgun design |
 | Weaknesses | No MT; no MP; amplicon + MG only — limits pipeline coverage |
 
+### Candidate 5 — PRJNA230567 + PXD013655 (Herold et al. wastewater, Luxembourg)
+
+| Property | Value |
+|----------|-------|
+| Accessions | PRJNA230567 (amplicon + MG + MT), PXD013655 (MP, PRIDE) |
+| Environment | Biological wastewater treatment plant (Luxembourg) |
+| Organism | Mixed microbial community — lipid-accumulating bacteria |
+| Omics layers | 16S amplicon + Illumina shotgun MG + MT + MP (full 4-omics stack) |
+| SRA experiments | 189 (+ 29,484 PRIDE files) |
+| Data volume | 1.5 TB (SRA) |
+| Conditions | Summer vs. winter seasonal variation; 5 replicates per condition |
+| Key publications | Herold et al. *Nat Commun* (2020); Martínez Arbas et al. *Nat Microbiol* (2021) |
+| Strengths | **Only confirmed public dataset with all 4 omics layers**; strong replicate design; well-published by the Wilmes lab |
+| Weaknesses | Environmental (not host-related); very large data volume (1.5 TB); wastewater context may reduce biological relevance for host-focused SIG |
+
+### Candidate 6 — PRJNA289586 + PRIDE (Heintz-Buschart et al. T1DM gut, Luxembourg)
+
+| Property | Value |
+|----------|-------|
+| Accessions | PRJNA289586 (MG + MT, SRA); PRIDE accession TBC |
+| Environment | Human gut — 4 multiplex families with type 1 diabetes mellitus |
+| Organism | Human gut microbiome (high complexity) |
+| Omics layers | Shotgun MG (WGS, NextSeq/HiSeq) + MT (RNA-Seq) + MP (PRIDE, 7,734 proteins); **no amplicon** |
+| SRA experiments | 221 |
+| Data volume | ~950 GB |
+| Conditions | Observational; T1DM cases vs. healthy family members; longitudinal sampling |
+| Key publication | Heintz-Buschart et al. *Nat Microbiol* (2016) — landmark integrated MG+MT+MP study |
+| Strengths | Human host, clinically relevant (T1DM); high community complexity; well-published reference dataset; same Wilmes lab as Candidate 5 |
+| Weaknesses | No amplicon; old vintage (2016); family-based design gives sparse per-condition replicates; PRIDE accession needs confirming |
+
+### Candidate 7 — PRJNA700849 + PXD022859 (Granata et al. oral cancer saliva)
+
+| Property | Value |
+|----------|-------|
+| Accessions | PRJNA700849 (16S amplicon, SRA); PXD022859 (MP, PRIDE) |
+| Environment | Human saliva — oral squamous cell carcinoma (OSCC) patients vs. controls |
+| Organism | Oral microbiome (human) |
+| Omics layers | 16S amplicon (MiSeq) + MP; **no shotgun MG, no MT** |
+| SRA experiments | 68 |
+| Data volume | ~10 GB |
+| Conditions | Control vs. OSCC with resection (L0) vs. OSCC without resection (L1) |
+| Key publication | Granata et al. (2021) |
+| Strengths | Human host; disease context; small dataset size (fast to run); three clinical groups |
+| Weaknesses | Only amplicon + MP — excludes most of the metro-map (no mag/taxprofiler/metatdenovo) |
+
 ### Additional datasets to search (open)
 
-The following contexts are underexplored and may yield better candidates:
-- Human gut microbiome time-series studies with MG + MT + MP
-- IBD or other host-disease datasets with multiple omics layers
-- The CAMI2 benchmarking dataset (already used by the SIG for benchmarking)
-- EBI Metagenomics / MGnify multi-omics submissions
+A systematic PubMed + bioRxiv search was run (June 2026) using `lit-synthesizer`. Recurring
+themes across 11 retrieved papers: integration frameworks (gNOMO2, MetaPUF), gut microbiome
+dysbiosis, IBD, T1DM, standardised multi-omics workflows. Key finding: **no published
+host-related dataset with all 4 omics layers was identified** — PRJNA230567 (wastewater)
+remains the only confirmed 4-omics public dataset. Further search targets:
 
-> **Tool:** Use the [ClawBio `lit-synthesizer` skill](https://github.com/ClawBio/ClawBio/tree/main/skills/lit-synthesizer)
-> to run systematic PubMed + bioRxiv searches for host-related multi-omics datasets.
-> It extracts themes across abstracts and builds citation graphs — purpose-built for
-> this kind of literature triage. Trigger with queries like
-> `"host microbiome metagenomics metatranscriptomics metaproteomics amplicon dataset"`.
-> Use the [ClawBio `ncbi-datasets` skill](https://github.com/ClawBio/ClawBio/tree/main/skills/ncbi-datasets)
-> to fetch metadata for candidate BioProject accessions before downloading full datasets.
+- IBD multi-omics studies (UCSD/Rob Knight group, HMP2 / iHMP)
+- iHMP (integrative Human Microbiome Project) — PRJNA398945 / PRJEB27928; may have MG + MT + MP
+- EBI MGnify / PRIDE cross-linked studies (MetaPUF workflow datasets)
+- Any post-2022 human gut study combining 16S + shotgun MG + MT
+
+> **Tool note:** `lit-synthesizer` + PubMed MCP were used for this search. `ncbi-datasets`
+> CLI was not available in this environment — use `conda install -c conda-forge ncbi-datasets-cli`
+> then run `datasets summary genome bioproject PRJNA230567 --as-json-lines` for genome metadata.
 
 ---
 
@@ -107,19 +153,25 @@ The following contexts are underexplored and may yield better candidates:
 
 Score 0–3 per criterion. **Open — not yet decided.**
 
-| Criterion | Weight | PRJNA682552 | PRJNA693457 | MetaGT (HumanGut) | Rausch 2019 |
-|-----------|--------|-------------|-------------|-------------------|-------------|
-| 4-omics coverage (amplicon + MG + MT + MP) | 3× | 3 | 3 | 1 | 1 |
-| Host-related / clinically relevant | 2× | 0 | 0 | 2 | 3 |
-| Biological replicates (≥3 per condition) | 2× | 3 | 3 | 1 | 2 |
-| Data recency (post-2021 preferred) | 1× | 1 | 1 | 2 | 1 |
-| Community complexity | 1× | 1 | 2 | 3 | 3 |
-| **Weighted total** | | **16** | **17** | **14** | **13** |
+| Criterion | Weight | PRJNA682552 | PRJNA693457 | MetaGT (HumanGut) | Rausch 2019 | PRJNA230567 | PRJNA289586 | PRJNA700849 |
+|-----------|--------|-------------|-------------|-------------------|-------------|-------------|-------------|-------------|
+| 4-omics coverage (amplicon + MG + MT + MP) | 3× | 3 | 3 | 1 | 1 | **3** | 2 | 1 |
+| Host-related / clinically relevant | 2× | 0 | 0 | 2 | 3 | 0 | **3** | **3** |
+| Biological replicates (≥3 per condition) | 2× | 3 | 3 | 1 | 2 | **3** | 1 | 2 |
+| Data recency (post-2021 preferred) | 1× | 1 | 1 | 2 | 1 | 1 | 0 | 2 |
+| Community complexity | 1× | 1 | 2 | 3 | 3 | 2 | **3** | 2 |
+| **Weighted total** | | **16** | **17** | **14** | **13** | **18** | **17** | **17** |
 
-> **Tension:** PRJNA682552/PRJNA693457 score highest on pipeline coverage criteria but
-> fail the "host-related" preference. No candidate found so far satisfies both. Recommend
-> continuing search before committing; if time-constrained, PRJNA693457 + MetaGT HumanGut
-> as a two-dataset combination may be the practical path.
+Scoring key — 4-omics: 3=all 4 layers, 2=3 layers, 1=1-2 layers. Host-related: 3=human clinical, 2=animal/indirect, 0=environmental. Replicates: 3=≥5/condition, 2=3-4, 1=1-2. Recency: 2=2021-2022, 1=2018-2020, 0=pre-2018. Complexity: 3=human gut, 2=moderate, 1=low.
+
+> **Updated finding (lit-synthesizer search, June 2026):** PRJNA230567 (Herold wastewater)
+> is the highest-scoring single dataset and the **only confirmed public dataset with all
+> 4 omics layers** — but is environmental. PRJNA289586 (Heintz-Buschart T1DM) and
+> PRJNA700849 (oral cancer) score equally well on host-relevance but lack one or more
+> omics layers. The fundamental tension — 4-omics coverage vs. host context — remains
+> unresolved. **Recommended path:** PRJNA230567 as the primary benchmark (maximises
+> pipeline coverage) + PRJNA289586 as a host-related companion dataset for the gut /
+> disease narrative. Flag to SIG before committing.
 
 ---
 
