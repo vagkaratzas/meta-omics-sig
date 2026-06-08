@@ -160,7 +160,7 @@ Score 0–3 per criterion. **Open — not yet decided.**
 | Biological replicates (≥3 per condition) | 2× | 3 | 3 | 1 | 2 | **3** | 1 | 2 |
 | Data recency (post-2021 preferred) | 1× | 1 | 1 | 2 | 1 | 1 | 0 | 2 |
 | Community complexity | 1× | 1 | 2 | 3 | 3 | 2 | **3** | 2 |
-| **Weighted total** | | **16** | **17** | **14** | **13** | **18** | **17** | **17** |
+| **Weighted total** | | **17** | **18** | **14** | **17** | **18** | **17** | **17** |
 
 Scoring key — 4-omics: 3=all 4 layers, 2=3 layers, 1=1-2 layers. Host-related: 3=human clinical, 2=animal/indirect, 0=environmental. Replicates: 3=≥5/condition, 2=3-4, 1=1-2. Recency: 2=2021-2022, 1=2018-2020, 0=pre-2018. Complexity: 3=human gut, 2=moderate, 1=low.
 
