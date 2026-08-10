@@ -1,0 +1,12 @@
+{
+  "useMarkdownLinks": true,
+  "newLinkFormat": "relative",
+  "alwaysUpdateLinks": true,
+  "showUnsupportedFiles": true,
+  "defaultViewMode": "preview",
+  "livePreview": true,
+  "strictLineBreaks": false,
+  "attachmentFolderPath": "assets",
+  "spellcheck": false,
+  "readableLineLength": true
+}
