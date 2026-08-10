@@ -51,11 +51,21 @@ Two decisions gate all downstream work; neither is resolved yet:
 
 | File | Purpose |
 |------|---------|
-| `PLAN.md` | Decision framework, selection constraints, pipeline chain design, roadmap, open questions |
-| `DATASETS.md` | Candidate datasets (accessions, omics layers, trade-offs) and the scoring matrix |
-| `RUNS.md` | Execution ledger — every pipeline run, with Seqera Platform provenance links |
+| [`Home.md`](Home.md) | Map of content — which file owns which question. Start here in Obsidian |
+| [`PLAN.md`](PLAN.md) | Decision framework, selection constraints, pipeline chain design, roadmap, open questions |
+| [`DATASETS.md`](DATASETS.md) | Candidate datasets (accessions, omics layers, trade-offs) and the scoring matrix |
+| [`RUNS.md`](RUNS.md) | Execution ledger — every pipeline run, with Seqera Platform provenance links |
 | `runs/<NN>_<pipeline>/` | Per-run inputs, params, and troubleshooting notes |
-| `AGENTS.md` | Bot/AI operational context — conventions, resource pointers, guardrails |
+| `scripts/converters/` | Samplesheet conversions between pipelines, each with a `--selftest` |
+| `docs/` | GitHub Pages site; `data.json` mirrors the PLAN.md validation table |
+| [`AGENTS.md`](AGENTS.md) | Bot/AI operational context — conventions, resource pointers, guardrails |
+| [`ACRONYMS.md`](ACRONYMS.md) | Glossary of acronyms used across these documents |
+| [`LOG.md`](LOG.md) | Dated activity log |
+
+This repository doubles as an **Obsidian vault** — open the folder in Obsidian and start
+at [`Home.md`](Home.md). Graph view and backlinks work off the ordinary relative Markdown
+links already in these files; no `[[wikilink]]` syntax is used, so everything renders
+identically on GitHub.
 
 ## SIG Resources
 
