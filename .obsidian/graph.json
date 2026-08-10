@@ -9,23 +9,35 @@
   "colorGroups": [
     {
       "query": "path:runs/",
-      "color": { "a": 1, "rgb": 5431378 }
+      "color": {
+        "a": 1,
+        "rgb": 5431378
+      }
     },
     {
       "query": "path:scripts/",
-      "color": { "a": 1, "rgb": 11621088 }
+      "color": {
+        "a": 1,
+        "rgb": 11621088
+      }
     },
     {
       "query": "file:(PLAN) OR file:(DATASETS) OR file:(RUNS)",
-      "color": { "a": 1, "rgb": 14701138 }
+      "color": {
+        "a": 1,
+        "rgb": 14701138
+      }
     },
     {
       "query": "file:(AGENTS) OR file:(CLAUDE)",
-      "color": { "a": 1, "rgb": 8420462 }
+      "color": {
+        "a": 1,
+        "rgb": 8420462
+      }
     }
   ],
   "collapse-display": false,
-  "showArrows": true,
+  "showArrow": false,
   "textFadeMultiplier": -0.7,
   "nodeSizeMultiplier": 1.4,
   "lineSizeMultiplier": 1.2,
@@ -34,6 +46,6 @@
   "repelStrength": 11,
   "linkStrength": 0.85,
   "linkDistance": 190,
-  "scale": 0.85,
+  "scale": 0.04728766987445648,
   "close": false
 }

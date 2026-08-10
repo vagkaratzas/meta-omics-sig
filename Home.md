@@ -9,9 +9,13 @@ Map of content for this repository. Nothing here is authoritative: every stateme
 in the file that owns it, and this note only says which file that is. If a fact appears
 both here and in a canonical doc, the canonical doc wins.
 
-> Open this folder as an Obsidian vault. Graph view and backlinks are built from the
-> ordinary relative Markdown links already in these files — there are no `[[wikilinks]]`,
-> because those render as literal brackets on GitHub and this repo is read there too.
+> Graph view and backlinks are built from the ordinary relative Markdown links already in
+> these files — there are no `[[wikilinks]]`, because those render as literal brackets on
+> GitHub and this repo is read there too.
+>
+> Install, first-open and the shortcuts worth learning live in
+> [README.md § Obsidian Vault](README.md#obsidian-vault) — kept there rather than repeated
+> here, so there is one copy to keep true.
 
 ## What this project is
 

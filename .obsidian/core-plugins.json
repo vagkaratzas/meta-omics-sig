@@ -26,5 +26,8 @@
   "markdown-importer": false,
   "webviewer": false,
   "sync": false,
-  "publish": false
+  "publish": false,
+  "footnotes": false,
+  "slash-command": false,
+  "bases": true
 }
