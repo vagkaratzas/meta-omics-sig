@@ -11,7 +11,7 @@
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);
   font:15px/1.55 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-.wrap{max-width:1640px;margin:0 auto;padding:24px 18px 64px}
+.wrap{margin:0 auto;padding:10px 20px 0 20px}
 .cols{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:28px;align-items:start}
 /* The belt is the point of the page — keep it in view while the tables are scrolled. */
 .col-left{position:sticky;top:18px;max-height:calc(100vh - 36px);overflow-y:auto;padding-right:4px}
@@ -33,7 +33,7 @@ details .sub{margin:0 0 10px}
 .count{margin-left:auto;font-weight:400;font-size:12.5px;color:var(--muted);
   font-family:ui-monospace,monospace}
 a{color:var(--accent)}
-.sub{color:var(--muted);margin:0 0 4px;max-width:70ch}
+.sub{color:var(--muted);margin:0 0 4px}
 .meta-line{color:var(--muted);font-size:13px;margin:10px 0 0}
 #err{display:none;margin:16px 0;padding:12px 14px;border:1px solid var(--amber);
   border-left-width:4px;border-radius:4px;background:var(--panel)}
