@@ -62,13 +62,32 @@ are immutable so this will not be fixed upstream.
 ## Run
 
 ```bash
+export NXF_SYNTAX_PARSER=v1   # REQUIRED — see below
+
 nextflow run nf-core/fetchngs \
   -r 1.12.0 \
-  -profile singularity \
+  -profile slurm,singularity \
   -c /path/to/your-site.config \
   -params-file params.yml \
   -resume
 ```
+
+### `NXF_SYNTAX_PARSER=v1` is not optional
+
+Nextflow **26.04 made the strict (v2) config parser the default**. It rejects Groovy
+function definitions in `nextflow.config`, and fetchngs 1.12.0 — the latest release,
+Feb 2024, predating the nf-core 3.x template — defines `check_max(obj, type)` at
+`nextflow.config:230`. Without the flag the run dies before doing anything:
+
+```
+Error nextflow.config:230:14: Unexpected input: '('
+ │ 230 | def check_max(obj, type) {
+ERROR ~ Config parsing failed
+```
+
+The pipeline's `dev` branch has been modernised and parses under v2, but it is unpinned
+and unreleased — not suitable for a benchmark intended for publication. Pin 1.12.0 and
+set the parser.
 
 ## Verify before scaling up
 
@@ -94,7 +113,11 @@ cut -f<alias>,<collection_date> results/01_fetchngs/metadata/*.tsv
   `rnaseq, atacseq, viralrecon, taxprofiler`). Those three handoffs require a conversion
   step — that is a finding for the validation table, not a blocker.
 - fetchngs 1.12.0 predates the nf-core 3.x template, so it uses `--max_cpus` /
-  `--max_memory` rather than the newer resource-limits syntax.
+  `--max_memory` rather than the newer `resourceLimits` syntax — and needs
+  `NXF_SYNTAX_PARSER=v1` on Nextflow 26.04+.
+- Every path in `params.yml` is absolute. `--outdir` on the command line overrides the
+  params file; `input` does not have a CLI equivalent here, so it must be correct in the
+  file or the run fails schema validation (`exists: true`).
 
 ## Status
 

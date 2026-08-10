@@ -53,6 +53,22 @@ and which pipelines it is tested against.
 Pipeline runs in this project should use `-params-file params.yml` to keep parameters
 reproducible and reviewable.
 
+### Nextflow 26.04+ strict config parser
+Nextflow 26.04 made the strict (v2) config parser the default. It rejects Groovy function
+definitions in `nextflow.config`, which **every pre-nf-core-3.x pipeline still contains**
+as the `check_max(obj, type)` resource helper. Symptom:
+
+```
+Error nextflow.config:<line>: Unexpected input: '('
+ │ def check_max(obj, type) {
+ERROR ~ Config parsing failed
+```
+
+Fix is `export NXF_SYNTAX_PARSER=v1`, not a pipeline downgrade or a `-r dev` switch —
+`dev` branches are unpinned and unsuitable for a benchmark meant for publication. Expect
+this for any pipeline in the chain whose latest release predates ~2024; check with
+`curl -s https://raw.githubusercontent.com/nf-core/<pipeline>/<tag>/nextflow.config | grep -c check_max`.
+
 ---
 
 ## Pipeline Quick Reference

@@ -1,9 +1,14 @@
 # nf-core/fetchngs 1.12.0 — LMO pilot (3 dates, all three omics layers)
-# Run with: nextflow run nf-core/fetchngs -r 1.12.0 -params-file params.yml ...
-# Paths must be absolute on the cluster — edit these two before running.
+#
+# REQUIRES: export NXF_SYNTAX_PARSER=v1
+# Nextflow 26.04+ defaults to the strict (v2) config parser, which rejects the
+# `def check_max(obj, type)` helper in this pipeline's nextflow.config. 1.12.0 is the
+# latest release and predates the nf-core 3.x template, so the legacy parser is required.
+#
+# Paths are absolute for the EBI codon cluster — change if the checkout moves.
 
-input: "/ABSOLUTE/PATH/TO/runs/01_fetchngs/ids.csv"
-outdir: "/ABSOLUTE/PATH/TO/results/01_fetchngs"
+input: "/path/to/runs/01_fetchngs/ids.csv"
+outdir: "/path/to/sig/fetchngs"
 
 # 'ftp' needs no extra tooling and is fine at this volume (~35 GB).
 # Switch to 'aspera' if `ascp` is on PATH — roughly 3-5x faster for the full 404 GB run.
