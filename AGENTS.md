@@ -271,8 +271,10 @@ Nextflow version, input manifest, Seqera Platform link, and outcome. **Never wri
 absolute cluster paths into tracked files** — they are site-specific and go stale. Output
 directories are gitignored; the Seqera link is the durable provenance record.
 
-**Companion website:** `docs/` is a dependency-free GitHub Pages site rendering the pipeline
-chain as a conveyor belt. **When you change PLAN.md's samplesheet validation table, change
+**Companion website:** live at <https://vagkaratzas.github.io/meta-omics-sig/>, built from
+`docs/` — a dependency-free GitHub Pages site rendering the pipeline chain as a conveyor
+belt. It is public, so treat its wording as outward-facing.
+**When you change PLAN.md's samplesheet validation table, change
 `docs/data.json` in the same commit** — `repoStatus` strings there are verbatim copies of that
 table's Status column and are the site's only source of authority. Site-specific judgements
 (`siteState`, `caveat`, `routable`) are labelled as annotations and must never be presented as

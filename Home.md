@@ -68,7 +68,8 @@ python3 scripts/check_links.py --quiet  # failures only
 
 ## Published site
 
-`docs/` is a GitHub Pages site rendering the chain as a conveyor belt. `docs/data.json` is
+Live at <https://vagkaratzas.github.io/meta-omics-sig/>, built from `docs/`, rendering the
+chain as a conveyor belt. `docs/data.json` is
 hand-maintained and **mirrors** PLAN.md — its `repoStatus` strings are copied verbatim from
 the validation table. Change PLAN.md and you must change `docs/data.json` in the same
 commit, or the site starts lying.
