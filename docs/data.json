@@ -20,10 +20,15 @@
     },
     {
       "id": "detaxizer", "label": "detaxizer", "kind": "pipeline", "x": 200, "y": 430,
-      "blurb": "Screens reads for contaminant or host sequence and can filter them out. Defaults to human contamination screening.",
-      "io": { "in": "FASTQ", "out": "Filtered FASTQ" },
-      "requires": null,
-      "requiresReadFrom": null,
+      "blurb": "Screens reads for contaminant or host sequence and can filter them out. Defaults to human contamination screening (tax2filter = Homo sapiens), but the target taxon and reference are configurable. Uniquely in this chain, it can also emit samplesheets for downstream pipelines.",
+      "io": { "in": "FASTQ", "out": "Filtered FASTQ + optional downstream samplesheets" },
+      "requires": [
+        "--input samplesheet: sample, short_reads_fastq_1, short_reads_fastq_2, long_reads_fastq_1",
+        "--kraken2db - defaults to downloading k2_standard (~80 GB) from S3; point at a local copy",
+        "--skip_filter for detect-only mode, assessing contamination without altering reads",
+        "--generate_downstream_samplesheets with --generate_pipeline_samplesheets (taxprofiler and/or mag only)"
+      ],
+      "requiresReadFrom": "1.3.0",
       "release": "1.3.0", "docs": "https://nf-co.re/detaxizer/1.3.0/", "devNote": null
     },
     {
@@ -126,7 +131,11 @@
       "id": "proteinfamilies", "label": "proteinfamilies", "kind": "pipeline", "x": 620, "y": 490,
       "blurb": "Clusters protein sequences into families and builds family models.",
       "io": { "in": "Protein FASTA", "out": "Protein family clusters" },
-      "requires": null, "requiresReadFrom": null,
+      "requires": [
+        "--input samplesheet: sample, fasta (amino acid FASTA)",
+        "fasta extension must be .fa / .fasta / .faa / .fas, optionally .gz - a .pep file is rejected"
+      ],
+      "requiresReadFrom": "2.4.0",
       "release": "2.4.0", "docs": "https://nf-co.re/proteinfamilies/2.4.0/", "devNote": null
     },
     {
@@ -145,9 +154,14 @@
     },
     {
       "id": "metatdenovo", "label": "metatdenovo", "kind": "pipeline", "x": 400, "y": 665,
-      "blurb": "De novo assembly and annotation of metatranscriptomes from shotgun RNA reads.",
-      "io": { "in": "Shotgun RNA FASTQ", "out": "Transcripts, contigs" },
-      "requires": null, "requiresReadFrom": null,
+      "blurb": "De novo assembly and annotation of metatranscriptomes from shotgun RNA reads. Reads from all samples are collected into a single co-assembly, so it emits one assembly and one ORF set regardless of sample count.",
+      "io": { "in": "Shotgun RNA FASTQ", "out": "Transcripts, contigs, ORFs + protein FASTA" },
+      "requires": [
+        "--input samplesheet: sample, fastq_1 (fastq_2 for paired-end)",
+        "--assembler - megahit or spades, no default",
+        "--orf_caller - prodigal, prokka or transdecoder, no default, required unless --user_orfs_* is set"
+      ],
+      "requiresReadFrom": "1.4.0",
       "release": "1.4.0", "docs": "https://nf-co.re/metatdenovo/1.4.0/", "devNote": null
     },
     {
@@ -168,9 +182,10 @@
   "edges": [
     {
       "id": "fetchngs__detaxizer", "from": "fetchngs", "to": "detaxizer",
-      "source": "table", "kind": "reads", "repoStatus": "OPEN", "statusClass": "untested",
+      "source": "table", "kind": "reads", "repoStatus": "CONVERSION REQUIRED", "statusClass": "conversion-required",
       "routable": false, "unit": "runs", "carries": ["AMPLICON", "WGS", "RNA-Seq"],
-      "note": "generic samplesheet.csv; no --nf_core_pipeline support", "caveat": null
+      "note": "generic samplesheet.csv; no --nf_core_pipeline support, and detaxizer's own input columns are short_reads_fastq_1 / short_reads_fastq_2 / long_reads_fastq_1, not fastq_1 / fastq_2.",
+      "caveat": "Status derived from comparing the two schemas, not from an execution - detaxizer is not run for the LMO pilot."
     },
     {
       "id": "fetchngs__ampliseq", "from": "fetchngs", "to": "ampliseq",
@@ -202,21 +217,26 @@
     },
     {
       "id": "detaxizer__ampliseq", "from": "detaxizer", "to": "ampliseq",
-      "source": "table", "kind": "reads", "repoStatus": "OPEN", "statusClass": "untested",
+      "source": "table", "kind": "reads", "repoStatus": "CONVERSION REQUIRED", "statusClass": "conversion-required",
       "routable": false, "unit": "runs", "carries": ["AMPLICON"],
-      "note": "detaxizer filtered FASTQ -> ampliseq samplesheet", "caveat": null
+      "note": "filtered FASTQ -> ampliseq samplesheet. ampliseq is excluded from --generate_pipeline_samplesheets, whose pattern admits only taxprofiler and mag, so this sheet must be built by hand.",
+      "caveat": "Status derived from schemas, not from an execution - detaxizer is not run for the LMO pilot."
     },
     {
       "id": "detaxizer__taxprofiler", "from": "detaxizer", "to": "taxprofiler",
-      "source": "table", "kind": "reads", "repoStatus": "OPEN", "statusClass": "untested",
+      "source": "table", "kind": "reads",
+      "repoStatus": "OPEN - native emitter exists, output not yet verified", "statusClass": "untested",
       "routable": false, "unit": "runs", "carries": ["WGS"],
-      "note": "detaxizer filtered FASTQ -> taxprofiler samplesheet", "caveat": null
+      "note": "--generate_downstream_samplesheets emits a taxprofiler samplesheet natively. detaxizer is the only pipeline found so far in this chain that ships a downstream samplesheet generator.",
+      "caveat": "Whether taxprofiler accepts the generated sheet unmodified is untested. Deferred with detaxizer to the first host-related dataset."
     },
     {
       "id": "detaxizer__mag", "from": "detaxizer", "to": "mag",
-      "source": "table", "kind": "reads", "repoStatus": "OPEN", "statusClass": "untested",
+      "source": "table", "kind": "reads",
+      "repoStatus": "OPEN - native emitter exists, output not yet verified", "statusClass": "untested",
       "routable": false, "unit": "runs", "carries": ["WGS"],
-      "note": "detaxizer filtered FASTQ -> mag samplesheet", "caveat": null
+      "note": "--generate_downstream_samplesheets emits a mag samplesheet natively, including the group and short_reads_platform columns mag requires and the generic fetchngs sheet lacks.",
+      "caveat": "Whether mag accepts the generated sheet unmodified is untested. Deferred with detaxizer to the first host-related dataset."
     },
     {
       "id": "detaxizer__createtaxdb", "from": "detaxizer", "to": "createtaxdb",
@@ -283,14 +303,23 @@
       "source": "table", "kind": "artifact", "repoStatus": "OPEN", "statusClass": "untested",
       "routable": false, "unit": "proteins", "carries": [],
       "note": "predicted proteins FASTA -> input. One validation-table row covers metapep and proteinfamilies together; drawn here as two edges sharing that status.",
-      "caveat": "MISSING STEP: mag does not emit protein FASTA. An ORF-calling / protein-extraction step sits between these stations and is not shown in the metro map."
+      "intermediateStep": "ORF calling", "caveat": "mag does not itself emit protein FASTA, so an ORF-calling / protein-extraction step belongs between these two stations. Worth proposing as an addition to the map."
     },
     {
       "id": "mag__proteinfamilies", "rowKey": "mag__proteins", "from": "mag", "to": "proteinfamilies",
       "source": "table", "kind": "artifact", "repoStatus": "OPEN", "statusClass": "untested",
       "routable": false, "unit": "proteins", "carries": [],
       "note": "predicted proteins FASTA -> input. One validation-table row covers metapep and proteinfamilies together; drawn here as two edges sharing that status.",
-      "caveat": "MISSING STEP: mag does not emit protein FASTA. An ORF-calling / protein-extraction step sits between these stations and is not shown in the metro map."
+      "intermediateStep": "ORF calling", "caveat": "mag does not itself emit protein FASTA, so an ORF-calling / protein-extraction step belongs between these two stations. Worth proposing as an addition to the map."
+    },
+    {
+      "id": "metatdenovo__proteinfamilies", "from": "metatdenovo", "to": "proteinfamilies",
+      "source": "table", "kind": "artifact",
+      "repoStatus": "CONVERSION REQUIRED - one-row samplesheet, no reformatting",
+      "statusClass": "conversion-required",
+      "routable": false, "unit": "proteins", "carries": [],
+      "note": "--orf_caller prodigal publishes prodigal/<assembly>.faa.gz, an extension proteinfamilies accepts. Only a one-row sample,fasta samplesheet is needed; the sequences themselves transfer unchanged.",
+      "caveat": "Not yet on the metro map; a candidate addition, since metatdenovo is the only pipeline here that emits protein FASTA directly. The mapped route via mag needs an ORF-calling step first. The ORF caller matters: transdecoder publishes *.transdecoder.pep.gz, and .pep is not among proteinfamilies' accepted extensions - adding it upstream would make that route work too."
     },
     {
       "id": "proteinfamilies__proteinfold", "from": "proteinfamilies", "to": "proteinfold",
@@ -352,7 +381,7 @@
         },
         "detaxizer": {
           "state": "not-selected", "in": null, "out": null, "version": null,
-          "note": "Not run for this pilot. PLAN.md conditions detaxizer on host-related data, and LMO is Baltic brackish seawater. Note this is a scoping choice - detaxizer is a general contamination screen that defaults to human, so this is not a claim that contamination is absent."
+          "note": "Deliberately not run for this pilot, decided 2026-08-10. LMO is Baltic brackish seawater with no host, tax2filter defaults to Homo sapiens, and filtering ahead of a metatranscriptome co-assembly risks removing conserved or low-complexity reads for no expected biological gain. A scoping choice, not a claim that contamination is absent. Deferred to the first host-related dataset, where it also unlocks a test of its native --generate_downstream_samplesheets emitter for taxprofiler and mag - the sharpest available test of nf-core samplesheet standardisation, since detaxizer is the only pipeline in this chain that ships one."
         },
         "differentialabundance": {
           "state": "unavailable", "in": null, "out": null, "version": null,
@@ -361,6 +390,14 @@
         "viralmetagenome": {
           "state": "pending", "in": null, "out": null, "version": null,
           "note": "Unreachable in this pilot: the only edge feeding viralmetagenome comes from detaxizer, which is not selected, and no validation-table edge feeds it at all."
+        },
+        "metatdenovo": {
+          "state": "configured", "in": 6, "out": null, "version": "1.4.0",
+          "note": "Prepared, not yet run. The six RNA-Seq libraries are converted to a sample,fastq_1,fastq_2 sheet by scripts/converters/fetchngs_to_reads_samplesheet.py, which renames samples off collection_date rather than the ERX accession fetchngs supplies. Configured as a single megahit co-assembly with prodigal ORF calling, specifically so a proteinfamilies-compatible .faa.gz is produced; eggnog, kofamscan and eukulele are skipped for this run."
+        },
+        "proteinfamilies": {
+          "state": "configured", "in": 1, "out": null, "version": "2.4.0",
+          "note": "Prepared, not yet run, blocked on metatdenovo. One input row, because metatdenovo co-assembles into a single protein FASTA. Fed from metatdenovo rather than from mag, since mag emits no protein FASTA."
         }
       }
     }

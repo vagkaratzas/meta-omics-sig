@@ -2,15 +2,18 @@
 
 ## Problem Statement
 
-The nf-core meta-omics SIG maintains a "metro map" showing how its pipelines chain
-together across data types and analysis stages. That diagram makes claims about
-samplesheet handoffs (output of pipeline A feeds pipeline B) that have not yet been
-validated end-to-end on real data. This project will:
+The nf-core meta-omics SIG maintains a "metro map" showing how its pipelines could chain
+together across data types and analysis stages. It is a roadmap of intended synergy — the
+edges indicate potential routes, not guarantees that a handoff works today. Turning that
+roadmap into a travelled route means someone has to walk it end to end on real data. This
+project does that, and feeds what it learns back to the pipelines. It will:
 
 1. Select a real, public multi-omics dataset
 2. Run it through as many metro-map pipelines as data layers allow
-3. Document every samplesheet handoff (validating or falsifying each edge)
-4. Publish the workflow and findings as an nf-core community paper
+3. Document every samplesheet handoff — what works today, what needs a bridge, and what
+   the bridge is
+4. Contribute the resulting bug reports, feature requests and reusable converters upstream
+5. Publish the workflow and findings as an nf-core community paper
 
 **Publication target:** nf-core community paper (joint authorship across SIG members).
 
@@ -61,30 +64,40 @@ working recommendation pending SIG sign-off and resolution of its metadata discr
 ## Proposed Pipeline Chain (Subject to Dataset Decision)
 
 The following chain assumes a dataset passing the three-layer gate — amplicon + MG + MT
-(e.g. LMO or PRJNA693457). Edges marked [UNVALIDATED] are metro-map claims not yet
-confirmed by actual samplesheet handoff testing.
+(e.g. LMO or PRJNA693457). Edges marked [UNTESTED] are potential routes from the metro map
+that we have not yet exercised on real data.
 
 ```
 fetchngs (SRA accessions)
-  └─► detaxizer (remove host reads, if host-related data) [UNVALIDATED]
-        ├─► ampliseq (amplicon reads → taxonomy profiles) [UNVALIDATED]
-        │     └─► differentialabundance (profiles, condition comparison) [UNVALIDATED]
-        ├─► createtaxdb (build custom reference DB) [UNVALIDATED]
-        │     └─► taxprofiler (shotgun MG reads → taxonomy profiles) [UNVALIDATED]
-        │           └─► differentialabundance [UNVALIDATED]
-        ├─► mag (shotgun MG reads → MAGs/contigs) [UNVALIDATED]
-        │     ├─► magmap (MAGs → read abundance profiles) [UNVALIDATED]
-        │     ├─► funcscan (contigs → functional annotation) [UNVALIDATED]
-        │     ├─► phageannotator (contigs → phage annotation) [UNVALIDATED]
-        │     ├─► phyloplace (contigs → phylogenetic placement) [UNVALIDATED]
-        │     └─► metapep / proteinfamilies (predicted proteins) [UNVALIDATED]
-        │           └─► proteinfold (family representatives → structures) [UNVALIDATED]
-        ├─► viralmetagenome (shotgun MG reads → viral contigs) [UNVALIDATED]
-        └─► metatdenovo (shotgun MT reads → metatranscriptome assembly) [UNVALIDATED]
+  └─► detaxizer (remove host reads, if host-related data) [UNTESTED — NOT RUN FOR LMO]
+        ├─► ampliseq (amplicon reads → taxonomy profiles) [UNTESTED]
+        │     └─► differentialabundance (profiles, condition comparison) [UNTESTED]
+        ├─► createtaxdb (build custom reference DB) [UNTESTED]
+        │     └─► taxprofiler (shotgun MG reads → taxonomy profiles) [UNTESTED]
+        │           └─► differentialabundance [UNTESTED]
+        ├─► mag (shotgun MG reads → MAGs/contigs) [UNTESTED]
+        │     ├─► magmap (MAGs → read abundance profiles) [UNTESTED]
+        │     ├─► funcscan (contigs → functional annotation) [UNTESTED]
+        │     ├─► phageannotator (contigs → phage annotation) [UNTESTED]
+        │     ├─► phyloplace (contigs → phylogenetic placement) [UNTESTED]
+        │     └─► metapep / proteinfamilies (predicted proteins) [UNTESTED]
+        │           └─► proteinfold (family representatives → structures) [UNTESTED]
+        ├─► viralmetagenome (shotgun MG reads → viral contigs) [UNTESTED]
+        └─► metatdenovo (shotgun MT reads → metatranscriptome assembly) [UNTESTED]
+              └─► proteinfamilies (prodigal .faa.gz → protein families) [NOT IN METRO MAP]
 ```
 
+> The `metatdenovo → proteinfamilies` branch is not yet on the metro map. It is included
+> here because metatdenovo is the only pipeline in the chain that emits protein FASTA
+> directly, which makes it the shortest schema-compatible route into the protein nodes —
+> a candidate addition to propose to the SIG.
+
 ### Core chain (high confidence, data-driven)
-fetchngs → detaxizer → [ampliseq | taxprofiler | mag | metatdenovo]
+fetchngs → [ampliseq | taxprofiler | mag | metatdenovo]
+
+detaxizer is omitted from the LMO core chain — no host, so nothing to remove. It re-enters
+the chain for the first host-related dataset, where it also unlocks a test of its native
+`--generate_downstream_samplesheets` emitter.
 
 ### Stretch nodes (additional omics layers or heavy compute)
 - eager: for ancient DNA preprocessing — likely out of scope for modern environmental/clinical data
@@ -104,31 +117,74 @@ fetchngs → detaxizer → [ampliseq | taxprofiler | mag | metatdenovo]
 
 ## Samplesheet Chaining — Validation Table
 
-Each edge in the chain is a claim to be tested. Status tracked here.
+Each edge is a potential route. This table records what we have exercised, what works
+today, and where a bridge is needed — so that the bridges can be built, contributed
+upstream, or shipped as reusable converters.
 
 > **Evidence (fetchngs 1.12.0, `nextflow_schema.json`, checked 2026-08-10):**
-> `--nf_core_pipeline` accepts only `rnaseq`, `atacseq`, `viralrecon`, `taxprofiler`.
-> Three of the four core-chain entry points — ampliseq, mag, metatdenovo — have **no
-> built-in samplesheet emitter** and need a conversion step from the generic
-> `samplesheet.csv`. This is the first falsified metro-map claim; the conversion is small
-> (column rename/subset) but it is real work the diagram does not show.
+> `--nf_core_pipeline` accepts `rnaseq`, `atacseq`, `viralrecon`, `taxprofiler`. Three of
+> the four core-chain entry points — ampliseq, mag, metatdenovo — are not yet covered by
+> it, so reaching them from the generic `samplesheet.csv` needs a conversion step. The
+> conversion is small (column rename/subset), and extending the `--nf_core_pipeline` enum
+> would remove it for a lot of users: a good feature request, filed as such.
+
+> **Candidate new edge — `metatdenovo → proteinfamilies` (schemas checked 2026-08-10):**
+> not yet on the metro map, and worth adding. metatdenovo 1.4.0 with
+> `--orf_caller prodigal` publishes `prodigal/<assembly>.faa.gz`; proteinfamilies 2.4.0
+> accepts `.fa|.fasta|.faa|.fas` (± `.gz`), so the protein FASTA transfers with no
+> reformatting — only a one-row `sample,fasta` samplesheet. The mapped route,
+> `mag → proteinfamilies`, needs one more piece: mag does not itself emit protein FASTA,
+> so an ORF-calling step belongs between those two stations. The ORF caller is decisive:
+> `transdecoder` publishes `*.transdecoder.pep.gz`, and `.pep` is not in proteinfamilies'
+> accepted extensions — a one-line schema addition upstream would make that route work
+> too.
+
+> **detaxizer already ships a downstream samplesheet generator — a pattern worth
+> propagating** (detaxizer 1.3.0 `nextflow_schema.json`, checked 2026-08-10). It exposes
+> `--generate_downstream_samplesheets`, with `--generate_pipeline_samplesheets` defaulting
+> to `taxprofiler,mag` and constrained by
+> `^(taxprofiler|mag)(?:,(taxprofiler|mag)){0,1}`. This is the clearest existing example
+> in the chain of a pipeline handing its successor a ready-made input, and it shows the
+> mechanism already works. Generalising it — more source pipelines, more targets — is
+> probably the single highest-leverage improvement available to inter-pipeline chaining
+> in this SIG, and it is worth raising as a cross-pipeline proposal rather than as
+> individual issues.
+>
+> Two limits of that generator: the regex admits at most two pipelines and excludes
+> `ampliseq` and `metatdenovo` entirely, so those edges still need conversion. And
+> detaxizer's own `--input` schema is
+> `sample, short_reads_fastq_1, short_reads_fastq_2, long_reads_fastq_1` — not
+> `sample, fastq_1, fastq_2` — so `fetchngs → detaxizer` needs a conversion too.
+>
+> **Scope decision (2026-08-10):** detaxizer is **not run for the LMO pilot.** LMO is
+> Baltic brackish seawater with no host, `tax2filter` defaults to *Homo sapiens*, and
+> filtering before a metatranscriptome co-assembly risks removing conserved or
+> low-complexity reads for no expected biological gain. Deferred to a future
+> host-related dataset (human gut is the obvious candidate) where the step has biological
+> meaning as well as validation value. Its statuses above are recorded from schemas, not
+> from a run.
+
+> **Conversion scripts:** the conversions this table calls for live in
+> `scripts/converters/`, each with an assert-based `--selftest`. They are the deliverable
+> that turns "CONVERSION REQUIRED" from a finding into a working handoff.
 
 | From | To | Samplesheet handoff mechanism | Status |
 |------|----|-------------------------------|--------|
-| fetchngs | detaxizer | generic `samplesheet.csv`; no `--nf_core_pipeline` support | OPEN |
+| fetchngs | detaxizer | generic `samplesheet.csv`; no `--nf_core_pipeline` support, and detaxizer's columns are `short_reads_fastq_1/2`, not `fastq_1/2` | **CONVERSION REQUIRED** |
 | fetchngs | ampliseq | generic `samplesheet.csv`; **no `--nf_core_pipeline` option** | **CONVERSION REQUIRED** |
 | fetchngs | taxprofiler | `--nf_core_pipeline taxprofiler` emits a purpose-built samplesheet | OPEN — flag exists, output not yet verified |
 | fetchngs | mag | generic `samplesheet.csv`; **no `--nf_core_pipeline` option** | **CONVERSION REQUIRED** |
 | fetchngs | metatdenovo | generic `samplesheet.csv`; **no `--nf_core_pipeline` option** | **CONVERSION REQUIRED** |
-| detaxizer | ampliseq | detaxizer filtered FASTQ → ampliseq samplesheet | OPEN |
-| detaxizer | taxprofiler | detaxizer filtered FASTQ → taxprofiler samplesheet | OPEN |
-| detaxizer | mag | detaxizer filtered FASTQ → mag samplesheet | OPEN |
+| detaxizer | ampliseq | filtered FASTQ → ampliseq samplesheet; **excluded** from `--generate_pipeline_samplesheets` | **CONVERSION REQUIRED** |
+| detaxizer | taxprofiler | `--generate_downstream_samplesheets` emits a taxprofiler samplesheet natively | OPEN — native emitter exists, output not yet verified |
+| detaxizer | mag | `--generate_downstream_samplesheets` emits a mag samplesheet natively | OPEN — native emitter exists, output not yet verified |
 | createtaxdb | taxprofiler | db output path referenced in taxprofiler params | OPEN |
 | mag | funcscan | MAG/contig FASTA → funcscan input | OPEN |
 | mag | phageannotator | contig FASTA → phageannotator input | OPEN |
 | mag | phyloplace | contig FASTA → phyloplace input | OPEN |
 | mag | magmap | MAG FASTA → magmap reference input | OPEN |
 | mag | metapep / proteinfamilies | predicted proteins FASTA → input | OPEN |
+| **metatdenovo** | **proteinfamilies** | `--orf_caller prodigal` publishes `prodigal/<assembly>.faa.gz`, an extension proteinfamilies accepts | **CONVERSION REQUIRED** — one-row samplesheet, no reformatting |
 | proteinfamilies | proteinfold | representative sequence per family → protein FASTA input | OPEN |
 | taxprofiler | differentialabundance | abundance profile → differentialabundance input | OPEN |
 | ampliseq | differentialabundance | QIIME2/BIOM profile → differentialabundance input | OPEN |
@@ -142,7 +198,7 @@ Each edge in the chain is a claim to be tested. Status tracked here.
 |-------|-------|-------|--------|
 | 0 — Dataset decision | Extend search; score against the matrix in [DATASETS.md](DATASETS.md); SIG vote | `lit-synthesizer`, `ncbi-datasets` | OPEN |
 | 1 — Scaffold | fetchngs run; verify raw data availability; build reference DBs | `ncbi-datasets` (reference genomes) | OPEN |
-| 2 — Core chain | detaxizer → ampliseq / taxprofiler / mag / metatdenovo | `claw-metagenomics` (validation runs) | OPEN |
+| 2 — Core chain | ampliseq / taxprofiler / mag / metatdenovo (detaxizer deferred — no host in LMO) | `claw-metagenomics` (validation runs) | OPEN |
 | 2a — Assembly QC | Assess MAG and transcript completeness | `busco-assessor` | OPEN |
 | 3 — Samplesheet handoffs | Test and document each edge in the validation table | — | OPEN |
 | 4 — Secondary analysis | differentialabundance; funcscan; phageannotator; phyloplace | — | OPEN |
@@ -175,3 +231,9 @@ Each edge in the chain is a claim to be tested. Status tracked here.
 8. If LMO is selected: restrict to the 26 all-3-omics matched dates, or use all 44
    amplicon dates and accept ragged layer coverage? Matched-only is cleaner for
    samplesheet-handoff validation.
+9. **Carried forward to the first host-related dataset:** run detaxizer and test
+   `--generate_downstream_samplesheets` against taxprofiler and mag. It is the only
+   pipeline in the chain found so far that emits downstream samplesheets natively, so
+   whether those sheets are accepted unmodified is the sharpest available test of
+   nf-core samplesheet standardisation. Deferred from the LMO pilot for lack of a host,
+   not for lack of interest.

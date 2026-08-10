@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>meta-omics SIG — pipeline conveyor</title>
-<meta name="description" content="Which nf-core meta-omics samplesheet handoffs have actually been validated, and which are still claims on a diagram.">
+<meta name="description" content="Walking the nf-core meta-omics pipeline chain end to end on real data: what each pipeline needs, which handoffs we have exercised, and where a bridge is still needed.">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -13,10 +13,12 @@
 <div class="col-left">
 
 <h1>nf-core meta-omics — the pipeline conveyor</h1>
-<p class="sub">Every arrow in the meta-omics &ldquo;metro map&rdquo; is a claim that one pipeline&rsquo;s
-output can feed the next. This page shows which of those claims have actually been tested, and
-routes a real dataset&rsquo;s sequencing runs down the belt as far as the evidence goes &mdash; which,
-today, is one hop.</p>
+<p class="sub">The meta-omics &ldquo;metro map&rdquo; sets out how these pipelines could chain
+together &mdash; a roadmap of intended synergy rather than a set of guarantees. This page tracks
+the work of walking it end to end on real data: what each pipeline needs as input, which handoffs
+we have exercised so far, and where a bridge is still needed. Bridges become converter scripts and
+upstream feature requests. A real dataset&rsquo;s sequencing runs travel the belt as far as the
+evidence goes &mdash; today, one hop.</p>
 <p class="meta-line" id="metaline"></p>
 
 <div id="err" role="alert">
@@ -147,19 +149,19 @@ function boot() {
   document.getElementById("footer").innerHTML =
     `Work of the <a href="${D.meta.sig}">nf-core meta-omics Special Interest Group</a>, published from a
      personal repository. Statuses mirror <a href="${D.meta.plan}">PLAN.md</a>; dataset candidates mirror
-     <a href="${D.meta.datasets_doc}">DATASETS.md</a>. Nothing here is a validated result until the
-     handoff table says so.`;
+     <a href="${D.meta.datasets_doc}">DATASETS.md</a>. Statuses describe what this project has
+     exercised so far, not the intent or the roadmap of any pipeline.`;
   legend(); candidates();
   render(D.datasets.find(x => x.selectable));
 }
 
 function legend() {
   const items = [
-    ["c-validated", "&#10003;", "validated handoff"],
-    ["c-conversion-required", "&#9873;", "works, needs a conversion step"],
-    ["c-untested", "?", "in the validation table, untested"],
-    ["c-absent-from-table", "&#8709;", "drawn in the metro map, absent from the table"],
-    ["c-site-annotation", "&#9678;", "site annotation, not a repo claim"],
+    ["c-validated", "&#10003;", "handoff exercised end to end"],
+    ["c-conversion-required", "&#9873;", "works, with a conversion step"],
+    ["c-untested", "?", "tracked route, not yet exercised"],
+    ["c-absent-from-table", "&#8709;", "on the metro map, not yet tracked here"],
+    ["c-site-annotation", "&#9678;", "our note, not a pipeline's own status"],
     ["", "&#9711;", "planned input &mdash; not yet fetched"],
     ["", "&#9679;", "actual output of a completed run"]
   ];
@@ -211,13 +213,18 @@ function drawFloor(st) {
     const p = el("path", { id: "p_" + e.id, d: dstr, class: "e " + e.statusClass });
     gE.append(p);
 
-    // A missing intermediate step is drawn on the belt, not just written in the panel.
-    // Sits at the true midpoint of the curve, not of the straight line between boxes.
-    if (e.caveat && e.caveat.startsWith("MISSING STEP")) {
+    // An intermediate step the route needs but the map has no station for, drawn on the
+    // belt rather than only written in the panel. Sits at the true midpoint of the curve,
+    // not of the straight line between boxes. Driven by the explicit `intermediateStep`
+    // field, never by matching prose in `caveat`.
+    if (e.intermediateStep) {
       const mid = p.getPointAtLength(p.getTotalLength() / 2);
       gE.append(el("circle", { cx: mid.x, cy: mid.y, r: 7, class: "gap" }));
       const t = el("text", { x: mid.x, y: mid.y + 3.5, class: "gap-t", "text-anchor": "middle" });
-      t.textContent = "!"; gE.append(t);
+      t.textContent = "+"; gE.append(t);
+      const title = el("title");
+      title.textContent = "Needs an intermediate step: " + e.intermediateStep;
+      gE.append(title);
     }
 
     const dots = dotsFor(e, st);

@@ -21,6 +21,8 @@ site-specific and go stale; the Seqera link preserves the full execution record.
 | # | Pipeline | Revision | Date | Scope | Status | Provenance |
 |---|----------|----------|------|-------|--------|------------|
 | 01 | nf-core/fetchngs | 1.12.0 | 2026-08-10 | LMO pilot — 3 dates × 3 omics layers | **SUCCESS** | [Seqera run](https://cloud.seqera.io/user/vangelis/watch/1Hd5FAdXhle9M9) |
+| 02 | nf-core/metatdenovo | 1.4.0 | — | 6 MT libraries → one co-assembly + protein FASTA | PREPARED | — |
+| 03 | nf-core/proteinfamilies | 2.4.0 | — | protein families from the run-02 ORFs | PREPARED, blocked on 02 | — |
 
 ---
 
@@ -136,3 +138,87 @@ unreleased change. Detail and suggested wording in the section below.
 - [ ] Cut a release with the modern template so 1.x works on Nextflow 26.04+ (release request)
 - [ ] Add `ampliseq` / `mag` / `metatdenovo` to `--nf_core_pipeline` (feature)
 - [ ] `wget` container lacks `/etc/resolv.conf` (bug, needs re-verification against `dev`'s 1.21.4 image)
+
+---
+
+## 02 — metatdenovo, LMO metatranscriptome co-assembly
+
+**Status: prepared, not yet run.** No provenance link until it executes.
+
+| | |
+|---|---|
+| Pipeline | `nf-core/metatdenovo` `-r 1.4.0` (Jun 2026) |
+| Nextflow | requires `>=25.10.4`; modern template, so **no** `NXF_SYNTAX_PARSER=v1` |
+| Input | 6 RNA-Seq libraries from run 01, ~27 GB |
+| Samplesheet | generated on-cluster by `scripts/converters/fetchngs_to_reads_samplesheet.py` |
+| Params | [`runs/02_metatdenovo/params.yml`](runs/02_metatdenovo/params.yml) |
+
+### Why the parameters are what they are
+
+`assembler: megahit` — the workflow collects all reads with `.toList()`/`.collect()` before
+assembling, so this is **one co-assembly**, not six. rnaSPAdes over ~320 M read pairs is
+memory-brutal; megahit is built for this shape.
+
+`orf_caller: prodigal` — this single parameter is what makes the proteinfamilies handoff
+work:
+
+| ORF caller | Published protein file | Accepted by proteinfamilies 2.4.0 |
+|------------|------------------------|-----------------------------------|
+| **prodigal** | `prodigal/<assembly>.faa.gz` | **yes** |
+| prokka | `prokka/prokka.faa.gz` | yes, but much slower here |
+| transdecoder | `transdecoder/*.transdecoder.pep.gz` | **no** — `.pep` is not in the schema's accepted set |
+
+`skip_eggnog` / `skip_kofamscan` / `skip_eukulele` — all three are ON by default and each
+wants a large database (eggnog ~50 GB; `eukulele_db` has no default at all). This run is
+for the assembly, ORFs and protein FASTA. Annotation returns once the chain is validated.
+
+### Sample renaming
+
+fetchngs sets `sample` to the ENA experiment accession, so results would be labelled
+`ERX11668914`. The converter rebuilds names from `collection_date` — never `sample_alias`,
+whose LMO metagenome dates are stale:
+
+`LMO_20160315_MT_a/b`, `LMO_20160803_MT_a/b`, `LMO_20171031_MT_a/b`
+
+---
+
+## 03 — proteinfamilies, families from the metatranscriptome ORFs
+
+**Status: prepared, blocked on run 02.**
+
+| | |
+|---|---|
+| Pipeline | `nf-core/proteinfamilies` `-r 2.4.0` (Jun 2026) |
+| Nextflow | requires `>=25.10.4`; modern template |
+| Input | one row — metatdenovo co-assembles, so there is a single protein FASTA |
+| Samplesheet | generated on-cluster by `scripts/converters/metatdenovo_to_proteinfamilies.py` |
+| Params | [`runs/03_proteinfamilies/params.yml`](runs/03_proteinfamilies/params.yml) |
+
+### New edge, not in the metro map
+
+`metatdenovo → proteinfamilies` is not yet on the metro map, and looks worth adding.
+metatdenovo with prodigal emits `.faa.gz` directly, so the handoff needs only a one-row
+samplesheet and no reformatting. The mapped route, `mag → proteinfamilies`, needs one more
+piece first: mag does not itself emit protein FASTA, so an ORF-calling step belongs between
+those two stations. Recorded as a new row in
+[PLAN.md](PLAN.md#samplesheet-chaining--validation-table) and proposed to the SIG.
+
+---
+
+## Conversion scripts
+
+`scripts/converters/` holds the conversions the validation table calls for. Each has an
+assert-based `--selftest` that runs with no arguments and no fixtures:
+
+| Script | Edge | Guards against |
+|--------|------|----------------|
+| `fetchngs_to_reads_samplesheet.py` | fetchngs → metatdenovo (and ampliseq, via `--strategy`) | stale `sample_alias` dates leaking into sample names; duplicate sample names silently merging samples |
+| `metatdenovo_to_proteinfamilies.py` | metatdenovo → proteinfamilies | emitting a samplesheet proteinfamilies would reject (the transdecoder `.pep` case); more than one protein FASTA, which would mean the co-assembly assumption broke |
+
+```bash
+python3 scripts/converters/fetchngs_to_reads_samplesheet.py --selftest
+python3 scripts/converters/metatdenovo_to_proteinfamilies.py --selftest
+```
+
+Generated samplesheets are **not committed** — they contain absolute cluster paths.
+Regenerate them on the cluster from the previous pipeline's output.
