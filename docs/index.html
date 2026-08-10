@@ -287,6 +287,17 @@ const stateLabel = s => ({ run: "run", configured: "configured, not run",
   "not-selected": "not selected", unavailable: "unavailable", external: "reference input",
   pending: "not run" }[s] || s);
 
+/* Two different versions live in the data and must not be conflated:
+     stations[].release        the version whose docs the `requires` list was read from
+     siteState[id].version     the version actually used for THIS dataset
+   They agree today, but a later study may run a different release. Prefer the executed
+   version, and surface both when they diverge rather than silently showing one. */
+const releaseLabel = (s, s2) => {
+  const documented = s.release, used = s2 && s2.version;
+  if (used && documented && used !== documented) return `${used} (docs: ${documented})`;
+  return used || documented || (s.devNote ? "dev only" : "—");
+};
+
 function badge(st) {
   // Count validation-table ROWS, not drawn edges: the mag->proteins row is one row
   // in PLAN.md but three arrows here, and share a rowKey to collapse back.
@@ -312,7 +323,7 @@ function stationTable(st) {
   D.stations.forEach(s => {
     const s2 = s.kind === "external" ? { state: "external" } : st(s.id);
     const tr = document.createElement("tr");
-    tr.innerHTML = `<td></td><td class="mono">${esc(s.release || (s.devNote ? "dev only" : "—"))}</td>
+    tr.innerHTML = `<td></td><td class="mono">${esc(releaseLabel(s, s2))}</td>
       <td>${esc(stateLabel(s2.state))}</td><td class="mono">${s2.in ?? "—"}</td>
       <td class="mono">${s2.out ?? "—"}</td><td>${esc(s2.note || "")}</td>`;
     const b = document.createElement("button");
@@ -355,7 +366,8 @@ document.getElementById("dlg-x").onclick = () => dlg.close();
 function openPanel(s, s2, opener) {
   document.getElementById("dlg-title").textContent = s.label;
   document.getElementById("dlg-rel").textContent =
-    s.release ? "release " + s.release : (s.devNote ? "no tagged release" : "");
+    (s.release || (s2 && s2.version)) ? "release " + releaseLabel(s, s2)
+                                      : (s.devNote ? "no tagged release" : "");
   const out = D.edges.filter(e => e.from === s.id);
   const inn = D.edges.filter(e => e.to === s.id);
   const list = arr => arr.length ? "<ul>" + arr.map(e => `<li><span class="chip c-${e.statusClass}">${

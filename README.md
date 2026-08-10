@@ -3,6 +3,10 @@
 This repository tracks the design and execution of an end-to-end multi-omics benchmark
 for the [nf-core meta-omics Special Interest Group](https://nf-co.re/special-interest-groups/meta-omics).
 
+**📊 Live project site: <https://vagkaratzas.github.io/meta-omics-sig/>** — an interactive
+view of the pipeline chain: what each pipeline needs as input, which handoffs have been
+exercised so far, and where a bridge is still needed.
+
 ## Goal
 
 Build a reproducible, publicly documented workflow that traverses as many nf-core meta-omics
@@ -26,7 +30,8 @@ The SIG's chaining diagram, and the starting point for this project. It sets out
 pipelines **could** chain together — a roadmap of intended synergy, where each track marks a
 potential route rather than a guarantee that the handoff works today. Walking those routes on
 real data, and reporting back what we find, is the work described in
-[PLAN.md](PLAN.md); live per-edge status is on the [project site](docs/).
+[PLAN.md](PLAN.md); live per-edge status is on the
+**[project site](https://vagkaratzas.github.io/meta-omics-sig/)**.
 
 The pipelines in scope are organized by stage:
 
@@ -71,7 +76,7 @@ Two decisions gate all downstream work; neither is resolved yet:
 | `runs/<NN>_<pipeline>/` | Per-run inputs, params, and troubleshooting notes |
 | `scripts/converters/` | Samplesheet conversions between pipelines, each with a `--selftest` |
 | `scripts/check_links.py` | Link-hygiene check for the vault — broken links, orphans, wikilinks |
-| `docs/` | GitHub Pages site; `data.json` mirrors the PLAN.md validation table |
+| `docs/` | Source for the [live site](https://vagkaratzas.github.io/meta-omics-sig/); `data.json` mirrors the PLAN.md validation table |
 | [`AGENTS.md`](AGENTS.md) | Bot/AI operational context — conventions, resource pointers, guardrails |
 | [`ACRONYMS.md`](ACRONYMS.md) | Glossary of acronyms used across these documents |
 | [`LOG.md`](LOG.md) | Dated activity log |
@@ -147,6 +152,7 @@ installing plugins or rearranging panes will not touch anyone else's setup.
 
 ## SIG Resources
 
+- **Project site (this work):** https://vagkaratzas.github.io/meta-omics-sig/
 - **SIG page:** https://nf-co.re/special-interest-groups/meta-omics
 - **GitHub project board:** https://github.com/orgs/nf-core/projects/79/views/1
 - **Meeting notes (HackMD):** https://hackmd.io/@nf-core/SyCCVMkT0
