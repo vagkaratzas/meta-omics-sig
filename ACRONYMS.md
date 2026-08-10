@@ -33,6 +33,7 @@ Markdown files in this repository.
 | KS | Culture KS dataset label used in this repository |
 | L0 | Granata oral cancer dataset group: OSCC with resection |
 | L1 | Granata oral cancer dataset group: OSCC without resection |
+| LMO | Linnaeus Microbial Observatory |
 | MAG | Metagenome-assembled genome |
 | MCP | Model Context Protocol |
 | MG | Metagenomics / metagenomic |

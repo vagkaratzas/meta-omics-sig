@@ -104,13 +104,20 @@ fetchngs → detaxizer → [ampliseq | taxprofiler | mag | metatdenovo]
 
 Each edge in the chain is a claim to be tested. Status tracked here.
 
+> **Evidence (fetchngs 1.12.0, `nextflow_schema.json`, checked 2026-08-10):**
+> `--nf_core_pipeline` accepts only `rnaseq`, `atacseq`, `viralrecon`, `taxprofiler`.
+> Three of the four core-chain entry points — ampliseq, mag, metatdenovo — have **no
+> built-in samplesheet emitter** and need a conversion step from the generic
+> `samplesheet.csv`. This is the first falsified metro-map claim; the conversion is small
+> (column rename/subset) but it is real work the diagram does not show.
+
 | From | To | Samplesheet handoff mechanism | Status |
 |------|----|-------------------------------|--------|
-| fetchngs | detaxizer | fetchngs outputs nf-core FASTQ samplesheet | OPEN |
-| fetchngs | ampliseq | fetchngs outputs nf-core FASTQ samplesheet | OPEN |
-| fetchngs | taxprofiler | fetchngs outputs nf-core FASTQ samplesheet | OPEN |
-| fetchngs | mag | fetchngs outputs nf-core FASTQ samplesheet | OPEN |
-| fetchngs | metatdenovo | fetchngs outputs nf-core FASTQ samplesheet | OPEN |
+| fetchngs | detaxizer | generic `samplesheet.csv`; no `--nf_core_pipeline` support | OPEN |
+| fetchngs | ampliseq | generic `samplesheet.csv`; **no `--nf_core_pipeline` option** | **CONVERSION REQUIRED** |
+| fetchngs | taxprofiler | `--nf_core_pipeline taxprofiler` emits a purpose-built samplesheet | OPEN — flag exists, output not yet verified |
+| fetchngs | mag | generic `samplesheet.csv`; **no `--nf_core_pipeline` option** | **CONVERSION REQUIRED** |
+| fetchngs | metatdenovo | generic `samplesheet.csv`; **no `--nf_core_pipeline` option** | **CONVERSION REQUIRED** |
 | detaxizer | ampliseq | detaxizer filtered FASTQ → ampliseq samplesheet | OPEN |
 | detaxizer | taxprofiler | detaxizer filtered FASTQ → taxprofiler samplesheet | OPEN |
 | detaxizer | mag | detaxizer filtered FASTQ → mag samplesheet | OPEN |

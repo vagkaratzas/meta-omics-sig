@@ -115,9 +115,9 @@ his group.
 | Filter fractions | 0.2 (free-living, no prefilter), 3–0.2 (prefiltered), 3 (particle-associated) — amplicon only; MG and MT are 0.2 exclusively |
 | Sample counts (ENA, 0.2 fraction) | 16S 13 + 19 + 12 = 44 dates · MG 26 samples / 26 dates · MT 64 runs / 33 dates (31 dates ×2 replicates) |
 | **Matched all-3-omics dates** | **26** (amplicon 0.2 ∩ MG ∩ MT); MG date set ⊂ MT date set |
-| Data volume | ~235 GB (~366 GB including polyA MT) |
+| Data volume | 461 GB across the five core accessions (16S 8.1 GB · MG 240.4 GB · MT rRNA-depleted 212.3 GB); 719 GB including both polyA MT studies |
 | Conditions | Seasonal / longitudinal — supports differentialabundance via season or bloom-phase contrasts |
-| Strengths | All three required layers on the **same water sample** for 26 dates; SIG-internal data owner (metadata questions resolvable same-day); 6× smaller than PRJNA230567; MT has 2 replicates per date; two independent MT chemistries usable as a methods comparison |
+| Strengths | All three required layers on the **same water sample** for 26 dates; SIG-internal data owner (metadata questions resolvable same-day); ~3× smaller than PRJNA230567 (461 GB vs 1.5 TB); MT has 2 replicates per date; two independent MT chemistries usable as a methods comparison |
 | Weaknesses | Environmental (not host-related); no MP (moot); sampled 2015–2017; time series rather than a factorial replicate design |
 
 > **Metadata caveat (open, 2026-08-10):** in PRJEB82694 the immutable `sample_alias`
@@ -181,7 +181,7 @@ Scoring key — 3-omics: 3=all 3 layers, 2=2 layers, 1=1 layer. Host-related: 3=
 >
 > | | PRJNA693457 (Culture BP) | PRJNA230567 (Herold) | LMO |
 > |---|---|---|---|
-> | Data volume | moderate | **1.5 TB** | **~235 GB** |
+> | Data volume | moderate | **1.5 TB** | **461 GB** |
 > | Matched all-3-omics samples | 2 conditions × 3 repl | seasonal, 5 repl/condition | **26 matched dates** |
 > | Community complexity | low (enrichment culture) | moderate | moderate |
 > | Metadata support | external, 2021 paper | external, Wilmes lab | **SIG-internal (D. Lundin)** |
