@@ -130,7 +130,7 @@
       "release": "2.4.0", "docs": "https://nf-co.re/proteinfamilies/2.4.0/", "devNote": null
     },
     {
-      "id": "proteinfold", "label": "proteinfold", "kind": "pipeline", "x": 620, "y": 542,
+      "id": "proteinfold", "label": "proteinfold", "kind": "pipeline", "x": 860, "y": 542,
       "blurb": "Predicts protein structures from amino-acid sequences. Computationally expensive; a stretch node.",
       "io": { "in": "Protein FASTA", "out": "Predicted structures" },
       "requires": null, "requiresReadFrom": null,
@@ -282,22 +282,22 @@
       "id": "mag__metapep", "rowKey": "mag__proteins", "from": "mag", "to": "metapep",
       "source": "table", "kind": "artifact", "repoStatus": "OPEN", "statusClass": "untested",
       "routable": false, "unit": "proteins", "carries": [],
-      "note": "One validation-table row covers metapep, proteinfamilies and proteinfold together; drawn here as three edges sharing that status.",
+      "note": "predicted proteins FASTA -> input. One validation-table row covers metapep and proteinfamilies together; drawn here as two edges sharing that status.",
       "caveat": "MISSING STEP: mag does not emit protein FASTA. An ORF-calling / protein-extraction step sits between these stations and is not shown in the metro map."
     },
     {
       "id": "mag__proteinfamilies", "rowKey": "mag__proteins", "from": "mag", "to": "proteinfamilies",
       "source": "table", "kind": "artifact", "repoStatus": "OPEN", "statusClass": "untested",
       "routable": false, "unit": "proteins", "carries": [],
-      "note": "One validation-table row covers metapep, proteinfamilies and proteinfold together; drawn here as three edges sharing that status.",
+      "note": "predicted proteins FASTA -> input. One validation-table row covers metapep and proteinfamilies together; drawn here as two edges sharing that status.",
       "caveat": "MISSING STEP: mag does not emit protein FASTA. An ORF-calling / protein-extraction step sits between these stations and is not shown in the metro map."
     },
     {
-      "id": "mag__proteinfold", "rowKey": "mag__proteins", "from": "mag", "to": "proteinfold",
+      "id": "proteinfamilies__proteinfold", "from": "proteinfamilies", "to": "proteinfold",
       "source": "table", "kind": "artifact", "repoStatus": "OPEN", "statusClass": "untested",
-      "routable": false, "unit": "proteins", "carries": [],
-      "note": "One validation-table row covers metapep, proteinfamilies and proteinfold together; drawn here as three edges sharing that status.",
-      "caveat": "MISSING STEP: mag does not emit protein FASTA. An ORF-calling / protein-extraction step sits between these stations and is not shown in the metro map."
+      "routable": false, "unit": "representative proteins", "carries": [],
+      "note": "representative sequence per family -> protein FASTA input",
+      "caveat": "proteinfamilies must emit one representative per family in a form proteinfold accepts; the extraction step has not been tested."
     },
     {
       "id": "taxprofiler__differentialabundance", "from": "taxprofiler", "to": "differentialabundance",

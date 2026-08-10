@@ -27,7 +27,8 @@ the metro map requires a specific data layer:
 | taxprofiler / mag / magmap | Shotgun metagenomic reads |
 | metatdenovo | Shotgun metatranscriptomic reads |
 | viralmetagenome | Shotgun metagenomic reads |
-| metapep / proteinfamilies / proteinfold | Predicted proteins (FASTA), downstream of MAG/assembly |
+| metapep / proteinfamilies | Predicted proteins (FASTA), downstream of MAG/assembly |
+| proteinfold | Representative sequences emitted by proteinfamilies |
 | funcscan / phageannotator / phyloplace | Assembled contigs or MAG FASTA |
 | differentialabundance | Abundance profiles, requires ≥2 conditions with replicates |
 
@@ -76,7 +77,8 @@ fetchngs (SRA accessions)
         │     ├─► funcscan (contigs → functional annotation) [UNVALIDATED]
         │     ├─► phageannotator (contigs → phage annotation) [UNVALIDATED]
         │     ├─► phyloplace (contigs → phylogenetic placement) [UNVALIDATED]
-        │     └─► metapep / proteinfamilies / proteinfold (predicted proteins) [UNVALIDATED]
+        │     └─► metapep / proteinfamilies (predicted proteins) [UNVALIDATED]
+        │           └─► proteinfold (family representatives → structures) [UNVALIDATED]
         ├─► viralmetagenome (shotgun MG reads → viral contigs) [UNVALIDATED]
         └─► metatdenovo (shotgun MT reads → metatranscriptome assembly) [UNVALIDATED]
 ```
@@ -126,7 +128,8 @@ Each edge in the chain is a claim to be tested. Status tracked here.
 | mag | phageannotator | contig FASTA → phageannotator input | OPEN |
 | mag | phyloplace | contig FASTA → phyloplace input | OPEN |
 | mag | magmap | MAG FASTA → magmap reference input | OPEN |
-| mag | metapep / proteinfamilies / proteinfold | predicted proteins FASTA → input | OPEN |
+| mag | metapep / proteinfamilies | predicted proteins FASTA → input | OPEN |
+| proteinfamilies | proteinfold | representative sequence per family → protein FASTA input | OPEN |
 | taxprofiler | differentialabundance | abundance profile → differentialabundance input | OPEN |
 | ampliseq | differentialabundance | QIIME2/BIOM profile → differentialabundance input | OPEN |
 | magmap | differentialabundance | coverage profiles → differentialabundance input | OPEN |
