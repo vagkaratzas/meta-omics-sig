@@ -15,6 +15,19 @@ chaining between pipelines. The use case will:
 
 ## The Meta-Omics Metro Map
 
+![The nf-core meta-omics pipeline chaining diagram: three stages left to right — data input
+(fetchngs, detaxizer, createtaxdb), primary analysis (ampliseq, taxprofiler, mag,
+viralmetagenome, metatdenovo, eager, magmap), and secondary analysis (differentialabundance,
+metapep, phageannotator, funcscan, phyloplace, proteinfamilies, proteinfold) — with coloured
+tracks for amplicon reads, shotgun reads and contigs/genomes, and file icons marking where
+FASTQ, FASTA and profile artefacts pass between pipelines.](images/pipeline_chain.png)
+
+The SIG's chaining diagram, and the starting point for this project. It sets out how these
+pipelines **could** chain together — a roadmap of intended synergy, where each track marks a
+potential route rather than a guarantee that the handoff works today. Walking those routes on
+real data, and reporting back what we find, is the work described in
+[PLAN.md](PLAN.md); live per-edge status is on the [project site](docs/).
+
 The pipelines in scope are organized by stage:
 
 | Stage | Pipelines | Data type in |
