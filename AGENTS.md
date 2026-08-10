@@ -2,7 +2,8 @@
 
 This file is for AI assistants working in this repository. It contains operational
 context, conventions, resource pointers, and guardrails. It is not a project overview
-(see README.md) or a decision framework (see PLAN.md).
+(see README.md), a decision framework (see PLAN.md), or the dataset candidate list
+(see DATASETS.md).
 
 ---
 
@@ -91,7 +92,14 @@ docs before generating any samplesheet or parameter file.
 
 ## Dataset Accessions in Scope
 
-Do not invent or guess SRA accessions. Only use these confirmed ones:
+Do not invent or guess SRA accessions. Only use these confirmed ones. Full candidate
+write-ups and the scoring matrix live in **DATASETS.md**; this table is the accession
+registry only.
+
+**Selection gate (SIG decision):** a usable candidate must carry amplicon + shotgun MG +
+shotgun MT. **Metaproteomics (MP) is out of scope** — the SIG has no pipeline consuming
+mass-spec MP data, so PRIDE/PXD accessions below are recorded for completeness but do not
+count toward selection.
 
 | Dataset label | Accessions | Omics layers | Host context |
 |---------------|-----------|--------------|--------------|
@@ -103,10 +111,27 @@ Do not invent or guess SRA accessions. Only use these confirmed ones:
 | Herold wastewater | PRJNA230567 (SRA) + PXD013655 (PRIDE) | 16S amplicon + MG + MT + MP — **only confirmed 4-omics public dataset** | Environmental (wastewater) |
 | Heintz-Buschart T1DM | PRJNA289586 (SRA) + PRIDE TBC | MG (WGS) + MT (RNA-Seq) + MP; no amplicon | Human gut, T1DM families |
 | Granata oral cancer | PRJNA700849 (SRA) + PXD022859 (PRIDE) | 16S amplicon + MP; no shotgun MG or MT | Human saliva, OSCC |
+| LMO (Linnaeus Microbial Observatory) | 16S: PRJEB52780, PRJEB52782, PRJEB52828 · MG: PRJEB82694 · MT rRNA-depleted: PRJEB69280 · MT polyA: PRJEB90631, PRJEB90671 | 16S amplicon + MG + MT — **passes the gate**; no MP | Environmental (Baltic Sea brackish water, 2 m) |
 
 If asked to find more datasets, search SRA/ENA directly or use the PubMed tool — do
 not fabricate accessions. The iHMP (PRJNA398945) is a high-priority unverified candidate
 to investigate.
+
+### LMO-specific handling
+
+- **Amplicon studies carry three filter fractions** — `0.2` (free-living, no prefilter),
+  `3-0.2` (prefiltered), `3` (particle-associated) — encoded in `sample_title` as
+  `filter fraction:<x>`. MG and MT are `0.2` only. Selections targeting the free-living
+  fraction must match `0.2` exactly and **exclude `3-0.2`**.
+- **Use `collection_date`, never `sample_alias`, as the date key.** In PRJEB82694 the
+  aliases retain pre-correction dates and disagree with `collection_date` /`sample_title`
+  for 23 of 26 samples. ENA aliases are immutable, so this will not be fixed upstream.
+- Verified counts (ENA, 2026-08-10, fraction `0.2`): PRJEB52780 13 · PRJEB52782 19 ·
+  PRJEB52828 12 · PRJEB82694 26 · PRJEB69280 64 runs over 33 dates. 26 dates carry all
+  three layers. These do **not** match the submitter's own tally — see DATASETS.md,
+  Candidate 8. Do not treat either count as settled.
+- Query counts via the ENA portal API rather than trusting cached numbers, e.g.
+  `curl -s "https://www.ebi.ac.uk/ena/portal/api/filereport?accession=<PRJEB>&result=read_run&fields=run_accession,sample_accession,sample_alias,sample_title,collection_date&format=tsv&limit=0"`
 
 ---
 
@@ -157,8 +182,9 @@ keyword trigger or explicit name.
 
 **Dataset research:** Use the `lit-synthesizer` ClawBio skill (PubMed + bioRxiv) and the
 PubMed MCP tool for literature search. Use `ncbi-datasets` to inspect BioProject metadata.
-Score candidates against the criteria in PLAN.md. Prioritize: 4-omics coverage,
-host-related context, ≥3 replicates per condition, post-2021 vintage.
+Score candidates against the matrix in DATASETS.md. Apply the gate first (amplicon + MG +
+MT — no gate, no selection), then prioritize: host-related context, ≥3 replicates per
+condition, post-2021 vintage, community complexity. Do not score MP availability.
 
 **Pipeline chaining:** To check if pipeline A's output can feed pipeline B, fetch both
 pipelines' samplesheet schemas from their GitHub repos and compare column sets. Report
@@ -167,5 +193,6 @@ gaps that would require a conversion step.
 **Parameter file generation:** Use confirmed dataset accessions and pipeline schema
 files. Never generate parameter values from memory alone.
 
-**Roadmap tracking:** PLAN.md is the canonical roadmap. Update it when decisions are
-made. Do not create a separate status file.
+**Roadmap tracking:** PLAN.md is the canonical roadmap; DATASETS.md is the canonical
+dataset candidate list and scoring matrix. Update them when decisions are made. Do not
+create a separate status file.

@@ -41,8 +41,9 @@ The pipelines in scope are organized by stage:
 
 Two decisions gate all downstream work; neither is resolved yet:
 
-1. **Dataset selection** — no single public dataset found so far satisfies both
-   "full 4-omics coverage" and "host-related with modern replicates." See `PLAN.md`.
+1. **Dataset selection** — no public dataset found so far satisfies both the
+   amplicon + MG + MT requirement and "host-related with modern replicates."
+   See `DATASETS.md`.
 2. **Pipeline chain scope** — which edges of the metro map can be validated with
    the chosen dataset, and which require separate data or a stretch run.
 
@@ -50,7 +51,8 @@ Two decisions gate all downstream work; neither is resolved yet:
 
 | File | Purpose |
 |------|---------|
-| `PLAN.md` | Decision framework, pipeline chain design, dataset evaluation, open questions |
+| `PLAN.md` | Decision framework, selection constraints, pipeline chain design, roadmap, open questions |
+| `DATASETS.md` | Candidate datasets (accessions, omics layers, trade-offs) and the scoring matrix |
 | `AGENTS.md` | Bot/AI operational context — conventions, resource pointers, guardrails |
 
 ## SIG Resources

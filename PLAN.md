@@ -34,152 +34,34 @@ the metro map requires a specific data layer:
 A dataset missing any layer reduces the pipelines reachable. Dataset selection is
 therefore the gating decision.
 
----
+> **Metaproteomics (MP) is out of scope.** The nf-core meta-omics SIG has no pipeline
+> that consumes mass-spec metaproteomic data. `metapep` / `proteinfamilies` /
+> `proteinfold` take *predicted* protein FASTA downstream of MAG/assembly — they do not
+> need an MP layer. MP availability is therefore no longer a dataset selection criterion
+> and PRIDE accessions are ignored for now.
 
-## Dataset Candidates
-
-### Candidate 1 — PRJNA682552 (Culture KS)
-
-| Property | Value |
-|----------|-------|
-| Accession | PRJNA682552 |
-| Environment | Freshwater sediment enrichment culture (Bremen, Germany) |
-| Organism | *Ferrigenium straubiae*, *Rhodanobacter* spp. (nitrate-reducing iron-oxidizing) |
-| Omics layers | 16S amplicon + Illumina/Nanopore shotgun MG + MT (2 conditions, 3 replicates) + MP |
-| SRA experiments | 31 |
-| Vintage | ~2019–2021 |
-| Strengths | Full 4-omics stack; biological replicates; long-read MG for better assembly |
-| Weaknesses | Cultured enrichment (not host-related); small community complexity; old vintage |
-
-### Candidate 2 — PRJNA693457 (Culture BP)
-
-| Property | Value |
-|----------|-------|
-| Accession | PRJNA693457 |
-| Environment | Freshwater sediment enrichment culture (Bremen, Germany) |
-| Organism | *Candidatus Ferrigenium bremense*, *Geothrix*, *Rhodoferax*, *Thiobacillus* spp. |
-| Omics layers | 16S amplicon (MiSeq + PacBio) + Illumina NovaSeq shotgun MG + MT (2 conditions, 3 replicates) + MP |
-| SRA experiments | 78 |
-| Assembled genomes | 13 |
-| Vintage | ~2019–2021 |
-| Strengths | Largest SRA experiment count; multi-platform amplicon; 13 pre-assembled genomes |
-| Weaknesses | Same study system as KS — cultured enrichment, not host-related; old vintage |
-
-### Candidate 3 — MetaGT study datasets (MG + MT pairs)
-
-| Property | Value |
-|----------|-------|
-| Key accessions | Mock16: SRR5947833, SRR5947907; HumanGut: SRR10175815, SRR10175826; SnailGut: SRR8397925, SRR8416101 |
-| Omics layers | Paired shotgun MG + MT only |
-| Strengths | Real human gut data (HumanGut); high-complexity; metatdenovo-relevant |
-| Weaknesses | No amplicon; no MP; limited replicates per study |
-
-### Candidate 4 — Rausch et al. 2019 (metaorganism study)
-
-| Property | Value |
-|----------|-------|
-| PMID / DOI | 31521200 / [10.1186/s40168-019-0743-1](https://doi.org/10.1186/s40168-019-0743-1) (PubMed) |
-| Journal | *Microbiome* (2019) |
-| Environment | 10 animal host taxa (sponges to humans, including aquatic and terrestrial) |
-| Omics layers | 16S amplicon (V1V2 and V3V4) + shotgun MG |
-| Strengths | Host-related; diverse taxa; comparative amplicon vs shotgun design |
-| Weaknesses | No MT; no MP; amplicon + MG only — limits pipeline coverage |
-
-### Candidate 5 — PRJNA230567 + PXD013655 (Herold et al. wastewater, Luxembourg)
-
-| Property | Value |
-|----------|-------|
-| Accessions | PRJNA230567 (amplicon + MG + MT), PXD013655 (MP, PRIDE) |
-| Environment | Biological wastewater treatment plant (Luxembourg) |
-| Organism | Mixed microbial community — lipid-accumulating bacteria |
-| Omics layers | 16S amplicon + Illumina shotgun MG + MT + MP (full 4-omics stack) |
-| SRA experiments | 189 (+ 29,484 PRIDE files) |
-| Data volume | 1.5 TB (SRA) |
-| Conditions | Summer vs. winter seasonal variation; 5 replicates per condition |
-| Key publications | Herold et al. *Nat Commun* (2020); Martínez Arbas et al. *Nat Microbiol* (2021) |
-| Strengths | **Only confirmed public dataset with all 4 omics layers**; strong replicate design; well-published by the Wilmes lab |
-| Weaknesses | Environmental (not host-related); very large data volume (1.5 TB); wastewater context may reduce biological relevance for host-focused SIG |
-
-### Candidate 6 — PRJNA289586 + PRIDE (Heintz-Buschart et al. T1DM gut, Luxembourg)
-
-| Property | Value |
-|----------|-------|
-| Accessions | PRJNA289586 (MG + MT, SRA); PRIDE accession TBC |
-| Environment | Human gut — 4 multiplex families with type 1 diabetes mellitus |
-| Organism | Human gut microbiome (high complexity) |
-| Omics layers | Shotgun MG (WGS, NextSeq/HiSeq) + MT (RNA-Seq) + MP (PRIDE, 7,734 proteins); **no amplicon** |
-| SRA experiments | 221 |
-| Data volume | ~950 GB |
-| Conditions | Observational; T1DM cases vs. healthy family members; longitudinal sampling |
-| Key publication | Heintz-Buschart et al. *Nat Microbiol* (2016) — landmark integrated MG+MT+MP study |
-| Strengths | Human host, clinically relevant (T1DM); high community complexity; well-published reference dataset; same Wilmes lab as Candidate 5 |
-| Weaknesses | No amplicon; old vintage (2016); family-based design gives sparse per-condition replicates; PRIDE accession needs confirming |
-
-### Candidate 7 — PRJNA700849 + PXD022859 (Granata et al. oral cancer saliva)
-
-| Property | Value |
-|----------|-------|
-| Accessions | PRJNA700849 (16S amplicon, SRA); PXD022859 (MP, PRIDE) |
-| Environment | Human saliva — oral squamous cell carcinoma (OSCC) patients vs. controls |
-| Organism | Oral microbiome (human) |
-| Omics layers | 16S amplicon (MiSeq) + MP; **no shotgun MG, no MT** |
-| SRA experiments | 68 |
-| Data volume | ~10 GB |
-| Conditions | Control vs. OSCC with resection (L0) vs. OSCC without resection (L1) |
-| Key publication | Granata et al. (2021) |
-| Strengths | Human host; disease context; small dataset size (fast to run); three clinical groups |
-| Weaknesses | Only amplicon + MP — excludes most of the metro-map (no mag/taxprofiler/metatdenovo) |
-
-### Additional datasets to search (open)
-
-A systematic PubMed + bioRxiv search was run (June 2026) using `lit-synthesizer`. Recurring
-themes across 11 retrieved papers: integration frameworks (gNOMO2, MetaPUF), gut microbiome
-dysbiosis, IBD, T1DM, standardised multi-omics workflows. Key finding: **no published
-host-related dataset with all 4 omics layers was identified** — PRJNA230567 (wastewater)
-remains the only confirmed 4-omics public dataset. Further search targets:
-
-- IBD multi-omics studies (UCSD/Rob Knight group, HMP2 / iHMP)
-- iHMP (integrative Human Microbiome Project) — PRJNA398945 / PRJEB27928; may have MG + MT + MP
-- EBI MGnify / PRIDE cross-linked studies (MetaPUF workflow datasets)
-- Any post-2022 human gut study combining 16S + shotgun MG + MT
-
-> **Tool note:** `lit-synthesizer` + PubMed MCP were used for this search. `ncbi-datasets`
-> CLI was not available in this environment — use `conda install -c conda-forge ncbi-datasets-cli`
-> then run `datasets summary genome bioproject PRJNA230567 --as-json-lines` for genome metadata.
+> **Hard requirement (SIG decision):** a candidate must provide **all three** of
+> amplicon + shotgun MG + shotgun MT. Candidates missing any of the three are excluded
+> from selection regardless of score.
 
 ---
 
-## Dataset Decision Matrix
+## Dataset Candidates and Decision Matrix
 
-Score 0–3 per criterion. **Open — not yet decided.**
+Moved to **[DATASETS.md](DATASETS.md)** — eight candidate datasets with accessions, omics
+layers, strengths/weaknesses, and the weighted scoring matrix (including the
+amplicon + MG + MT gate applied above).
 
-| Criterion | Weight | PRJNA682552 | PRJNA693457 | MetaGT (HumanGut) | Rausch 2019 | PRJNA230567 | PRJNA289586 | PRJNA700849 |
-|-----------|--------|-------------|-------------|-------------------|-------------|-------------|-------------|-------------|
-| 4-omics coverage (amplicon + MG + MT + MP) | 3× | 3 | 3 | 1 | 1 | **3** | 2 | 1 |
-| Host-related / clinically relevant | 2× | 0 | 0 | 2 | 3 | 0 | **3** | **3** |
-| Biological replicates (≥3 per condition) | 2× | 3 | 3 | 1 | 2 | **3** | 1 | 2 |
-| Data recency (post-2021 preferred) | 1× | 1 | 1 | 2 | 1 | 1 | 0 | 2 |
-| Community complexity | 1× | 1 | 2 | 3 | 3 | 2 | **3** | 2 |
-| **Weighted total** | | **17** | **18** | **14** | **17** | **18** | **17** | **17** |
-
-Scoring key — 4-omics: 3=all 4 layers, 2=3 layers, 1=1-2 layers. Host-related: 3=human clinical, 2=animal/indirect, 0=environmental. Replicates: 3=≥5/condition, 2=3-4, 1=1-2. Recency: 2=2021-2022, 1=2018-2020, 0=pre-2018. Complexity: 3=human gut, 2=moderate, 1=low.
-
-> **Updated finding (lit-synthesizer search, June 2026):** PRJNA230567 (Herold wastewater)
-> is the highest-scoring single dataset and the **only confirmed public dataset with all
-> 4 omics layers** — but is environmental. PRJNA289586 (Heintz-Buschart T1DM) and
-> PRJNA700849 (oral cancer) score equally well on host-relevance but lack one or more
-> omics layers. The fundamental tension — 4-omics coverage vs. host context — remains
-> unresolved. **Recommended path:** PRJNA230567 as the primary benchmark (maximises
-> pipeline coverage) + PRJNA289586 as a host-related companion dataset for the gut /
-> disease narrative. Flag to SIG before committing.
+**Current status:** open — not yet decided. Four candidates pass the gate; LMO is the
+working recommendation pending SIG sign-off and resolution of its metadata discrepancy.
 
 ---
 
 ## Proposed Pipeline Chain (Subject to Dataset Decision)
 
-The following chain assumes a dataset with the full 4-omics stack (e.g. PRJNA693457).
-Edges marked [UNVALIDATED] are metro-map claims not yet confirmed by actual samplesheet
-handoff testing.
+The following chain assumes a dataset passing the three-layer gate — amplicon + MG + MT
+(e.g. LMO or PRJNA693457). Edges marked [UNVALIDATED] are metro-map claims not yet
+confirmed by actual samplesheet handoff testing.
 
 ```
 fetchngs (SRA accessions)
@@ -248,7 +130,7 @@ Each edge in the chain is a claim to be tested. Status tracked here.
 
 | Phase | Tasks | Tools | Status |
 |-------|-------|-------|--------|
-| 0 — Dataset decision | Extend search; score against matrix; SIG vote | `lit-synthesizer`, `ncbi-datasets` | OPEN |
+| 0 — Dataset decision | Extend search; score against the matrix in [DATASETS.md](DATASETS.md); SIG vote | `lit-synthesizer`, `ncbi-datasets` | OPEN |
 | 1 — Scaffold | fetchngs run; verify raw data availability; build reference DBs | `ncbi-datasets` (reference genomes) | OPEN |
 | 2 — Core chain | detaxizer → ampliseq / taxprofiler / mag / metatdenovo | `claw-metagenomics` (validation runs) | OPEN |
 | 2a — Assembly QC | Assess MAG and transcript completeness | `busco-assessor` | OPEN |
@@ -262,15 +144,24 @@ Each edge in the chain is a claim to be tested. Status tracked here.
 
 ## Open Questions
 
-1. Can we find a host-related dataset (human gut, IBD, etc.) with all four omics layers
-   AND modern replicates? This is the highest-priority search task. Run `lit-synthesizer`
-   before the next SIG meeting to triage the literature systematically.
-2. Is a two-dataset strategy acceptable for the publication (e.g. PRJNA693457 for full
-   omics coverage + MetaGT HumanGut for host-relevance narrative)?
+1. Can we find a host-related dataset (human gut, IBD, etc.) that passes the three-layer
+   gate (amplicon + MG + MT) AND has modern replicates? Highest-priority search task —
+   every selectable candidate today is environmental. Run `lit-synthesizer` before the
+   next SIG meeting to triage the literature systematically.
+2. Is a two-dataset strategy acceptable for the publication (e.g. LMO for the full
+   three-layer chain + MetaGT HumanGut for host-relevance narrative)?
 3. Which samplesheet chaining edges already work out-of-the-box vs. require new
    nf-core module work? (Needs testing in Phase 3.)
 4. How should eager fit in, if at all? It is designed for ancient/degraded DNA and
    may not belong in a modern environmental/clinical workflow.
 5. What is the minimum viable chain for a first publication? Core chain only?
-6. Does metaproteomics data processing fit within existing nf-core pipelines, or is
-   metapep/proteinfamilies the proxy for the MP layer?
+6. ~~Does metaproteomics data processing fit within existing nf-core pipelines?~~
+   **RESOLVED (2026-08-10):** no. The SIG has no pipeline consuming mass-spec MP data.
+   MP is out of scope; `metapep` / `proteinfamilies` / `proteinfold` run on proteins
+   predicted from MAGs, and PRIDE accessions are dropped from dataset scoring.
+7. If LMO is selected: which MT chemistry is primary — rRNA-depleted (PRJEB69280) or
+   polyA (PRJEB90631/PRJEB90671)? Running both is a defensible methods comparison for
+   `metatdenovo` but doubles Phase 2 compute.
+8. If LMO is selected: restrict to the 26 all-3-omics matched dates, or use all 44
+   amplicon dates and accept ragged layer coverage? Matched-only is cleaner for
+   samplesheet-handoff validation.
