@@ -1,2 +1,5 @@
 settings.json
 output/
+
+# Generated on the cluster from the previous pipeline's output — contains absolute paths.
+runs/*/samplesheet.csv

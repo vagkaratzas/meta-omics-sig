@@ -81,7 +81,12 @@ fetchngs (SRA accessions)
         │           └─► proteinfold (family representatives → structures) [UNVALIDATED]
         ├─► viralmetagenome (shotgun MG reads → viral contigs) [UNVALIDATED]
         └─► metatdenovo (shotgun MT reads → metatranscriptome assembly) [UNVALIDATED]
+              └─► proteinfamilies (prodigal .faa.gz → protein families) [NOT IN METRO MAP]
 ```
+
+> The `metatdenovo → proteinfamilies` branch is absent from the metro map. It is included
+> here because metatdenovo is the only pipeline in the chain that emits protein FASTA
+> directly, which makes it the shortest validated-by-schema route into the protein nodes.
 
 ### Core chain (high confidence, data-driven)
 fetchngs → detaxizer → [ampliseq | taxprofiler | mag | metatdenovo]
@@ -113,6 +118,20 @@ Each edge in the chain is a claim to be tested. Status tracked here.
 > `samplesheet.csv`. This is the first falsified metro-map claim; the conversion is small
 > (column rename/subset) but it is real work the diagram does not show.
 
+> **New edge — `metatdenovo → proteinfamilies` (schemas checked 2026-08-10):** not in the
+> metro map, and better supported than the edge that is. metatdenovo 1.4.0 with
+> `--orf_caller prodigal` publishes `prodigal/<assembly>.faa.gz`; proteinfamilies 2.4.0
+> accepts `.fa|.fasta|.faa|.fas` (± `.gz`), so the protein FASTA transfers with no
+> reformatting — only a one-row `sample,fasta` samplesheet. By contrast the mapped route,
+> `mag → proteinfamilies`, is still OPEN because **mag emits no protein FASTA at all**; an
+> ORF-calling step is missing from that arrow. The ORF caller is decisive: `transdecoder`
+> publishes `*.transdecoder.pep.gz`, and `.pep` is **not** in proteinfamilies' accepted
+> set, so that route additionally requires a rename.
+
+> **Conversion scripts:** the conversions this table calls for live in
+> `scripts/converters/`, each with an assert-based `--selftest`. They are the deliverable
+> that turns "CONVERSION REQUIRED" from a finding into a working handoff.
+
 | From | To | Samplesheet handoff mechanism | Status |
 |------|----|-------------------------------|--------|
 | fetchngs | detaxizer | generic `samplesheet.csv`; no `--nf_core_pipeline` support | OPEN |
@@ -129,6 +148,7 @@ Each edge in the chain is a claim to be tested. Status tracked here.
 | mag | phyloplace | contig FASTA → phyloplace input | OPEN |
 | mag | magmap | MAG FASTA → magmap reference input | OPEN |
 | mag | metapep / proteinfamilies | predicted proteins FASTA → input | OPEN |
+| **metatdenovo** | **proteinfamilies** | `--orf_caller prodigal` publishes `prodigal/<assembly>.faa.gz`, an extension proteinfamilies accepts | **CONVERSION REQUIRED** — one-row samplesheet, no reformatting |
 | proteinfamilies | proteinfold | representative sequence per family → protein FASTA input | OPEN |
 | taxprofiler | differentialabundance | abundance profile → differentialabundance input | OPEN |
 | ampliseq | differentialabundance | QIIME2/BIOM profile → differentialabundance input | OPEN |

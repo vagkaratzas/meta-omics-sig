@@ -1,0 +1,45 @@
+# nf-core/metatdenovo 1.4.0 — LMO pilot, metatranscriptome co-assembly
+#
+# Generate the samplesheet first (it holds absolute cluster paths, so it is not
+# committed — regenerate it on the cluster from the fetchngs output):
+#
+#   python3 scripts/converters/fetchngs_to_reads_samplesheet.py \
+#       <fetchngs-outdir>/samplesheet/samplesheet.csv \
+#       runs/02_metatdenovo/samplesheet.csv \
+#       --strategy RNA-Seq
+#
+# metatdenovo 1.4.0 uses the modern nf-core template (no check_max), so
+# NXF_SYNTAX_PARSER=v1 is NOT needed here. Requires Nextflow >= 25.10.4.
+
+input: "/path/to/runs/02_metatdenovo/samplesheet.csv"
+outdir: "/path/to/results/02_metatdenovo"
+
+# All six RNA-Seq libraries go into ONE co-assembly — the workflow collects reads with
+# .toList()/.collect() before calling the assembler, so this produces a single assembly,
+# a single ORF set, and therefore a single protein FASTA.
+#
+# megahit over spades: rnaSPAdes on a co-assembly of six libraries (~27 GB gzipped,
+# ~320 M read pairs) is memory-brutal. megahit is built for exactly this shape. Revisit
+# spades with spades_flavor=rna if transcript contiguity turns out to matter.
+assembler: "megahit"
+
+# prodigal emits ${prefix}.faa.gz, which proteinfamilies accepts directly.
+#
+# Do NOT switch this to transdecoder without also renaming its output: transdecoder
+# publishes *.transdecoder.pep.gz, and proteinfamilies' schema_input.json only accepts
+# .fa/.fasta/.faa/.fas (optionally .gz). A .pep.gz file fails schema validation.
+# prokka also yields a usable prokka.faa.gz but is far slower on a metatranscriptome
+# co-assembly.
+#
+# prodigal is prokaryote-oriented, which matches this dataset: the 0.2 um free-living
+# fraction is bacteria-dominated and the paired amplicon layer is 16S. If the eukaryotic
+# fraction becomes a focus, transdecoder plus a rename is the alternative.
+orf_caller: "prodigal"
+
+# Functional and taxonomic annotation are ON by default and each wants a large database
+# (eggnog ~50 GB, KOfam, and a EUKulele DB that is not even set by default). The goal of
+# this run is the assembly, the ORFs and the protein FASTA that feeds proteinfamilies, so
+# all three are skipped. Turn them back on once the chain itself is validated.
+skip_eggnog: true
+skip_kofamscan: true
+skip_eukulele: true
