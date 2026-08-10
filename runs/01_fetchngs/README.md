@@ -199,11 +199,14 @@ cut -f<alias>,<collection_date> results/01_fetchngs/metadata/*.tsv
 
 | Step | Status |
 |------|--------|
-| `SRA_IDS_TO_RUNINFO` + `SRA_RUNINFO_TO_FTP` (12 runs each) | **PASS** — 24/24 tasks |
+| `SRA_IDS_TO_RUNINFO` + `SRA_RUNINFO_TO_FTP` | **PASS** |
 | `collection_date` present in runinfo | **PASS** — column 33 (`sample_alias` at 11) |
-| `SRA_FASTQ_FTP` download | BLOCKED — `wget:1.20.1` image lacks `/etc/resolv.conf`; retrying with a `container` override |
-| Samplesheet emitted + curated | BLOCKED on download |
-| Scale to matched-26 (102 runs, 404 GB) | BLOCKED on pilot |
+| `SRA_FASTQ_FTP` download | **PASS** — 12/12 runs, md5-verified, after `container` override |
+| Samplesheet emitted | **PASS** — 12 rows × 39 columns |
+| Samplesheet curated for downstream | OPEN — `sample` column is the ERX accession, needs renaming |
+| Scale to matched-26 (102 runs, 404 GB) | READY |
+
+Full run record, metadata validation and Seqera provenance link: [RUNS.md](../../RUNS.md#01--fetchngs-lmo-pilot).
 
 Environment findings from the pilot, all recorded in [AGENTS.md](../../AGENTS.md):
 `NXF_SYNTAX_PARSER=v1` required on Nextflow 26.04+; `ena_metadata_fields` must be
