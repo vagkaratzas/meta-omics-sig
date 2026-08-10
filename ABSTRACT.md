@@ -1,84 +1,86 @@
 # Nextflow Summit 2026 — abstract draft
 
 > Working document. Delete once submitted.
-> **Honesty check before sending:** see *Claims and their evidence* at the bottom. Some
-> sentences describe work scheduled but not yet executed — adjust or cut depending on
-> what has actually run by the submission deadline.
+> **Framing note:** the metro map presents *potential* chaining between pipelines — it was
+> always a forward-looking plan, never a promise that edges work out of the box. This
+> abstract is written as a collaborative effort to realise that plan, and every finding is
+> framed as a contribution back to the pipelines, not as a deficiency in them.
+> Check *Claims and their evidence* at the bottom before sending.
 
 ---
 
 ## Title options
 
-1. **The metro map lies: stress-testing samplesheet handoffs across 16 nf-core meta-omics pipelines**
-2. **Does pipeline A's output actually feed pipeline B? Auditing the nf-core meta-omics chain**
-3. **Every arrow is a claim: validating inter-pipeline handoffs in nf-core meta-omics**
+1. **From reads to protein families: testing nf-core meta-omics pipeline synergy end to end**
+2. **Making the metro map real: an end-to-end meta-omics use case across amplicon, metagenome and metatranscriptome**
+3. **Chaining nf-core meta-omics pipelines: a real-data use case, reusable converters, and upstream contributions**
 
-Recommended: **1** for a talk (the provocation earns attention and the content backs it
-up), **2** for a poster (a question invites people to stop and ask).
+Recommended: **1** for a talk (concrete, shows the span in six words), **2** for a poster
+(names the diagram people already recognise).
 
 ---
 
 ## Abstract (~300 words)
 
-The nf-core meta-omics Special Interest Group maintains a "metro map" showing how its
-pipelines chain together across data types and analysis stages. Every arrow on that
-diagram is a claim: that the output of one pipeline can be fed to the next. Those claims
-have never been tested end to end on real data.
+The nf-core meta-omics Special Interest Group maintains a "metro map" of how its pipelines
+could chain together across data types and analysis stages. It is a roadmap of intended
+synergy rather than a set of guarantees, and turning it into a travelled route requires
+someone to walk it end to end on real data. That is what this project does.
 
-We are auditing them systematically. Using a matched multi-omics time series from the
-Linnaeus Microbial Observatory in the Baltic Sea — 16S amplicon, shotgun metagenome and
-metatranscriptome sampled from the same water on 26 dates — we route real data down the
-chain and record, edge by edge, whether the handoff works, needs a conversion step, or
-fails.
+We are running a matched multi-omics study through as much of the chain as its data layers
+allow. The primary use case is the Linnaeus Microbial Observatory time series in the Baltic
+Sea, which provides 16S amplicon, shotgun metagenome and metatranscriptome sequencing from
+the same water sample across 26 collection dates — a rare opportunity to exercise the
+amplicon, assembly, profiling and protein branches of the map with data that genuinely
+belongs together.
 
-The early results are not what the diagram implies. Of 19 tracked handoffs, **none is yet
-validated as working out of the box**, and six require an explicit conversion step. The
-entry pipeline, `fetchngs`, can emit a purpose-built samplesheet for only one of the four
-pipelines that begin the core chain — `ampliseq`, `mag` and `metatdenovo` all require
-manual conversion, and the sample identifier it supplies is an ENA experiment accession
-that would label every downstream result `ERX13368357`. Conversely, `detaxizer` — an
-*optional* filtering step — is the only pipeline we have found that ships a downstream
-samplesheet generator at all. We also identify a protein-level handoff absent from the
-metro map that is better supported than the one drawn on it, and show that a single
-parameter choice (`--orf_caller`) determines whether that handoff is possible, because one
-ORF caller emits a file extension the next pipeline rejects.
+Walking the chain surfaces exactly the practical detail a diagram cannot carry: which
+handoffs already work, which need a small conversion, which parameter choices determine
+whether a downstream pipeline will accept an input at all. We are feeding that back as
+concrete, actionable contributions — bug reports and feature requests to individual
+pipelines, including opportunities to extend existing samplesheet-generation support so
+that fewer users need to bridge steps by hand. Where a bridge is needed today, we publish
+tested converter scripts that any user can reuse.
 
-Alongside the audit we contribute tested conversion scripts, upstream bug reports, and a
-published, continuously updated site rendering the chain with each edge's status and its
-evidence. Our aim is a reusable method for auditing pipeline interoperability — and a
-sharper picture of what nf-core samplesheet standardisation still owes its users.
+Alongside the runs we maintain an educational site that renders the chain interactively:
+what each pipeline requires as input, what it emits, the current status and evidence for
+every handoff, and the progression of the dataset analysis as it advances. It is intended
+as a practical entry point for anyone assembling their own meta-omics workflow, and as the
+living record behind the community publication this effort will produce.
+
+We present the method, what we have learned so far, and how others can apply both to their
+own pipeline chains.
 
 ---
 
 ## Short version (~120 words, for a poster or a character-limited form)
 
-Every arrow in the nf-core meta-omics "metro map" claims that one pipeline's output can
-feed the next. None had been tested end to end. Using a matched amplicon + metagenome +
-metatranscriptome time series from the Baltic Sea, we are auditing all 19 handoffs on real
-data. So far none works unmodified: six need explicit conversion, and the entry pipeline
-`fetchngs` can emit a ready samplesheet for just one of the four core-chain destinations,
-while the *optional* `detaxizer` step is the only one shipping a samplesheet generator. We
-also find a protein handoff missing from the map that works better than the one drawn on
-it. We contribute tested conversion scripts, upstream bug reports, and a live site
-recording each edge's status and evidence.
+The nf-core meta-omics "metro map" sets out how its pipelines could chain together. Turning
+that roadmap into a travelled route takes someone walking it end to end on real data. We
+are doing that with a Baltic Sea time series carrying 16S amplicon, metagenome and
+metatranscriptome from the same water sample across 26 dates, exercising the amplicon,
+assembly, profiling and protein branches together. Along the way we contribute bug reports
+and feature requests back to individual pipelines, publish tested converter scripts users
+can reuse where a bridge is needed today, and maintain an educational site showing each
+pipeline's inputs and outputs, the status and evidence for every handoff, and the analysis
+progression. Both feed a forthcoming nf-core community publication.
 
 ---
 
 ## Talk vs poster
 
-**Talk.** The argument has a narrative shape — a diagram everyone trusts, a systematic
-test, and a specific inversion (the optional step is better tooled than the mandatory one)
-that reframes how the audience reads every nf-core chaining diagram. The live site gives a
-strong closing demo. Ask for 15 minutes.
+**Talk.** The material has a natural arc — a roadmap the community already knows, a real
+dataset walked through it, and a set of concrete improvements handed back. The interactive
+site is a strong closing demo. Ask for 15 minutes.
 
-**Poster.** The per-edge status table is genuinely poster-shaped: 19 rows, colour-coded,
-readable in 30 seconds, and it starts conversations with maintainers of individual
-pipelines — who are exactly the people who can fix what we found. Lower risk if fewer
-pipelines have run by November.
+**Poster.** The per-pipeline requirements and handoff-status table is genuinely
+poster-shaped and starts the right conversations: maintainers of individual pipelines stop,
+look at their own row, and discuss it directly. That is the fastest route from finding to
+merged fix.
 
-**If forced to choose now:** submit as a talk, offer to convert to a poster. The findings
-already stand on schema evidence alone, so the talk does not depend on how many pipelines
-finish running before the summit.
+**If forced to choose now:** submit as a talk and offer to convert. The contribution stands
+on the method and the tooling, so it does not depend on how many pipelines have finished
+running by November.
 
 ---
 
@@ -88,34 +90,35 @@ finish running before the summit.
   *Author list and order to be confirmed with the SIG before submission — PLAN.md Phase 6
   lists joint authorship as an open item.*
 - **Affiliation:** to be completed.
-- **Keywords:** nf-core, Nextflow, meta-omics, metagenomics, metatranscriptomics,
-  interoperability, samplesheets, reproducibility, pipeline chaining
-- **Data:** ENA PRJEB52780, PRJEB52782, PRJEB52828 (16S), PRJEB82694 (metagenome),
-  PRJEB69280 (metatranscriptome) — Linnaeus Microbial Observatory, Baltic Sea
+- **Keywords:** nf-core, Nextflow, meta-omics, metagenomics, metatranscriptomics, amplicon,
+  pipeline chaining, samplesheets, interoperability, reproducibility
+- **Data:** ENA PRJEB52780, PRJEB52782, PRJEB52828 (16S amplicon), PRJEB82694 (metagenome),
+  PRJEB69280 (metatranscriptome) — Linnaeus Microbial Observatory, Baltic Sea.
+  Data generated by Daniel Lundin's group; acknowledge accordingly.
 - **Code / site:** https://github.com/vagkaratzas/meta-omics-sig
-- **Related SIG page:** https://nf-co.re/special-interest-groups/meta-omics
+- **SIG page:** https://nf-co.re/special-interest-groups/meta-omics
 
 ---
 
 ## Claims and their evidence
 
-Check each line before submitting. Anything marked ⚠ depends on work not yet done.
+Check each line before submitting. ⚠ marks anything depending on work not yet done.
 
 | Claim in the abstract | Status |
 |---|---|
-| 19 tracked handoffs; none validated; 6 conversion-required | Solid — matches PLAN.md validation table and `docs/data.json` |
-| `fetchngs --nf_core_pipeline` supports only 1 of the 4 core-chain destinations | Solid — enum is `[rnaseq, atacseq, viralrecon, taxprofiler]`, verified on 1.12.0 and `dev` |
-| `sample` column is the ENA experiment accession | Solid — observed in the executed pilot, 12/12 rows |
-| `detaxizer` is the only pipeline found shipping a downstream samplesheet generator | Solid *as stated* — "only one we have found". Re-check across the other 15 before submitting so the claim stays defensible |
-| Protein handoff missing from the map, better supported than the drawn one | Solid at schema level — metatdenovo publishes `.faa.gz`; mag emits no protein FASTA |
-| `--orf_caller` decides whether the handoff is possible | Solid — transdecoder publishes `.pep.gz`; proteinfamilies' schema accepts only `.fa/.fasta/.faa/.fas` |
-| "26 dates" matched across three layers | Solid from ENA — **but** the sample-count discrepancy with the data owner is unresolved (DATASETS.md, Candidate 8). Resolve before publishing a number |
-| "we route real data down the chain" | ⚠ One pipeline of 16 has run. True but thin today; will be stronger by November. Do not imply the full chain has been executed |
-| "tested conversion scripts" | Solid — 3 scripts, each with an assert-based `--selftest` |
-| "upstream bug reports" | ⚠ Five issues drafted in RUNS.md, **none filed yet**. File at least the two concrete `fetchngs` bugs before submitting, or soften to "bug reports prepared" |
-| "continuously updated site" | Solid — `docs/` is live and mirrors the validation table |
+| Matched amplicon + MG + MT from the same water sample, 26 dates | Solid from ENA — **but** the sample-count discrepancy with the data owner is unresolved (DATASETS.md, Candidate 8). Settle it before publishing the number |
+| "which handoffs already work, which need a small conversion" | Solid — 19 tracked handoffs, 6 currently marked conversion-required, in PLAN.md and mirrored on the site |
+| "parameter choices determine whether a downstream pipeline will accept an input" | Solid — `--orf_caller transdecoder` emits `.pep.gz`; proteinfamilies accepts only `.fa/.fasta/.faa/.fas` |
+| "opportunities to extend existing samplesheet-generation support" | Solid — `detaxizer` ships `--generate_downstream_samplesheets` (taxprofiler, mag); `fetchngs --nf_core_pipeline` covers `rnaseq, atacseq, viralrecon, taxprofiler` |
+| "tested converter scripts" | Solid — 3 scripts, each with an assert-based `--selftest` |
+| "bug reports and feature requests" | ⚠ Five are drafted in RUNS.md, **none filed**. File at least the two concrete `fetchngs` bugs before submitting, or soften to "prepared" |
+| "educational site … rendering the chain interactively" | Solid — `docs/` is live and mirrors the validation table |
+| "running a matched multi-omics study through as much of the chain as its data layers allow" | ⚠ One pipeline of 16 has run; two more are configured. True as a description of the project, but do not let it read as though the full chain is complete |
+| "forthcoming community publication" | Solid as an intention — PLAN.md Phase 6. Keep it stated as forthcoming |
 
-**Biggest risk:** the abstract reads as though the whole chain has been run. It has not.
-The findings are real and mostly schema-derived, which is defensible, but the phrasing
-must not overclaim — the SIG's own guardrail is to emphasise what is validated versus what
-remains open. Every number above is reproducible from the repository as it stands.
+**Tone check.** No sentence should read as though the pipelines or their maintainers
+promised something they did not. The map indicates potential; we are testing that potential
+and contributing what we learn. Findings are opportunities, not failures.
+
+**Biggest risk.** The abstract should not imply the chain has been fully executed. The
+method, the tooling and the site are real today; the run coverage is still growing.
