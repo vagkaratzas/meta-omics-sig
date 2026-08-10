@@ -47,11 +47,19 @@ with the Seqera Platform provenance link lives in [RUNS.md](RUNS.md).
 | 02 | metatdenovo | [runs/02_metatdenovo/README.md](runs/02_metatdenovo/README.md) |
 | 03 | proteinfamilies | [runs/03_proteinfamilies/README.md](runs/03_proteinfamilies/README.md) |
 
-## Conversions
+## Scripts
 
 `scripts/converters/` holds the samplesheet conversions that the validation table marks
 CONVERSION REQUIRED. Each has an assert-based `--selftest` that runs with no arguments and
 no fixtures. They are the deliverable that turns a finding into a working handoff.
+
+`scripts/check_links.py` checks link hygiene for this vault — broken links, orphaned notes,
+and `[[wikilink]]` syntax that would not render on GitHub. Run it after editing links:
+
+```bash
+python3 scripts/check_links.py          # full report, exits non-zero on failure
+python3 scripts/check_links.py --quiet  # failures only
+```
 
 ## Published site
 

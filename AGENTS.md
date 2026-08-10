@@ -27,9 +27,10 @@ The repository doubles as an Obsidian vault, which imposes one hard rule:
 - **Do not move or rename the canonical docs.** `docs/data.json`, `README.md` and
   `Home.md` all reference them by path, and `docs/index.html` builds links from
   `meta.plan` / `meta.datasets_doc` / `meta.runs_doc`.
-- After editing links, confirm nothing broke and no file became orphaned — a file with no
-  inbound links is invisible in the vault, which is how `ACRONYMS.md` and `LOG.md` went
-  unnoticed until 2026-08-10.
+- After editing links, run `python3 scripts/check_links.py`. It fails on broken links,
+  orphaned files, and wikilinks, and exits non-zero. A file with no inbound links is
+  invisible in the vault — that is how `ACRONYMS.md` and `LOG.md` went unnoticed until
+  2026-08-10.
 
 ---
 
