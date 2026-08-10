@@ -303,14 +303,14 @@
       "source": "table", "kind": "artifact", "repoStatus": "OPEN", "statusClass": "untested",
       "routable": false, "unit": "proteins", "carries": [],
       "note": "predicted proteins FASTA -> input. One validation-table row covers metapep and proteinfamilies together; drawn here as two edges sharing that status.",
-      "caveat": "MISSING STEP: mag does not emit protein FASTA. An ORF-calling / protein-extraction step sits between these stations and is not shown in the metro map."
+      "intermediateStep": "ORF calling", "caveat": "mag does not itself emit protein FASTA, so an ORF-calling / protein-extraction step belongs between these two stations. Worth proposing as an addition to the map."
     },
     {
       "id": "mag__proteinfamilies", "rowKey": "mag__proteins", "from": "mag", "to": "proteinfamilies",
       "source": "table", "kind": "artifact", "repoStatus": "OPEN", "statusClass": "untested",
       "routable": false, "unit": "proteins", "carries": [],
       "note": "predicted proteins FASTA -> input. One validation-table row covers metapep and proteinfamilies together; drawn here as two edges sharing that status.",
-      "caveat": "MISSING STEP: mag does not emit protein FASTA. An ORF-calling / protein-extraction step sits between these stations and is not shown in the metro map."
+      "intermediateStep": "ORF calling", "caveat": "mag does not itself emit protein FASTA, so an ORF-calling / protein-extraction step belongs between these two stations. Worth proposing as an addition to the map."
     },
     {
       "id": "metatdenovo__proteinfamilies", "from": "metatdenovo", "to": "proteinfamilies",
@@ -319,7 +319,7 @@
       "statusClass": "conversion-required",
       "routable": false, "unit": "proteins", "carries": [],
       "note": "--orf_caller prodigal publishes prodigal/<assembly>.faa.gz, an extension proteinfamilies accepts. Only a one-row sample,fasta samplesheet is needed; the sequences themselves transfer unchanged.",
-      "caveat": "Not drawn in the metro map, yet better supported than mag -> proteinfamilies, which is OPEN because mag emits no protein FASTA at all. The ORF caller decides the outcome: transdecoder publishes *.transdecoder.pep.gz, and .pep is not in proteinfamilies' accepted set, so that route needs a rename on top."
+      "caveat": "Not yet on the metro map; a candidate addition, since metatdenovo is the only pipeline here that emits protein FASTA directly. The mapped route via mag needs an ORF-calling step first. The ORF caller matters: transdecoder publishes *.transdecoder.pep.gz, and .pep is not among proteinfamilies' accepted extensions - adding it upstream would make that route work too."
     },
     {
       "id": "proteinfamilies__proteinfold", "from": "proteinfamilies", "to": "proteinfold",

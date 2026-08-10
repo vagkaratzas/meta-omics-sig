@@ -19,9 +19,10 @@ both here and in a canonical doc, the canonical doc wins.
 
 ## What this project is
 
-Validating — or falsifying — the samplesheet handoffs claimed by the nf-core meta-omics
-"metro map", by running a real multi-omics dataset through as many pipelines as its data
-layers allow, then publishing the result as an nf-core community paper.
+Testing nf-core meta-omics pipeline synergy end to end. The "metro map" sets out how these
+pipelines could chain together — a roadmap of potential routes, not guarantees. We walk it
+on a real multi-omics dataset, contribute the resulting bug reports, feature requests and
+reusable converters back upstream, and publish the result as an nf-core community paper.
 
 Start at [README.md](README.md) for the overview.
 
@@ -79,8 +80,11 @@ commit, or the site starts lying.
 - **Three vocabularies in `docs/data.json` must not blend:** `repoStatus` (verbatim from
   PLAN.md), site annotations (`caveat`, `siteState`, `routable`), and `statusClass`
   (a render class only).
-- **Do not declare a handoff working without evidence.** The project's value is in testing
-  the metro-map claims, not restating them.
+- **Do not declare a handoff working without evidence.** The value is in actually walking
+  the routes, not in restating the roadmap.
+- **Findings are contributions, not criticism.** The metro map indicates potential routes;
+  nobody promised they work today. Write every gap as something to fix upstream or bridge
+  with a converter.
 - **Do not resolve the dataset decision unilaterally** — that is the SIG's call.
 
 ## Open threads

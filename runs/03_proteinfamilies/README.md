@@ -10,14 +10,15 @@ Third pipeline of the chain. Clusters the protein sequences predicted by
 ## Why this edge exists
 
 The metro map routes proteins into proteinfamilies **from mag**, and PLAN.md's validation
-table has a single `mag → metapep / proteinfamilies` row. But mag does not emit protein
-FASTA — an ORF-calling step is missing from that arrow, which is why it is still OPEN.
+table has a single `mag → metapep / proteinfamilies` row. That route needs one more piece:
+mag does not itself emit protein FASTA, so an ORF-calling step belongs between the two
+stations — which is why the row is still OPEN.
 
-metatdenovo, with `--orf_caller prodigal`, **does** emit protein FASTA directly:
+metatdenovo, with `--orf_caller prodigal`, emits protein FASTA directly:
 `prodigal/<assembly>.faa.gz`, an extension proteinfamilies accepts without modification.
-So `metatdenovo → proteinfamilies` is a shorter and better-supported route to
-proteinfamilies than the one the diagram draws — and it is an edge the metro map does not
-show at all. Recorded as a new row in
+That makes `metatdenovo → proteinfamilies` a short, schema-compatible route into the
+protein nodes, and one not yet drawn on the metro map — a candidate addition to propose to
+the SIG. Recorded as a new row in
 [PLAN.md](../../PLAN.md#samplesheet-chaining--validation-table).
 
 ## Build the samplesheet

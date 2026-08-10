@@ -196,12 +196,12 @@ whose LMO metagenome dates are stale:
 
 ### New edge, not in the metro map
 
-`metatdenovo → proteinfamilies` is absent from the metro map, yet it is **better supported
-than the edge the diagram does draw**. `mag → proteinfamilies` is still OPEN because mag
-emits no protein FASTA at all — an ORF-calling step is missing from that arrow. metatdenovo
-with prodigal emits `.faa.gz` directly, so the handoff needs only a one-row samplesheet and
-no reformatting. Recorded as a new row in
-[PLAN.md](PLAN.md#samplesheet-chaining--validation-table).
+`metatdenovo → proteinfamilies` is not yet on the metro map, and looks worth adding.
+metatdenovo with prodigal emits `.faa.gz` directly, so the handoff needs only a one-row
+samplesheet and no reformatting. The mapped route, `mag → proteinfamilies`, needs one more
+piece first: mag does not itself emit protein FASTA, so an ORF-calling step belongs between
+those two stations. Recorded as a new row in
+[PLAN.md](PLAN.md#samplesheet-chaining--validation-table) and proposed to the SIG.
 
 ---
 
