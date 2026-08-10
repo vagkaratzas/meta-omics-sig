@@ -20,10 +20,15 @@
     },
     {
       "id": "detaxizer", "label": "detaxizer", "kind": "pipeline", "x": 200, "y": 430,
-      "blurb": "Screens reads for contaminant or host sequence and can filter them out. Defaults to human contamination screening.",
-      "io": { "in": "FASTQ", "out": "Filtered FASTQ" },
-      "requires": null,
-      "requiresReadFrom": null,
+      "blurb": "Screens reads for contaminant or host sequence and can filter them out. Defaults to human contamination screening (tax2filter = Homo sapiens), but the target taxon and reference are configurable. Uniquely in this chain, it can also emit samplesheets for downstream pipelines.",
+      "io": { "in": "FASTQ", "out": "Filtered FASTQ + optional downstream samplesheets" },
+      "requires": [
+        "--input samplesheet: sample, short_reads_fastq_1, short_reads_fastq_2, long_reads_fastq_1",
+        "--kraken2db - defaults to downloading k2_standard (~80 GB) from S3; point at a local copy",
+        "--skip_filter for detect-only mode, assessing contamination without altering reads",
+        "--generate_downstream_samplesheets with --generate_pipeline_samplesheets (taxprofiler and/or mag only)"
+      ],
+      "requiresReadFrom": "1.3.0",
       "release": "1.3.0", "docs": "https://nf-co.re/detaxizer/1.3.0/", "devNote": null
     },
     {
@@ -177,9 +182,10 @@
   "edges": [
     {
       "id": "fetchngs__detaxizer", "from": "fetchngs", "to": "detaxizer",
-      "source": "table", "kind": "reads", "repoStatus": "OPEN", "statusClass": "untested",
+      "source": "table", "kind": "reads", "repoStatus": "CONVERSION REQUIRED", "statusClass": "conversion-required",
       "routable": false, "unit": "runs", "carries": ["AMPLICON", "WGS", "RNA-Seq"],
-      "note": "generic samplesheet.csv; no --nf_core_pipeline support", "caveat": null
+      "note": "generic samplesheet.csv; no --nf_core_pipeline support, and detaxizer's own input columns are short_reads_fastq_1 / short_reads_fastq_2 / long_reads_fastq_1, not fastq_1 / fastq_2.",
+      "caveat": "Status derived from comparing the two schemas, not from an execution - detaxizer is not run for the LMO pilot."
     },
     {
       "id": "fetchngs__ampliseq", "from": "fetchngs", "to": "ampliseq",
@@ -211,21 +217,26 @@
     },
     {
       "id": "detaxizer__ampliseq", "from": "detaxizer", "to": "ampliseq",
-      "source": "table", "kind": "reads", "repoStatus": "OPEN", "statusClass": "untested",
+      "source": "table", "kind": "reads", "repoStatus": "CONVERSION REQUIRED", "statusClass": "conversion-required",
       "routable": false, "unit": "runs", "carries": ["AMPLICON"],
-      "note": "detaxizer filtered FASTQ -> ampliseq samplesheet", "caveat": null
+      "note": "filtered FASTQ -> ampliseq samplesheet. ampliseq is excluded from --generate_pipeline_samplesheets, whose pattern admits only taxprofiler and mag, so this sheet must be built by hand.",
+      "caveat": "Status derived from schemas, not from an execution - detaxizer is not run for the LMO pilot."
     },
     {
       "id": "detaxizer__taxprofiler", "from": "detaxizer", "to": "taxprofiler",
-      "source": "table", "kind": "reads", "repoStatus": "OPEN", "statusClass": "untested",
+      "source": "table", "kind": "reads",
+      "repoStatus": "OPEN - native emitter exists, output not yet verified", "statusClass": "untested",
       "routable": false, "unit": "runs", "carries": ["WGS"],
-      "note": "detaxizer filtered FASTQ -> taxprofiler samplesheet", "caveat": null
+      "note": "--generate_downstream_samplesheets emits a taxprofiler samplesheet natively. detaxizer is the only pipeline found so far in this chain that ships a downstream samplesheet generator.",
+      "caveat": "Whether taxprofiler accepts the generated sheet unmodified is untested. Deferred with detaxizer to the first host-related dataset."
     },
     {
       "id": "detaxizer__mag", "from": "detaxizer", "to": "mag",
-      "source": "table", "kind": "reads", "repoStatus": "OPEN", "statusClass": "untested",
+      "source": "table", "kind": "reads",
+      "repoStatus": "OPEN - native emitter exists, output not yet verified", "statusClass": "untested",
       "routable": false, "unit": "runs", "carries": ["WGS"],
-      "note": "detaxizer filtered FASTQ -> mag samplesheet", "caveat": null
+      "note": "--generate_downstream_samplesheets emits a mag samplesheet natively, including the group and short_reads_platform columns mag requires and the generic fetchngs sheet lacks.",
+      "caveat": "Whether mag accepts the generated sheet unmodified is untested. Deferred with detaxizer to the first host-related dataset."
     },
     {
       "id": "detaxizer__createtaxdb", "from": "detaxizer", "to": "createtaxdb",
@@ -370,7 +381,7 @@
         },
         "detaxizer": {
           "state": "not-selected", "in": null, "out": null, "version": null,
-          "note": "Not run for this pilot. PLAN.md conditions detaxizer on host-related data, and LMO is Baltic brackish seawater. Note this is a scoping choice - detaxizer is a general contamination screen that defaults to human, so this is not a claim that contamination is absent."
+          "note": "Deliberately not run for this pilot, decided 2026-08-10. LMO is Baltic brackish seawater with no host, tax2filter defaults to Homo sapiens, and filtering ahead of a metatranscriptome co-assembly risks removing conserved or low-complexity reads for no expected biological gain. A scoping choice, not a claim that contamination is absent. Deferred to the first host-related dataset, where it also unlocks a test of its native --generate_downstream_samplesheets emitter for taxprofiler and mag - the sharpest available test of nf-core samplesheet standardisation, since detaxizer is the only pipeline in this chain that ships one."
         },
         "differentialabundance": {
           "state": "unavailable", "in": null, "out": null, "version": null,

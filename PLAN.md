@@ -66,7 +66,7 @@ confirmed by actual samplesheet handoff testing.
 
 ```
 fetchngs (SRA accessions)
-  └─► detaxizer (remove host reads, if host-related data) [UNVALIDATED]
+  └─► detaxizer (remove host reads, if host-related data) [UNVALIDATED — NOT RUN FOR LMO]
         ├─► ampliseq (amplicon reads → taxonomy profiles) [UNVALIDATED]
         │     └─► differentialabundance (profiles, condition comparison) [UNVALIDATED]
         ├─► createtaxdb (build custom reference DB) [UNVALIDATED]
@@ -89,7 +89,11 @@ fetchngs (SRA accessions)
 > directly, which makes it the shortest validated-by-schema route into the protein nodes.
 
 ### Core chain (high confidence, data-driven)
-fetchngs → detaxizer → [ampliseq | taxprofiler | mag | metatdenovo]
+fetchngs → [ampliseq | taxprofiler | mag | metatdenovo]
+
+detaxizer is omitted from the LMO core chain — no host, so nothing to remove. It re-enters
+the chain for the first host-related dataset, where it also unlocks a test of its native
+`--generate_downstream_samplesheets` emitter.
 
 ### Stretch nodes (additional omics layers or heavy compute)
 - eager: for ancient DNA preprocessing — likely out of scope for modern environmental/clinical data
@@ -128,20 +132,44 @@ Each edge in the chain is a claim to be tested. Status tracked here.
 > publishes `*.transdecoder.pep.gz`, and `.pep` is **not** in proteinfamilies' accepted
 > set, so that route additionally requires a rename.
 
+> **detaxizer ships a downstream samplesheet generator — the feature fetchngs lacks**
+> (detaxizer 1.3.0 `nextflow_schema.json`, checked 2026-08-10). It exposes
+> `--generate_downstream_samplesheets`, with `--generate_pipeline_samplesheets` defaulting
+> to `taxprofiler,mag` and constrained by
+> `^(taxprofiler|mag)(?:,(taxprofiler|mag)){0,1}`. So an **optional** filtering step
+> emits ready-made samplesheets for two downstream pipelines, while the **mandatory**
+> entry pipeline forces hand-conversion for three of four targets. That asymmetry is a
+> finding about nf-core samplesheet standardisation in its own right, independent of
+> whether detaxizer is ever run here.
+>
+> Two limits of that generator: the regex admits at most two pipelines and excludes
+> `ampliseq` and `metatdenovo` entirely, so those edges still need conversion. And
+> detaxizer's own `--input` schema is
+> `sample, short_reads_fastq_1, short_reads_fastq_2, long_reads_fastq_1` — not
+> `sample, fastq_1, fastq_2` — so `fetchngs → detaxizer` needs a conversion too.
+>
+> **Scope decision (2026-08-10):** detaxizer is **not run for the LMO pilot.** LMO is
+> Baltic brackish seawater with no host, `tax2filter` defaults to *Homo sapiens*, and
+> filtering before a metatranscriptome co-assembly risks removing conserved or
+> low-complexity reads for no expected biological gain. Deferred to a future
+> host-related dataset (human gut is the obvious candidate) where the step has biological
+> meaning as well as validation value. Its statuses above are recorded from schemas, not
+> from a run.
+
 > **Conversion scripts:** the conversions this table calls for live in
 > `scripts/converters/`, each with an assert-based `--selftest`. They are the deliverable
 > that turns "CONVERSION REQUIRED" from a finding into a working handoff.
 
 | From | To | Samplesheet handoff mechanism | Status |
 |------|----|-------------------------------|--------|
-| fetchngs | detaxizer | generic `samplesheet.csv`; no `--nf_core_pipeline` support | OPEN |
+| fetchngs | detaxizer | generic `samplesheet.csv`; no `--nf_core_pipeline` support, and detaxizer's columns are `short_reads_fastq_1/2`, not `fastq_1/2` | **CONVERSION REQUIRED** |
 | fetchngs | ampliseq | generic `samplesheet.csv`; **no `--nf_core_pipeline` option** | **CONVERSION REQUIRED** |
 | fetchngs | taxprofiler | `--nf_core_pipeline taxprofiler` emits a purpose-built samplesheet | OPEN — flag exists, output not yet verified |
 | fetchngs | mag | generic `samplesheet.csv`; **no `--nf_core_pipeline` option** | **CONVERSION REQUIRED** |
 | fetchngs | metatdenovo | generic `samplesheet.csv`; **no `--nf_core_pipeline` option** | **CONVERSION REQUIRED** |
-| detaxizer | ampliseq | detaxizer filtered FASTQ → ampliseq samplesheet | OPEN |
-| detaxizer | taxprofiler | detaxizer filtered FASTQ → taxprofiler samplesheet | OPEN |
-| detaxizer | mag | detaxizer filtered FASTQ → mag samplesheet | OPEN |
+| detaxizer | ampliseq | filtered FASTQ → ampliseq samplesheet; **excluded** from `--generate_pipeline_samplesheets` | **CONVERSION REQUIRED** |
+| detaxizer | taxprofiler | `--generate_downstream_samplesheets` emits a taxprofiler samplesheet natively | OPEN — native emitter exists, output not yet verified |
+| detaxizer | mag | `--generate_downstream_samplesheets` emits a mag samplesheet natively | OPEN — native emitter exists, output not yet verified |
 | createtaxdb | taxprofiler | db output path referenced in taxprofiler params | OPEN |
 | mag | funcscan | MAG/contig FASTA → funcscan input | OPEN |
 | mag | phageannotator | contig FASTA → phageannotator input | OPEN |
@@ -162,7 +190,7 @@ Each edge in the chain is a claim to be tested. Status tracked here.
 |-------|-------|-------|--------|
 | 0 — Dataset decision | Extend search; score against the matrix in [DATASETS.md](DATASETS.md); SIG vote | `lit-synthesizer`, `ncbi-datasets` | OPEN |
 | 1 — Scaffold | fetchngs run; verify raw data availability; build reference DBs | `ncbi-datasets` (reference genomes) | OPEN |
-| 2 — Core chain | detaxizer → ampliseq / taxprofiler / mag / metatdenovo | `claw-metagenomics` (validation runs) | OPEN |
+| 2 — Core chain | ampliseq / taxprofiler / mag / metatdenovo (detaxizer deferred — no host in LMO) | `claw-metagenomics` (validation runs) | OPEN |
 | 2a — Assembly QC | Assess MAG and transcript completeness | `busco-assessor` | OPEN |
 | 3 — Samplesheet handoffs | Test and document each edge in the validation table | — | OPEN |
 | 4 — Secondary analysis | differentialabundance; funcscan; phageannotator; phyloplace | — | OPEN |
@@ -195,3 +223,9 @@ Each edge in the chain is a claim to be tested. Status tracked here.
 8. If LMO is selected: restrict to the 26 all-3-omics matched dates, or use all 44
    amplicon dates and accept ragged layer coverage? Matched-only is cleaner for
    samplesheet-handoff validation.
+9. **Carried forward to the first host-related dataset:** run detaxizer and test
+   `--generate_downstream_samplesheets` against taxprofiler and mag. It is the only
+   pipeline in the chain found so far that emits downstream samplesheets natively, so
+   whether those sheets are accepted unmodified is the sharpest available test of
+   nf-core samplesheet standardisation. Deferred from the LMO pilot for lack of a host,
+   not for lack of interest.
