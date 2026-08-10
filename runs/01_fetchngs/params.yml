@@ -16,17 +16,16 @@ download_method: "ftp"
 
 # IMPORTANT: this REPLACES fetchngs' built-in field list rather than extending it.
 # The built-in list omits `collection_date`, and LMO's `sample_alias` dates are stale
-# (see AGENTS.md, LMO-specific handling). Every field below the blank-line comment is
-# the fetchngs default; `collection_date` and the environmental fields are our additions.
-ena_metadata_fields: >-
-  run_accession,experiment_accession,sample_accession,secondary_sample_accession,
-  study_accession,secondary_study_accession,submission_accession,
-  run_alias,experiment_alias,sample_alias,study_alias,
-  library_layout,library_selection,library_source,library_strategy,library_name,
-  instrument_model,instrument_platform,base_count,read_count,
-  tax_id,scientific_name,sample_title,experiment_title,study_title,sample_description,
-  fastq_md5,fastq_bytes,fastq_ftp,fastq_galaxy,fastq_aspera,
-  collection_date,lat,lon,depth,environmental_medium
+# (see AGENTS.md, LMO-specific handling). The list below is the fetchngs default plus
+# our additions: collection_date, lat, lon, depth, environmental_medium.
+#
+# MUST BE ONE LINE WITH NO SPACES. The module interpolates it unquoted:
+#   modules/local/sra_ids_to_runinfo/main.nf:20
+#   def metadata_fields = fields ? "--ena_metadata_fields ${fields}" : ''
+# Any whitespace makes the shell split the value into extra positional arguments and
+# sra_ids_to_runinfo.py dies with an argparse usage message, exit 2. A YAML folded
+# scalar (>-) folds newlines into spaces and will silently reintroduce this bug.
+ena_metadata_fields: "run_accession,experiment_accession,sample_accession,secondary_sample_accession,study_accession,secondary_study_accession,submission_accession,run_alias,experiment_alias,sample_alias,study_alias,library_layout,library_selection,library_source,library_strategy,library_name,instrument_model,instrument_platform,base_count,read_count,tax_id,scientific_name,sample_title,experiment_title,study_title,sample_description,fastq_md5,fastq_bytes,fastq_ftp,fastq_galaxy,fastq_aspera,collection_date,lat,lon,depth,environmental_medium"
 
 # Columns carried into id_mappings.csv / multiqc_config.yml.
 # collection_date is the join key for every downstream samplesheet — sample_alias is not.

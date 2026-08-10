@@ -89,6 +89,29 @@ The pipeline's `dev` branch has been modernised and parses under v2, but it is u
 and unreleased — not suitable for a benchmark intended for publication. Pin 1.12.0 and
 set the parser.
 
+## Verify params.yml before running
+
+`ena_metadata_fields` is interpolated **unquoted** into the shell command at
+`modules/local/sra_ids_to_runinfo/main.nf:20`. One stray space costs a full run:
+
+```bash
+python3 -c "
+import yaml,urllib.request
+d=yaml.safe_load(open('params.yml'))
+v=d['ena_metadata_fields']
+assert len(v.split())==1, 'whitespace in ena_metadata_fields -> argparse exit 2'
+valid={l.split(chr(9))[0] for l in urllib.request.urlopen(
+  'https://www.ebi.ac.uk/ena/portal/api/returnFields?result=read_run&format=tsv'
+).read().decode().splitlines()[1:]}
+bad=[f for f in v.split(',') if f not in valid]
+assert not bad, f'invalid ENA fields: {bad}'
+assert {'run_accession','experiment_accession','library_layout','fastq_ftp','fastq_md5'} <= set(v.split(','))
+assert 'collection_date' in v.split(',')
+assert set(d['sample_mapping_fields'].split(',')) <= set(v.split(','))
+print('params.yml OK')
+"
+```
+
 ## Verify before scaling up
 
 ```bash
@@ -118,6 +141,22 @@ cut -f<alias>,<collection_date> results/01_fetchngs/metadata/*.tsv
 - Every path in `params.yml` is absolute. `--outdir` on the command line overrides the
   params file; `input` does not have a CLI equivalent here, so it must be correct in the
   file or the run fails schema validation (`exists: true`).
+- **`ena_metadata_fields` must be a single unbroken line with no whitespace.** The module
+  interpolates it unquoted, so spaces become extra shell arguments and every
+  `SRA_IDS_TO_RUNINFO` task dies with an argparse usage message and exit 2. A YAML folded
+  scalar (`>-`) reintroduces this: it folds newlines into spaces.
+- **`-resume` collides with the execution reports.** A resumed run keeps the original
+  session timestamp, so `pipeline_info/execution_report_<ts>.html` already exists and
+  Nextflow aborts the render. Add to your site config:
+  ```groovy
+  report.overwrite   = true
+  timeline.overwrite = true
+  trace.overwrite    = true
+  dag.overwrite      = true
+  ```
+- `TowerReports - Error copying reports file ... Operation not supported` is cosmetic —
+  the `nf-tower` plugin cannot copy its TSV between those two filesystems. It does not
+  fail the run.
 
 ## Status
 
