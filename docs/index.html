@@ -213,7 +213,8 @@ function boot() {
   sel.onchange = () => render(D.datasets.find(x => x.id === sel.value));
   document.getElementById("metaline").innerHTML =
     `Updated ${esc(D.meta.updated)} &middot; <a href="${D.meta.plan}">PLAN.md</a> is the source of truth for
-     every status below &middot; <a href="${D.meta.sig}">nf-core meta-omics SIG</a> &middot;
+     every status below &middot; <a href="${D.meta.runs_doc}">RUNS.md</a> holds the execution provenance
+     &middot; <a href="${D.meta.sig}">nf-core meta-omics SIG</a> &middot;
      <a href="${D.meta.repo}">repository</a>`;
   document.getElementById("footer").innerHTML =
     `Work of the <a href="${D.meta.sig}">nf-core meta-omics Special Interest Group</a>, published from a

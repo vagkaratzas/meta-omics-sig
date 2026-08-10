@@ -5,7 +5,8 @@
     "repo": "https://github.com/vagkaratzas/meta-omics-sig",
     "sig": "https://nf-co.re/special-interest-groups/meta-omics",
     "plan": "https://github.com/vagkaratzas/meta-omics-sig/blob/main/PLAN.md",
-    "datasets_doc": "https://github.com/vagkaratzas/meta-omics-sig/blob/main/DATASETS.md"
+    "datasets_doc": "https://github.com/vagkaratzas/meta-omics-sig/blob/main/DATASETS.md",
+    "runs_doc": "https://github.com/vagkaratzas/meta-omics-sig/blob/main/RUNS.md"
   },
 
   "stations": [
@@ -176,7 +177,7 @@
       "source": "table", "kind": "reads", "repoStatus": "CONVERSION REQUIRED", "statusClass": "conversion-required",
       "routable": true, "unit": "runs", "carries": ["AMPLICON"],
       "note": "generic samplesheet.csv; no --nf_core_pipeline option. The enum is [rnaseq, atacseq, viralrecon, taxprofiler] only, so a column rename/subset is required.",
-      "caveat": null
+      "caveat": "Confirmed in the 2026-08-10 pilot run: the emitted sample column is the ENA experiment accession (sample == experiment_accession for all 12 rows), so a sample rename is required on top of the column conversion or every downstream result is labelled ERX..."
     },
     {
       "id": "fetchngs__taxprofiler", "from": "fetchngs", "to": "taxprofiler",
@@ -190,13 +191,14 @@
       "source": "table", "kind": "reads", "repoStatus": "CONVERSION REQUIRED", "statusClass": "conversion-required",
       "routable": true, "unit": "runs", "carries": ["WGS"],
       "note": "generic samplesheet.csv; no --nf_core_pipeline option",
-      "caveat": "mag 5.5.0 also needs group and short_reads_platform columns that the generic sheet does not carry. Not yet tested."
+      "caveat": "mag 5.5.0 also needs group and short_reads_platform columns that the generic sheet does not carry. Not yet tested. The 2026-08-10 pilot also confirmed the sample column is the ENA experiment accession, so a rename is required as well."
     },
     {
       "id": "fetchngs__metatdenovo", "from": "fetchngs", "to": "metatdenovo",
       "source": "table", "kind": "reads", "repoStatus": "CONVERSION REQUIRED", "statusClass": "conversion-required",
       "routable": true, "unit": "runs", "carries": ["RNA-Seq"],
-      "note": "generic samplesheet.csv; no --nf_core_pipeline option", "caveat": null
+      "note": "generic samplesheet.csv; no --nf_core_pipeline option",
+      "caveat": "Confirmed in the 2026-08-10 pilot run: the sample column is the ENA experiment accession, so a rename is required alongside the column conversion. The six RNA-Seq runs are two library-level replicates per date, which metatdenovo will treat as six independent samples unless merged first."
     },
     {
       "id": "detaxizer__ampliseq", "from": "detaxizer", "to": "ampliseq",
@@ -345,8 +347,8 @@
       ],
       "siteState": {
         "fetchngs": {
-          "state": "configured", "in": 12, "out": null, "version": "1.12.0",
-          "note": "ids.csv and params.yml exist, but params.yml still carries /path/to/ placeholders. Nothing has been fetched."
+          "state": "run", "in": 12, "out": 12, "version": "1.12.0",
+          "note": "Run 2026-08-10 on SLURM with Singularity. All 12 runs downloaded and md5-verified: 555,738,002 reads, 79,977,308,002 bases, 34.5 GB. Emitted samplesheet.csv is 12 rows by 39 columns, with collection_date at column 35. Three environment workarounds were needed (Nextflow 26.04 strict config parser, whitespace in ena_metadata_fields, and a wget container with no /etc/resolv.conf) - all recorded in RUNS.md and AGENTS.md. Provenance link in RUNS.md."
         },
         "detaxizer": {
           "state": "not-selected", "in": null, "out": null, "version": null,
