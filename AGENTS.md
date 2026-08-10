@@ -53,6 +53,40 @@ and which pipelines it is tested against.
 Pipeline runs in this project should use `-params-file params.yml` to keep parameters
 reproducible and reviewable.
 
+### Singularity containers without `/etc/resolv.conf` (no DNS in container)
+Singularity bind-mounts the host `/etc/resolv.conf` into containers, but a file bind
+requires the target to already exist in the image. Minimal biocontainers often lack it,
+and with overlay/underlay disabled in `singularity.conf` the mount is silently skipped —
+the container then has no resolver and every network task fails. Symptom:
+
+```
+WARNING: Skipping mount .../session/etc/resolv.conf [files]: /etc/resolv.conf doesn't exist in container
+wget: unable to resolve host address 'ftp.sra.ebi.ac.uk'
+```
+
+Looks like a firewall, is not. Diagnose in three commands before working around it:
+
+```bash
+cat <workdir>/.command.err                      # names DNS vs routing
+getent hosts <host>                             # host-side resolution
+singularity exec <image> cat /etc/resolv.conf   # container-side resolution
+```
+
+Usually it is **one bad image**, not the cluster. Confirmed on codon (2026-08-10):
+`depot.galaxyproject.org/singularity/wget:1.20.1` has no `/etc/resolv.conf`, while
+`quay.io/biocontainers/gnu-wget:1.18--h60da905_7` and the pipeline's Python containers are
+fine. Preferred fix is a per-process `container` override in the site config, which keeps
+the run containerized:
+
+```groovy
+process { withName: 'SRA_FASTQ_FTP' { container = 'quay.io/biocontainers/gnu-wget:1.18--h60da905_7' } }
+```
+
+Fall back to `-profile conda` only if no substitute image exists. The systemic fix is
+enabling overlay in `singularity.conf` (cluster-admin change) so Singularity can create
+missing mount points. Affects any stage touching the network — downloads, database
+fetches, API calls.
+
 ### Nextflow 26.04+ strict config parser
 Nextflow 26.04 made the strict (v2) config parser the default. It rejects Groovy function
 definitions in `nextflow.config`, which **every pre-nf-core-3.x pipeline still contains**

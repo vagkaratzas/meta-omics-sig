@@ -127,11 +127,48 @@ cut -f<alias>,<collection_date> results/01_fetchngs/metadata/*.tsv
 
 ## Known gotchas
 
-- **Compute nodes often cannot reach the internet.** fetchngs' download processes need
-  outbound HTTPS/FTP to ENA. If the cluster firewalls compute nodes, route the download
-  processes to a data-transfer queue in your site config, or run fetchngs on a login node
-  with `-profile singularity` and a `local` executor, then run everything downstream on
-  SLURM.
+- **Compute nodes often cannot reach the internet.** `SRA_FASTQ_FTP` is a `wget` wrapper
+  (`ext.args = '-t 5 -nv -c -T 60'`), so its exit status names the fault directly:
+  `3` file I/O, **`4` network failure**, `5` SSL verification, `8` server error response.
+  An exit 4 on every download task with the metadata stages green means DNS or routing,
+  not data. **Read `.command.err` before assuming a firewall** — on codon the actual cause
+  was DNS inside the container, not the network:
+
+  ```
+  WARNING: Skipping mount .../session/etc/resolv.conf [files]: /etc/resolv.conf doesn't exist in container
+  wget: unable to resolve host address 'ftp.sra.ebi.ac.uk'
+  ```
+
+  **This is one bad image, not a broken cluster.** `depot.galaxyproject.org/singularity/wget:1.20.1`
+  ships without `/etc/resolv.conf`, and a Singularity file bind needs the target to exist
+  in the image, so the mount is skipped and the container gets no resolver. Confirmed
+  scope: `SRA_IDS_TO_RUNINFO` and `SRA_RUNINFO_TO_FTP` reach the ENA API from their Python
+  containers and pass, and `quay.io/biocontainers/gnu-wget:1.18--h60da905_7` shows the
+  host's `resolv.conf` correctly. Fix — override that single container:
+
+  ```groovy
+  process {
+      withName: 'SRA_FASTQ_FTP' {
+          container = 'quay.io/biocontainers/gnu-wget:1.18--h60da905_7'
+      }
+  }
+  ```
+
+  All flags the module uses (`-t 5 -nv -c -T 60 -O`) exist in wget 1.18, and the
+  version-capture `sed` still parses. Preferred over `-profile conda` because a benchmark
+  intended for publication should stay containerized end to end. Diagnose before
+  reaching for the workaround:
+
+  ```bash
+  cat <workdir>/.command.err                                   # says resolv.conf or routing
+  getent hosts ftp.sra.ebi.ac.uk                               # host-side DNS
+  singularity exec <image> cat /etc/resolv.conf                # container-side DNS
+  ```
+
+  If a future image fails the same way and no substitute exists, fall back to
+  `-profile slurm,conda` (the module declares `conda "conda-forge::wget=1.20.1"`), or ask
+  admins to enable overlay in `singularity.conf` so Singularity can create missing mount
+  points itself.
 - `--nf_core_pipeline` has no `ampliseq` / `mag` / `metatdenovo` option (enum is
   `rnaseq, atacseq, viralrecon, taxprofiler`). Those three handoffs require a conversion
   step — that is a finding for the validation table, not a blocker.
@@ -162,5 +199,12 @@ cut -f<alias>,<collection_date> results/01_fetchngs/metadata/*.tsv
 
 | Step | Status |
 |------|--------|
-| Pilot run | NOT YET RUN |
+| `SRA_IDS_TO_RUNINFO` + `SRA_RUNINFO_TO_FTP` (12 runs each) | **PASS** — 24/24 tasks |
+| `collection_date` present in runinfo | **PASS** — column 33 (`sample_alias` at 11) |
+| `SRA_FASTQ_FTP` download | BLOCKED — `wget:1.20.1` image lacks `/etc/resolv.conf`; retrying with a `container` override |
+| Samplesheet emitted + curated | BLOCKED on download |
 | Scale to matched-26 (102 runs, 404 GB) | BLOCKED on pilot |
+
+Environment findings from the pilot, all recorded in [AGENTS.md](../../AGENTS.md):
+`NXF_SYNTAX_PARSER=v1` required on Nextflow 26.04+; `ena_metadata_fields` must be
+whitespace-free; Singularity containers on codon have no working DNS.
