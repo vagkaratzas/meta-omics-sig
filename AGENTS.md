@@ -14,6 +14,23 @@ There is currently no pipeline code here — the repo holds documentation and pl
 artifacts. Tasks will include: dataset investigation, samplesheet format research,
 pipeline chaining validation, and eventually workflow orchestration scripts.
 
+**Read [Home.md](Home.md) first.** It is the map of content: which file owns which
+question. Use it to route a request to the right canonical file instead of grepping
+blindly across all of them.
+
+The repository doubles as an Obsidian vault, which imposes one hard rule:
+
+- **Use standard relative Markdown links, never `[[wikilink]]` syntax.** Obsidian resolves
+  `[text](FILE.md)` for graph and backlinks just fine, whereas wikilinks render as literal
+  brackets on GitHub and in the `docs/` Pages site. Every link in this repo is
+  GitHub-safe; keep it that way.
+- **Do not move or rename the canonical docs.** `docs/data.json`, `README.md` and
+  `Home.md` all reference them by path, and `docs/index.html` builds links from
+  `meta.plan` / `meta.datasets_doc` / `meta.runs_doc`.
+- After editing links, confirm nothing broke and no file became orphaned — a file with no
+  inbound links is invisible in the vault, which is how `ACRONYMS.md` and `LOG.md` went
+  unnoticed until 2026-08-10.
+
 ---
 
 ## Key Resources (Always Check Before Answering)
