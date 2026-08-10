@@ -1,0 +1,440 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>meta-omics SIG — pipeline conveyor</title>
+<meta name="description" content="Which nf-core meta-omics samplesheet handoffs have actually been validated, and which are still claims on a diagram.">
+<style>
+:root{
+  --bg:#f7f7f5; --panel:#fff; --ink:#1a1a1a; --muted:#5c5c5c; --line:#d8d6d0;
+  --accent:#2d6a4f; --amber:#b45309; --grey:#9a9a95; --violet:#6d4aa8;
+  --station:#fff; --station-run:#2d6a4f; --shadow:0 1px 3px rgba(0,0,0,.09);
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#15161a; --panel:#1e2026; --ink:#e9e8e4; --muted:#a0a09a; --line:#33353d;
+        --accent:#5fbf92; --amber:#e0a44a; --grey:#6b6d76; --violet:#a98ae0;
+        --station:#22242b; --station-run:#5fbf92; --shadow:0 1px 3px rgba(0,0,0,.4);}
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:15px/1.55 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:1100px;margin:0 auto;padding:24px 18px 64px}
+h1{font-size:22px;margin:0 0 6px}
+h2{font-size:16px;margin:32px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+a{color:var(--accent)}
+.sub{color:var(--muted);margin:0 0 4px;max-width:70ch}
+.meta-line{color:var(--muted);font-size:13px;margin:10px 0 0}
+#err{display:none;margin:16px 0;padding:12px 14px;border:1px solid var(--amber);
+  border-left-width:4px;border-radius:4px;background:var(--panel)}
+#err code{background:rgba(127,127,127,.16);padding:1px 5px;border-radius:3px}
+.controls{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;margin:20px 0 10px}
+select{font:inherit;padding:6px 8px;background:var(--panel);color:var(--ink);
+  border:1px solid var(--line);border-radius:4px}
+label{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:4px}
+.badge{background:var(--panel);border:1px solid var(--line);border-radius:4px;
+  padding:8px 12px;font-size:13px;box-shadow:var(--shadow)}
+.badge b{font-weight:600}
+.notice{background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--violet);
+  border-radius:4px;padding:10px 12px;font-size:13.5px;margin:10px 0}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:12.5px;color:var(--muted);margin:10px 0 6px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{font-style:normal;font-weight:700}
+.figure{overflow-x:auto;background:var(--panel);border:1px solid var(--line);
+  border-radius:6px;box-shadow:var(--shadow);padding:8px}
+svg.floor{display:block;min-width:1050px;width:100%;height:auto}
+.st-box{fill:var(--station);stroke:var(--muted);stroke-width:1.5}
+.st-box.run{stroke:var(--station-run);stroke-width:2.5}
+.st-box.configured{stroke:var(--accent);stroke-dasharray:5 3}
+.st-box.pending{stroke:var(--grey);stroke-dasharray:2 3}
+.st-box.external{stroke:var(--violet);stroke-dasharray:1 4}
+.st-box.hit{stroke:var(--ink);stroke-width:3}
+.st-label{font:600 12.5px ui-sans-serif,system-ui,sans-serif;fill:var(--ink)}
+.st-sub{font:10.5px ui-monospace,monospace;fill:var(--muted)}
+.st-g{cursor:pointer}
+.e{fill:none;stroke-width:2}
+.e.validated{stroke:var(--accent)}
+.e.conversion-required{stroke:var(--amber)}
+.e.untested{stroke:var(--grey);stroke-dasharray:7 5;opacity:.75}
+.e.absent-from-table{stroke:var(--grey);stroke-dasharray:1 5;opacity:.6}
+.e.site-annotation{stroke:var(--violet);stroke-dasharray:3 3;opacity:.8}
+.dot{stroke-width:1.6}
+.dot.actual{fill:var(--accent);stroke:var(--accent)}
+.dot.planned{fill:none;stroke:var(--amber);stroke-dasharray:2.5 2}
+.gap{fill:var(--bg);stroke:var(--amber);stroke-width:1.5}
+.gap-t{font:700 10px ui-sans-serif,sans-serif;fill:var(--amber)}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{text-align:left;padding:7px 9px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:600}
+td.mono,.mono{font-family:ui-monospace,monospace;font-size:12.5px}
+.scroller{overflow-x:auto}
+.chip{display:inline-block;padding:1px 7px;border-radius:10px;font-size:11.5px;
+  font-weight:600;border:1px solid currentColor;white-space:nowrap}
+.c-validated{color:var(--accent)} .c-conversion-required{color:var(--amber)}
+.c-untested{color:var(--muted)} .c-absent-from-table{color:var(--grey)}
+.c-site-annotation{color:var(--violet)}
+.rowbtn{font:inherit;font-weight:600;background:none;border:none;padding:0;color:var(--accent);
+  cursor:pointer;text-align:left;text-decoration:underline;text-underline-offset:2px}
+.rowbtn:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+dialog{border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink);
+  max-width:620px;width:calc(100% - 32px);padding:0;box-shadow:0 8px 32px rgba(0,0,0,.28)}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+.dlg-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;
+  padding:16px 18px 10px;border-bottom:1px solid var(--line)}
+.dlg-body{padding:14px 18px 20px}
+.dlg-body h4{margin:16px 0 5px;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.dlg-body h4:first-child{margin-top:0}
+.dlg-body ul{margin:4px 0;padding-left:20px}
+.close{font:inherit;background:none;border:1px solid var(--line);border-radius:4px;
+  color:var(--ink);cursor:pointer;padding:3px 9px}
+.sitenote{border-left:3px solid var(--violet);padding-left:9px;color:var(--muted);font-size:13px}
+.caveat{border-left:3px solid var(--amber);padding-left:9px;font-size:13px}
+footer{margin-top:40px;padding-top:14px;border-top:1px solid var(--line);
+  color:var(--muted);font-size:12.5px}
+@media (max-width:640px){ .controls{flex-direction:column;align-items:stretch} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>nf-core meta-omics — the pipeline conveyor</h1>
+<p class="sub">Every arrow in the meta-omics &ldquo;metro map&rdquo; is a claim that one pipeline&rsquo;s
+output can feed the next. This page shows which of those claims have actually been tested, and
+routes a real dataset&rsquo;s sequencing runs down the belt as far as the evidence goes &mdash; which,
+today, is one hop.</p>
+<p class="meta-line" id="metaline"></p>
+
+<div id="err" role="alert">
+  <strong>Could not load <code>data.json</code>.</strong>
+  <span id="errdetail"></span><br>
+  This page reads its data over <code>fetch()</code>, which browsers block on <code>file://</code>.
+  Serve the folder instead: <code>python3 -m http.server -d docs 8080</code> then open
+  <code>http://localhost:8080/</code>.
+</div>
+
+<div class="controls">
+  <div>
+    <label for="ds">Dataset</label>
+    <select id="ds"></select>
+  </div>
+  <div class="badge" id="badge">&hellip;</div>
+</div>
+<div class="notice" id="notice" hidden></div>
+
+<div class="legend" id="legend"></div>
+<div class="figure">
+  <svg class="floor" id="floor" viewBox="0 0 1050 720" aria-hidden="true" focusable="false"></svg>
+</div>
+<p class="meta-line" id="routingbasis"></p>
+
+<h2>Stations</h2>
+<div class="scroller">
+  <table id="st-table">
+    <thead><tr><th>Pipeline</th><th>Release</th><th>State (this dataset)</th><th>In</th><th>Out</th><th>Note</th></tr></thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<h2>Handoffs</h2>
+<p class="sub" style="font-size:13.5px">Status text is copied verbatim from the validation table in
+<code>PLAN.md</code>. Edges with no status do not appear in that table at all.</p>
+<div class="scroller">
+  <table id="e-table">
+    <thead><tr><th>From</th><th>To</th><th>Status (PLAN.md)</th><th>Source</th><th>Carries</th><th>Note</th></tr></thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<h2>Runs in this dataset</h2>
+<div class="scroller">
+  <table id="r-table">
+    <thead><tr><th>Accession</th><th>Strategy</th><th>Layer</th><th>Collection date</th><th>Study</th><th>Instrument</th><th>GB</th></tr></thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<h2>Other dataset candidates</h2>
+<p class="sub" style="font-size:13.5px">The SIG dataset decision is <strong>open</strong>. The gate is
+amplicon + shotgun metagenome + shotgun metatranscriptome; these are not selectable here because no
+runs have been prepared for them.</p>
+<div class="scroller">
+  <table id="c-table">
+    <thead><tr><th>Candidate</th><th>Gate</th><th>Why</th><th>Accessions</th></tr></thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<footer id="footer"></footer>
+</div>
+
+<dialog id="dlg">
+  <div class="dlg-head">
+    <div><strong id="dlg-title"></strong><div class="mono" id="dlg-rel"></div></div>
+    <button class="close" id="dlg-x">Close</button>
+  </div>
+  <div class="dlg-body" id="dlg-body"></div>
+</dialog>
+
+<script>
+const SVGNS = "http://www.w3.org/2000/svg";
+const W = 168, H = 34, DUR = 7, MAXDOTS = 30;
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+let D, byId, ds;
+
+const el = (n, a = {}) => { const e = document.createElementNS(SVGNS, n);
+  for (const k in a) e.setAttribute(k, a[k]); return e; };
+const esc = s => String(s ?? "").replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+const wOf = s => s.w || W;
+const anchors = s => ({ ox: s.x + wOf(s), oy: s.y + H / 2, ix: s.x, iy: s.y + H / 2 });
+
+// Cubic from source right edge to target left edge. Control points pushed out
+// horizontally so near-vertical drops still read as belts rather than kinks.
+function pathFor(a, b) {
+  const s = anchors(a), t = anchors(b), dx = Math.max(60, (t.ix - s.ox) * 0.55);
+  return `M${s.ox},${s.oy} C${s.ox + dx},${s.oy} ${t.ix - dx},${t.iy} ${t.ix},${t.iy}`;
+}
+
+fetch("data.json")
+  .then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+  .then(d => {
+    for (const k of ["meta", "stations", "edges", "datasets", "candidates"])
+      if (!d[k]) throw new Error("missing top-level key: " + k);
+    D = d; byId = Object.fromEntries(d.stations.map(s => [s.id, s]));
+    boot();
+  })
+  .catch(e => {
+    document.getElementById("errdetail").textContent = " (" + e.message + ")";
+    document.getElementById("err").style.display = "block";
+  });
+
+function boot() {
+  const sel = document.getElementById("ds");
+  D.datasets.filter(x => x.selectable).forEach(x => sel.add(new Option(x.label, x.id)));
+  sel.onchange = () => render(D.datasets.find(x => x.id === sel.value));
+  document.getElementById("metaline").innerHTML =
+    `Updated ${esc(D.meta.updated)} &middot; <a href="${D.meta.plan}">PLAN.md</a> is the source of truth for
+     every status below &middot; <a href="${D.meta.sig}">nf-core meta-omics SIG</a> &middot;
+     <a href="${D.meta.repo}">repository</a>`;
+  document.getElementById("footer").innerHTML =
+    `Work of the <a href="${D.meta.sig}">nf-core meta-omics Special Interest Group</a>, published from a
+     personal repository. Statuses mirror <a href="${D.meta.plan}">PLAN.md</a>; dataset candidates mirror
+     <a href="${D.meta.datasets_doc}">DATASETS.md</a>. Nothing here is a validated result until the
+     handoff table says so.`;
+  legend(); candidates();
+  render(D.datasets.find(x => x.selectable));
+}
+
+function legend() {
+  const items = [
+    ["c-validated", "&#10003;", "validated handoff"],
+    ["c-conversion-required", "&#9873;", "works, needs a conversion step"],
+    ["c-untested", "?", "in the validation table, untested"],
+    ["c-absent-from-table", "&#8709;", "drawn in the metro map, absent from the table"],
+    ["c-site-annotation", "&#9678;", "site annotation, not a repo claim"],
+    ["", "&#9711;", "planned input &mdash; not yet fetched"],
+    ["", "&#9679;", "actual output of a completed run"]
+  ];
+  document.getElementById("legend").innerHTML =
+    items.map(([c, g, t]) => `<span class="${c}"><i>${g}</i> ${t}</span>`).join("");
+}
+
+function render(d) {
+  ds = d;
+  const st = id => (ds.siteState && ds.siteState[id]) || { state: "pending" };
+  document.getElementById("routingbasis").textContent = ds.routingBasis || "";
+  const n = document.getElementById("notice");
+  n.hidden = !ds.notice; n.textContent = ds.notice || "";
+  drawFloor(st); badge(st); stationTable(st); edgeTable(); runTable();
+}
+
+/* ---- routing -------------------------------------------------------------
+   A dot exists on an edge only if the edge is in this dataset's activeRoute,
+   the run's strategy is carried, and the SOURCE station has actually run.
+   Dots never continue past a station that has not run, so today they travel
+   exactly one hop and every dot is "planned" rather than "actual".          */
+function dotsFor(edge, st) {
+  if (!edge.routable || !ds.activeRoute.includes(edge.id)) return [];
+  if (st(edge.from).state === "unavailable" || st(edge.from).state === "not-selected") return [];
+  const runs = ds.runs.filter(r => (edge.carries || []).includes(r.strategy));
+  const actual = st(edge.from).state === "run";
+  return runs.slice(0, MAXDOTS).map(r => ({ run: r, actual, total: runs.length }));
+}
+
+function drawFloor(st) {
+  const svg = document.getElementById("floor");
+  svg.textContent = "";
+  const gE = el("g"), gD = el("g"), gS = el("g");
+  svg.append(gE, gD, gS);
+
+  D.edges.forEach(e => {
+    const a = byId[e.from], b = byId[e.to]; if (!a || !b) return;
+    const dstr = pathFor(a, b);
+    const p = el("path", { id: "p_" + e.id, d: dstr, class: "e " + e.statusClass });
+    gE.append(p);
+
+    // A missing intermediate step is drawn on the belt, not just written in the panel.
+    // Sits at the true midpoint of the curve, not of the straight line between boxes.
+    if (e.caveat && e.caveat.startsWith("MISSING STEP")) {
+      const mid = p.getPointAtLength(p.getTotalLength() / 2);
+      gE.append(el("circle", { cx: mid.x, cy: mid.y, r: 7, class: "gap" }));
+      const t = el("text", { x: mid.x, y: mid.y + 3.5, class: "gap-t", "text-anchor": "middle" });
+      t.textContent = "!"; gE.append(t);
+    }
+
+    const dots = dotsFor(e, st);
+    dots.forEach((info, i) => {
+      const c = el("circle", { r: 5, cx: 0, cy: 0,
+        class: "dot " + (info.actual ? "actual" : "planned") });
+      gD.append(c);
+      animate(c, "p_" + e.id, i, dots.length);
+    });
+  });
+
+  D.stations.forEach(s => {
+    const state = s.kind === "external" ? "external" : st(s.id).state;
+    const g = el("g", { class: "st-g" });
+    g.append(el("rect", { x: s.x, y: s.y, width: wOf(s), height: H, rx: 5,
+      class: "st-box " + state, id: "b_" + s.id }));
+    const t1 = el("text", { x: s.x + 10, y: s.y + 15, class: "st-label" });
+    t1.textContent = s.label;
+    const t2 = el("text", { x: s.x + 10, y: s.y + 27, class: "st-sub" });
+    t2.textContent = s.kind === "external" ? "external input" : stateLabel(state);
+    g.append(t1, t2);
+    g.addEventListener("click", () => {
+      const b = document.querySelector(`button[data-st="${s.id}"]`);
+      if (b) { b.scrollIntoView({ block: "center", behavior: "smooth" }); b.click(); }
+    });
+    gS.append(g);
+  });
+}
+
+// SMIL first; if the engine cannot drive it, fall back to one rAF loop over the
+// same path geometry. Reduced motion gets neither — dots are simply placed.
+function animate(circle, pathId, i, total) {
+  const path = document.getElementById(pathId);
+  const place = f => { const p = path.getPointAtLength(path.getTotalLength() * f);
+    circle.setAttribute("cx", p.x); circle.setAttribute("cy", p.y); };
+  if (reduce) { place((i + 1) / (total + 1)); return; }
+
+  // Negative begin: the animation is already mid-cycle at t=0, so dots sit spread along
+  // the belt from the first frame. A positive begin would park them on the SVG origin
+  // (animateMotion translates from cx/cy=0) until their turn came round.
+  const am = el("animateMotion", { dur: DUR + "s", repeatCount: "indefinite",
+    begin: (-i * (DUR / Math.max(total, 1))).toFixed(2) + "s" });
+  const mp = el("mpath"); mp.setAttribute("href", "#" + pathId);
+  mp.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", "#" + pathId);
+  am.append(mp); circle.append(am);
+
+  if (typeof am.beginElement !== "function") {
+    am.remove();
+    const off = i / Math.max(total, 1);
+    place(off);                       // before the first frame, so no flash at the origin
+    const tick = t => { place(((t / 1000 / DUR) + off) % 1); requestAnimationFrame(tick); };
+    requestAnimationFrame(tick);
+  }
+}
+
+const stateLabel = s => ({ run: "run", configured: "configured, not run",
+  "not-selected": "not selected", unavailable: "unavailable", external: "reference input",
+  pending: "not run" }[s] || s);
+
+function badge(st) {
+  // Count validation-table ROWS, not drawn edges: the mag->proteins row is one row
+  // in PLAN.md but three arrows here, and share a rowKey to collapse back.
+  const rows = new Map();
+  D.edges.filter(e => e.source === "table")
+         .forEach(e => rows.set(e.rowKey || e.id, e.statusClass));
+  const tbl = [...rows.values()];
+  const c = k => tbl.filter(x => x === k).length;
+  const absent = D.edges.filter(e => e.source === "diagram").length;
+  const run = D.stations.filter(s => s.kind === "pipeline" && st(s.id).state === "run").length;
+  const pipes = D.stations.filter(s => s.kind === "pipeline").length;
+  document.getElementById("badge").innerHTML =
+    `<b>${c("validated")}/${tbl.length}</b> handoffs validated &middot;
+     <b>${c("conversion-required")}</b> need conversion &middot;
+     <b>${c("untested")}</b> untested &middot;
+     <b>${absent}</b> in the metro map but not the table &middot;
+     <b>${run}/${pipes}</b> pipelines run`;
+}
+
+function stationTable(st) {
+  const tb = document.querySelector("#st-table tbody");
+  tb.innerHTML = "";
+  D.stations.forEach(s => {
+    const s2 = s.kind === "external" ? { state: "external" } : st(s.id);
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td></td><td class="mono">${esc(s.release || (s.devNote ? "dev only" : "—"))}</td>
+      <td>${esc(stateLabel(s2.state))}</td><td class="mono">${s2.in ?? "—"}</td>
+      <td class="mono">${s2.out ?? "—"}</td><td>${esc(s2.note || "")}</td>`;
+    const b = document.createElement("button");
+    b.className = "rowbtn"; b.textContent = s.label; b.dataset.st = s.id;
+    b.setAttribute("aria-haspopup", "dialog");
+    b.onclick = () => openPanel(s, s2, b);
+    tr.firstChild.append(b);
+    tb.append(tr);
+  });
+}
+
+function edgeTable() {
+  const tb = document.querySelector("#e-table tbody");
+  tb.innerHTML = D.edges.map(e => `<tr>
+    <td class="mono">${esc(byId[e.from].label)}</td>
+    <td class="mono">${esc(byId[e.to].label)}</td>
+    <td><span class="chip c-${e.statusClass}">${esc(e.repoStatus || "not in table")}</span></td>
+    <td>${esc(e.source)}</td>
+    <td class="mono">${(e.carries || []).join(", ") || "—"}</td>
+    <td>${esc(e.note || "")}${e.caveat ? `<div class="caveat">${esc(e.caveat)}</div>` : ""}</td>
+  </tr>`).join("");
+}
+
+function runTable() {
+  document.querySelector("#r-table tbody").innerHTML = ds.runs.map(r => `<tr>
+    <td class="mono">${esc(r.acc)}</td><td>${esc(r.strategy)}</td><td>${esc(r.layer)}</td>
+    <td class="mono">${esc(r.collectionDate)}</td><td class="mono">${esc(r.study)}</td>
+    <td>${esc(r.instrument)}</td><td class="mono">${r.gb}</td></tr>`).join("");
+}
+
+function candidates() {
+  document.querySelector("#c-table tbody").innerHTML = D.candidates.map(c => `<tr>
+    <td>${esc(c.label)}</td><td>${c.gate === "pass" ? "passes" : "fails"}</td>
+    <td>${esc(c.reason)}</td><td class="mono">${esc(c.accessions)}</td></tr>`).join("");
+}
+
+const dlg = document.getElementById("dlg");
+document.getElementById("dlg-x").onclick = () => dlg.close();
+
+function openPanel(s, s2, opener) {
+  document.getElementById("dlg-title").textContent = s.label;
+  document.getElementById("dlg-rel").textContent =
+    s.release ? "release " + s.release : (s.devNote ? "no tagged release" : "");
+  const out = D.edges.filter(e => e.from === s.id);
+  const inn = D.edges.filter(e => e.to === s.id);
+  const list = arr => arr.length ? "<ul>" + arr.map(e => `<li><span class="chip c-${e.statusClass}">${
+      esc(e.repoStatus || "not in table")}</span> ${esc(byId[e.from].label)} &rarr; ${esc(byId[e.to].label)}
+      <div style="color:var(--muted);font-size:12.5px">${esc(e.note || "")}</div>${
+      e.caveat ? `<div class="caveat">${esc(e.caveat)}</div>` : ""}</li>`).join("") + "</ul>"
+    : "<p style='color:var(--muted)'>None.</p>";
+
+  document.getElementById("dlg-body").innerHTML = `
+    <h4>What it does</h4><p>${esc(s.blurb)}</p>
+    <h4>Input &rarr; output</h4><p class="mono">${esc(s.io.in)} &rarr; ${esc(s.io.out)}</p>
+    ${s.requires ? `<h4>Required inputs${s.requiresReadFrom ?
+        ` <span class="mono">(as documented at ${esc(s.requiresReadFrom)})</span>` : ""}</h4>
+      <ul>${s.requires.map(r => `<li>${esc(r)}</li>`).join("")}</ul>` : ""}
+    ${s.devNote ? `<div class="caveat">${esc(s.devNote)}</div>` : ""}
+    <h4>State for ${esc(ds.label)}</h4>
+    <p class="sitenote">${esc(stateLabel(s2.state))}${s2.note ? " &mdash; " + esc(s2.note) : ""}
+      <br><em>Site annotation, not a status recorded in PLAN.md.</em></p>
+    <h4>Incoming handoffs</h4>${list(inn)}
+    <h4>Outgoing handoffs</h4>${list(out)}
+    ${s.docs ? `<h4>Documentation</h4><p><a href="${s.docs}">${esc(s.docs)}</a></p>` : ""}`;
+
+  document.querySelectorAll(".st-box.hit").forEach(n => n.classList.remove("hit"));
+  const box = document.getElementById("b_" + s.id);
+  if (box) box.classList.add("hit");
+  dlg.showModal();
+  dlg.addEventListener("close", () => opener.focus(), { once: true });
+}
+</script>
+</body>
+</html>

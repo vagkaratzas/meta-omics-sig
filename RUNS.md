@@ -1,0 +1,138 @@
+# Execution Ledger
+
+Every pipeline execution for the end-to-end use case, with the provenance needed to
+reproduce or audit it. One row per run in the index; one section per run below.
+
+Named `RUNS.md` rather than `OUTPUTS.md` because what needs tracking is **executions** —
+the output directories themselves are gitignored and live on cluster storage.
+
+- Per-run inputs, params and troubleshooting notes: `runs/<NN>_<pipeline>/README.md`
+- Chain design and edge validation status: [PLAN.md](PLAN.md)
+- Reusable environment gotchas: [AGENTS.md](AGENTS.md)
+
+**Convention:** never record absolute cluster paths here. Record the pipeline, revision,
+Nextflow version, input manifest, Seqera Platform run link, and outcome. Paths are
+site-specific and go stale; the Seqera link preserves the full execution record.
+
+---
+
+## Index
+
+| # | Pipeline | Revision | Date | Scope | Status | Provenance |
+|---|----------|----------|------|-------|--------|------------|
+| 01 | nf-core/fetchngs | 1.12.0 | 2026-08-10 | LMO pilot — 3 dates × 3 omics layers | **SUCCESS** | [Seqera run](https://cloud.seqera.io/user/vangelis/watch/1Hd5FAdXhle9M9) |
+
+---
+
+## 01 — fetchngs, LMO pilot
+
+**Provenance:** <https://cloud.seqera.io/user/vangelis/watch/1Hd5FAdXhle9M9>
+
+| | |
+|---|---|
+| Pipeline | `nf-core/fetchngs` `-r 1.12.0` (latest release; Feb 2024) |
+| Nextflow | 26.04.4 |
+| Executor / container | SLURM / Singularity |
+| Input manifest | [`runs/01_fetchngs/ids.csv`](runs/01_fetchngs/ids.csv) — 12 ENA run accessions |
+| Params | [`runs/01_fetchngs/params.yml`](runs/01_fetchngs/params.yml) |
+| Date | 2026-08-10 |
+| Outcome | Success — 12/12 runs downloaded and md5-verified |
+
+### What was fetched
+
+3 dates from the LMO matched-26 set, chosen to touch all five core accessions and three
+seasons. Amplicon restricted to `filter fraction:0.2`; MT restricted to the rRNA-depleted
+study.
+
+| Layer | Study | Runs | Instrument |
+|-------|-------|------|------------|
+| 16S amplicon | PRJEB52780, PRJEB52782, PRJEB52828 | 3 | Illumina MiSeq |
+| Metagenome | PRJEB82694 | 3 | Illumina NovaSeq 6000 |
+| Metatranscriptome | PRJEB69280 | 6 (2 replicates × 3 dates) | Illumina HiSeq 2500 |
+
+Dates: 2016-03-15 (early spring), 2016-08-03 (summer), 2017-10-31 (autumn).
+Totals: **555,738,002 reads · 79,977,308,002 bases · 34.5 GB**, all PAIRED.
+
+### Outputs produced
+
+| Path (relative to outdir) | Contents |
+|---------------------------|----------|
+| `fastq/` | 24 FASTQ files (12 runs × R1/R2) |
+| `fastq/md5/` | md5 checksum per file, verified in-pipeline |
+| `metadata/*.runinfo_ftp.tsv` | 12 files, one per run, full ENA metadata |
+| `samplesheet/samplesheet.csv` | 12 rows × **39 columns** |
+| `samplesheet/id_mappings.csv` | 9 columns, MultiQC rename source |
+| `samplesheet/multiqc_config.yml` | MultiQC `sample_names_rename` map |
+
+### Metadata validation — the point of the pilot
+
+`ena_metadata_fields` was overridden to add `collection_date, lat, lon, depth,
+environmental_medium` to the fetchngs default set. Confirmed present: `collection_date`
+is column 35 of `samplesheet.csv` and column 33 of the runinfo TSVs.
+
+**The PRJEB82694 alias/date conflict reproduces exactly as predicted**, now with pipeline
+output as evidence rather than an API query:
+
+| Run | Study | Layer | `collection_date` | date in `sample_alias` | |
+|-----|-------|-------|-------------------|------------------------|---|
+| ERR9715801 | PRJEB52780 | AMPLICON | 2016-03-15 | 2016-03-15 | match |
+| ERR12258632 | PRJEB69280 | RNA-Seq | 2016-03-15 | 2016-03-15 | match |
+| ERR12258633 | PRJEB69280 | RNA-Seq | 2016-03-15 | 2016-03-15 | match |
+| ERR13967264 | PRJEB82694 | WGS | 2016-03-15 | **2017-08-15** | **DIFFER** |
+| ERR9717120 | PRJEB52782 | AMPLICON | 2016-08-03 | 2016-08-03 | match |
+| ERR12258650 | PRJEB69280 | RNA-Seq | 2016-08-03 | 2016-08-03 | match |
+| ERR12258651 | PRJEB69280 | RNA-Seq | 2016-08-03 | 2016-08-03 | match |
+| ERR13967258 | PRJEB82694 | WGS | 2016-08-03 | **2017-02-15** | **DIFFER** |
+| ERR9726503 | PRJEB52828 | AMPLICON | 2017-10-31 | 2017-10-31 | match |
+| ERR12258626 | PRJEB69280 | RNA-Seq | 2017-10-31 | 2017-10-31 | match |
+| ERR12258627 | PRJEB69280 | RNA-Seq | 2017-10-31 | 2017-10-31 | match |
+| ERR13967244 | PRJEB82694 | WGS | 2017-10-31 | **2016-03-31** | **DIFFER** |
+
+3/3 metagenome runs disagree; 9/9 amplicon and metatranscriptome runs agree. Confirms
+`collection_date` as the only safe join key across layers.
+
+### New metadata questions for Daniel
+
+Two inconsistencies surfaced that were not visible before joining the layers:
+
+1. **`depth` disagrees between layers for the same water sample.** MG and MT record
+   `depth = 2` (matching "2 m depth" in their sample titles); all three amplicon studies
+   record `depth = 3`, constant across every filter fraction. Suspicion: the amplicon
+   `depth` field was populated with the filter fraction (3 µm) rather than sampling
+   depth. Needs confirming before `depth` is used as a covariate.
+2. **`environmental_medium` is not harmonised.** MT reads
+   `Water;brackish water (ENVO:00002019)`; MG and amplicon read
+   `brackish water (ENVO:00002019)`.
+
+`lat`/`lon` are identical across all 12 samples (56.9309, 17.0607) — consistent.
+
+### Handoff finding
+
+The emitted `sample` column **is the experiment accession** (`ERX…`) for every row —
+`sample == experiment_accession` holds for all 12. Downstream pipelines keyed on this
+would label every result `ERX13368357` rather than something like
+`LMO_2016-03-15_MG_0.2`. A rename step is required before ampliseq / mag / metatdenovo,
+in addition to the column conversion already recorded in
+[PLAN.md](PLAN.md#samplesheet-chaining--validation-table).
+
+### Environment workarounds required
+
+All three are now documented in [AGENTS.md](AGENTS.md); none are LMO-specific.
+
+| Obstacle | Resolution |
+|----------|------------|
+| Nextflow 26.04 strict config parser rejects `def check_max(obj, type)` in 1.12.0's `nextflow.config` | `export NXF_SYNTAX_PARSER=v1` |
+| `ena_metadata_fields` interpolated unquoted → YAML folded scalar's spaces split into extra shell args, argparse exit 2 on all 12 tasks | single-line, whitespace-free value |
+| `wget:1.20.1` container has no `/etc/resolv.conf` → Singularity skips the bind, no DNS, `wget` exit 4 | per-process `container` override to `quay.io/biocontainers/gnu-wget:1.18--h60da905_7` |
+| Execution report render aborts on `-resume` (timestamped filename already exists) | `report.overwrite` / `timeline.overwrite` / `trace.overwrite` / `dag.overwrite` = `true` |
+
+### Upstream issues to file against nf-core/fetchngs
+
+All four verified still present on `dev` as of 2026-08-10 — none are fixed by an
+unreleased change. Detail and suggested wording in the section below.
+
+- [ ] Quote `${fields}` in the `SRA_IDS_TO_RUNINFO` command (bug)
+- [ ] `multiqc_mappings_config.py` emits a stray `"` and mangles comma-containing values (bug)
+- [ ] Cut a release with the modern template so 1.x works on Nextflow 26.04+ (release request)
+- [ ] Add `ampliseq` / `mag` / `metatdenovo` to `--nf_core_pipeline` (feature)
+- [ ] `wget` container lacks `/etc/resolv.conf` (bug, needs re-verification against `dev`'s 1.21.4 image)

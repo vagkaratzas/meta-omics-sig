@@ -244,5 +244,18 @@ gaps that would require a conversion step.
 files. Never generate parameter values from memory alone.
 
 **Roadmap tracking:** PLAN.md is the canonical roadmap; DATASETS.md is the canonical
-dataset candidate list and scoring matrix. Update them when decisions are made. Do not
-create a separate status file.
+dataset candidate list and scoring matrix; RUNS.md is the canonical execution ledger.
+Update them when decisions are made or runs complete. Do not create a separate status
+file.
+
+**Recording runs:** every execution gets a RUNS.md entry with pipeline, revision,
+Nextflow version, input manifest, Seqera Platform link, and outcome. **Never write
+absolute cluster paths into tracked files** — they are site-specific and go stale. Output
+directories are gitignored; the Seqera link is the durable provenance record.
+
+**Companion website:** `docs/` is a dependency-free GitHub Pages site rendering the pipeline
+chain as a conveyor belt. **When you change PLAN.md's samplesheet validation table, change
+`docs/data.json` in the same commit** — `repoStatus` strings there are verbatim copies of that
+table's Status column and are the site's only source of authority. Site-specific judgements
+(`siteState`, `caveat`, `routable`) are labelled as annotations and must never be presented as
+repo-recorded status. Serve locally with `python3 -m http.server -d docs 8080`.

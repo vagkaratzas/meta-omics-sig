@@ -53,6 +53,8 @@ Two decisions gate all downstream work; neither is resolved yet:
 |------|---------|
 | `PLAN.md` | Decision framework, selection constraints, pipeline chain design, roadmap, open questions |
 | `DATASETS.md` | Candidate datasets (accessions, omics layers, trade-offs) and the scoring matrix |
+| `RUNS.md` | Execution ledger — every pipeline run, with Seqera Platform provenance links |
+| `runs/<NN>_<pipeline>/` | Per-run inputs, params, and troubleshooting notes |
 | `AGENTS.md` | Bot/AI operational context — conventions, resource pointers, guardrails |
 
 ## SIG Resources

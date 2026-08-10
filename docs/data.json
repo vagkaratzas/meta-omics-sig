@@ -1,0 +1,378 @@
+{
+  "_schema": "Hand-maintained data for the meta-omics SIG conveyor-belt site. Strict JSON: no comments, no trailing commas. Three vocabularies are kept apart and must not be blended. (1) repoStatus = a string copied VERBATIM from the 'Samplesheet Chaining - Validation Table' in PLAN.md; edges not in that table have no repoStatus key at all. (2) Site annotations (caveat, siteState, routable, layer, routingBasis) are this site's own notes and are always rendered as such, never as a status. (3) statusClass is a render class only. When you change PLAN.md's validation table, change this file.",
+  "meta": {
+    "updated": "2026-08-10",
+    "repo": "https://github.com/vagkaratzas/meta-omics-sig",
+    "sig": "https://nf-co.re/special-interest-groups/meta-omics",
+    "plan": "https://github.com/vagkaratzas/meta-omics-sig/blob/main/PLAN.md",
+    "datasets_doc": "https://github.com/vagkaratzas/meta-omics-sig/blob/main/DATASETS.md"
+  },
+
+  "stations": [
+    {
+      "id": "fetchngs", "label": "fetchngs", "kind": "pipeline", "x": 20, "y": 330,
+      "blurb": "Fetches public sequencing data from SRA/ENA accessions and emits the FASTQ files plus a generic samplesheet describing them.",
+      "io": { "in": "SRA / ENA accessions", "out": "FASTQ + samplesheet.csv" },
+      "requires": ["ids.csv - one accession per line (not a CSV samplesheet)"],
+      "requiresReadFrom": "1.12.0",
+      "release": "1.12.0", "docs": "https://nf-co.re/fetchngs/1.12.0/", "devNote": null
+    },
+    {
+      "id": "detaxizer", "label": "detaxizer", "kind": "pipeline", "x": 200, "y": 430,
+      "blurb": "Screens reads for contaminant or host sequence and can filter them out. Defaults to human contamination screening.",
+      "io": { "in": "FASTQ", "out": "Filtered FASTQ" },
+      "requires": null,
+      "requiresReadFrom": null,
+      "release": "1.3.0", "docs": "https://nf-co.re/detaxizer/1.3.0/", "devNote": null
+    },
+    {
+      "id": "reference-genomes", "label": "reference genomes", "kind": "external", "x": 200, "y": 120,
+      "blurb": "Not an nf-core pipeline. Reference sequences with taxonomy IDs, sourced separately (for example via NCBI datasets). Drawn because createtaxdb has to be fed from somewhere, and it is not fed by the read stream.",
+      "io": { "in": "-", "out": "Reference FASTA + taxids" },
+      "requires": null, "requiresReadFrom": null,
+      "release": null, "docs": null, "devNote": null
+    },
+    {
+      "id": "createtaxdb", "label": "createtaxdb", "kind": "pipeline", "x": 400, "y": 120,
+      "blurb": "Builds custom taxonomic classification databases from reference sequences for downstream profilers.",
+      "io": { "in": "Reference genomes / sequences", "out": "Database files" },
+      "requires": [
+        "--input samplesheet: id, taxid, and at least one of fasta_dna / fasta_aa",
+        "--dbname",
+        "at least one --build_<tool> flag (no tool is built by default)"
+      ],
+      "requiresReadFrom": "3.1.0",
+      "release": "3.1.0", "docs": "https://nf-co.re/createtaxdb/3.1.0/", "devNote": null
+    },
+    {
+      "id": "ampliseq", "label": "ampliseq", "kind": "pipeline", "x": 400, "y": 60,
+      "blurb": "Processes 16S/ITS/COI amplicon reads into ASVs, taxonomy tables and diversity metrics.",
+      "io": { "in": "Amplicon FASTQ", "out": "Taxonomy tables, diversity" },
+      "requires": [
+        "--input samplesheet: sample, fastq_1 (fastq_2 required for paired-end)",
+        "--FW_primer and --RV_primer (skippable only with --skip_cutadapt)",
+        "--metadata (optional, recommended for downstream analysis)"
+      ],
+      "requiresReadFrom": "2.18.0",
+      "release": "2.18.0", "docs": "https://nf-co.re/ampliseq/2.18.0/", "devNote": null
+    },
+    {
+      "id": "taxprofiler", "label": "taxprofiler", "kind": "pipeline", "x": 600, "y": 120,
+      "blurb": "Taxonomic profiling of shotgun reads across multiple classifiers at once.",
+      "io": { "in": "Shotgun FASTQ", "out": "Abundance profiles" },
+      "requires": [
+        "--input samplesheet: sample, run_accession, instrument_platform, fastq_1, fastq_2, fasta",
+        "--databases sheet: tool, db_name, db_params, db_path (db_type optional)",
+        "one --run_<tool> flag per profiler, matching a database row"
+      ],
+      "requiresReadFrom": "2.0.1",
+      "release": "2.0.1", "docs": "https://nf-co.re/taxprofiler/2.0.1/", "devNote": null
+    },
+    {
+      "id": "mag", "label": "mag", "kind": "pipeline", "x": 400, "y": 180,
+      "blurb": "Assembles shotgun reads into contigs and bins them into MAGs - draft genomes inferred from metagenomic sequencing.",
+      "io": { "in": "Shotgun FASTQ", "out": "Contigs, MAG FASTA" },
+      "requires": [
+        "--input samplesheet header: sample, group, short_reads_1, short_reads_2, long_reads",
+        "short_reads_platform - required whenever short reads are given",
+        "long_reads_platform - required whenever long reads are given",
+        "run (optional) - run/lane-wise concatenation before assembly"
+      ],
+      "requiresReadFrom": "5.5.0",
+      "release": "5.5.0", "docs": "https://nf-co.re/mag/5.5.0/", "devNote": null
+    },
+    {
+      "id": "magmap", "label": "magmap", "kind": "pipeline", "x": 620, "y": 230,
+      "blurb": "Maps reads against a set of MAGs or genomes to produce coverage and abundance profiles.",
+      "io": { "in": "Contigs / genomes + reads", "out": "Coverage / abundance profiles" },
+      "requires": [
+        "--input samplesheet: sample, fastq_1, fastq_2 (fastq_2 omitted for single-end)",
+        "--genomeinfo: accno, genome_fna (genome_gff optional; Prokka annotates genomes without it)"
+      ],
+      "requiresReadFrom": "1.1.0",
+      "release": "1.1.0", "docs": "https://nf-co.re/magmap/1.1.0/", "devNote": null
+    },
+    {
+      "id": "funcscan", "label": "funcscan", "kind": "pipeline", "x": 620, "y": 282,
+      "blurb": "Screens assembled contigs for antimicrobial peptides, AMR genes and biosynthetic gene clusters.",
+      "io": { "in": "Assembled contigs / FASTA", "out": "Functional annotations" },
+      "requires": null, "requiresReadFrom": null,
+      "release": "4.0.0", "docs": "https://nf-co.re/funcscan/4.0.0/", "devNote": null
+    },
+    {
+      "id": "phageannotator", "label": "phageannotator", "kind": "pipeline", "x": 620, "y": 334,
+      "blurb": "Identifies and annotates phage sequences in assembled contigs.",
+      "io": { "in": "Assembled contigs / FASTA", "out": "Phage annotations" },
+      "requires": null, "requiresReadFrom": null,
+      "release": null, "docs": "https://nf-co.re/phageannotator/dev/",
+      "devNote": "No tagged release - development branch only. Unsuitable for a pinned benchmark run as things stand."
+    },
+    {
+      "id": "phyloplace", "label": "phyloplace", "kind": "pipeline", "x": 620, "y": 386,
+      "blurb": "Places query sequences onto a reference phylogenetic tree.",
+      "io": { "in": "Query FASTA + reference tree", "out": "Placement results" },
+      "requires": null, "requiresReadFrom": null,
+      "release": "2.1.0", "docs": "https://nf-co.re/phyloplace/2.1.0/", "devNote": null
+    },
+    {
+      "id": "metapep", "label": "metapep", "kind": "pipeline", "x": 620, "y": 438,
+      "blurb": "Predicts peptides from protein sequences for downstream immunopeptidomics-style analysis.",
+      "io": { "in": "Protein FASTA", "out": "Peptide predictions" },
+      "requires": null, "requiresReadFrom": null,
+      "release": "1.0.0", "docs": "https://nf-co.re/metapep/1.0.0/", "devNote": null
+    },
+    {
+      "id": "proteinfamilies", "label": "proteinfamilies", "kind": "pipeline", "x": 620, "y": 490,
+      "blurb": "Clusters protein sequences into families and builds family models.",
+      "io": { "in": "Protein FASTA", "out": "Protein family clusters" },
+      "requires": null, "requiresReadFrom": null,
+      "release": "2.4.0", "docs": "https://nf-co.re/proteinfamilies/2.4.0/", "devNote": null
+    },
+    {
+      "id": "proteinfold", "label": "proteinfold", "kind": "pipeline", "x": 620, "y": 542,
+      "blurb": "Predicts protein structures from amino-acid sequences. Computationally expensive; a stretch node.",
+      "io": { "in": "Protein FASTA", "out": "Predicted structures" },
+      "requires": null, "requiresReadFrom": null,
+      "release": "2.0.0", "docs": "https://nf-co.re/proteinfold/2.0.0/", "devNote": null
+    },
+    {
+      "id": "viralmetagenome", "label": "viralmetagenome", "kind": "pipeline", "x": 400, "y": 610,
+      "blurb": "Recovers and analyses viral sequences from shotgun metagenomic reads.",
+      "io": { "in": "Shotgun FASTQ", "out": "Viral contigs" },
+      "requires": null, "requiresReadFrom": null,
+      "release": "1.1.3", "docs": "https://nf-co.re/viralmetagenome/1.1.3/", "devNote": null
+    },
+    {
+      "id": "metatdenovo", "label": "metatdenovo", "kind": "pipeline", "x": 400, "y": 665,
+      "blurb": "De novo assembly and annotation of metatranscriptomes from shotgun RNA reads.",
+      "io": { "in": "Shotgun RNA FASTQ", "out": "Transcripts, contigs" },
+      "requires": null, "requiresReadFrom": null,
+      "release": "1.4.0", "docs": "https://nf-co.re/metatdenovo/1.4.0/", "devNote": null
+    },
+    {
+      "id": "differentialabundance", "label": "differentialabundance", "kind": "pipeline", "x": 838, "y": 300, "w": 200,
+      "blurb": "Tests features for differential abundance between conditions and renders a report.",
+      "io": { "in": "Abundance profiles + metadata", "out": "Differentially abundant features" },
+      "requires": [
+        "observations samplesheet: sample, plus one or more condition/grouping columns",
+        "abundance matrix: features as rows, observation IDs as columns matching the samplesheet",
+        "contrasts file: id, variable, reference, target (blocking optional)",
+        "feature annotations (optional but recommended)"
+      ],
+      "requiresReadFrom": "2.0.0",
+      "release": "2.0.0", "docs": "https://nf-co.re/differentialabundance/2.0.0/", "devNote": null
+    }
+  ],
+
+  "edges": [
+    {
+      "id": "fetchngs__detaxizer", "from": "fetchngs", "to": "detaxizer",
+      "source": "table", "kind": "reads", "repoStatus": "OPEN", "statusClass": "untested",
+      "routable": false, "unit": "runs", "carries": ["AMPLICON", "WGS", "RNA-Seq"],
+      "note": "generic samplesheet.csv; no --nf_core_pipeline support", "caveat": null
+    },
+    {
+      "id": "fetchngs__ampliseq", "from": "fetchngs", "to": "ampliseq",
+      "source": "table", "kind": "reads", "repoStatus": "CONVERSION REQUIRED", "statusClass": "conversion-required",
+      "routable": true, "unit": "runs", "carries": ["AMPLICON"],
+      "note": "generic samplesheet.csv; no --nf_core_pipeline option. The enum is [rnaseq, atacseq, viralrecon, taxprofiler] only, so a column rename/subset is required.",
+      "caveat": null
+    },
+    {
+      "id": "fetchngs__taxprofiler", "from": "fetchngs", "to": "taxprofiler",
+      "source": "table", "kind": "reads", "repoStatus": "OPEN - flag exists, output not yet verified", "statusClass": "untested",
+      "routable": true, "unit": "runs", "carries": ["WGS"],
+      "note": "--nf_core_pipeline taxprofiler emits a purpose-built samplesheet",
+      "caveat": "Even with the samplesheet, taxprofiler additionally requires a --databases sheet that fetchngs cannot produce. Not yet tested."
+    },
+    {
+      "id": "fetchngs__mag", "from": "fetchngs", "to": "mag",
+      "source": "table", "kind": "reads", "repoStatus": "CONVERSION REQUIRED", "statusClass": "conversion-required",
+      "routable": true, "unit": "runs", "carries": ["WGS"],
+      "note": "generic samplesheet.csv; no --nf_core_pipeline option",
+      "caveat": "mag 5.5.0 also needs group and short_reads_platform columns that the generic sheet does not carry. Not yet tested."
+    },
+    {
+      "id": "fetchngs__metatdenovo", "from": "fetchngs", "to": "metatdenovo",
+      "source": "table", "kind": "reads", "repoStatus": "CONVERSION REQUIRED", "statusClass": "conversion-required",
+      "routable": true, "unit": "runs", "carries": ["RNA-Seq"],
+      "note": "generic samplesheet.csv; no --nf_core_pipeline option", "caveat": null
+    },
+    {
+      "id": "detaxizer__ampliseq", "from": "detaxizer", "to": "ampliseq",
+      "source": "table", "kind": "reads", "repoStatus": "OPEN", "statusClass": "untested",
+      "routable": false, "unit": "runs", "carries": ["AMPLICON"],
+      "note": "detaxizer filtered FASTQ -> ampliseq samplesheet", "caveat": null
+    },
+    {
+      "id": "detaxizer__taxprofiler", "from": "detaxizer", "to": "taxprofiler",
+      "source": "table", "kind": "reads", "repoStatus": "OPEN", "statusClass": "untested",
+      "routable": false, "unit": "runs", "carries": ["WGS"],
+      "note": "detaxizer filtered FASTQ -> taxprofiler samplesheet", "caveat": null
+    },
+    {
+      "id": "detaxizer__mag", "from": "detaxizer", "to": "mag",
+      "source": "table", "kind": "reads", "repoStatus": "OPEN", "statusClass": "untested",
+      "routable": false, "unit": "runs", "carries": ["WGS"],
+      "note": "detaxizer filtered FASTQ -> mag samplesheet", "caveat": null
+    },
+    {
+      "id": "detaxizer__createtaxdb", "from": "detaxizer", "to": "createtaxdb",
+      "source": "diagram", "kind": "db", "statusClass": "absent-from-table",
+      "routable": false, "unit": "-", "carries": [],
+      "note": "Drawn in the PLAN.md metro map but absent from the validation table.",
+      "caveat": "Appears inconsistent with createtaxdb's documented input contract: at 3.1.0 it consumes reference FASTA plus taxids, not filtered reads. Raised for SIG review; the site does not resolve it."
+    },
+    {
+      "id": "detaxizer__viralmetagenome", "from": "detaxizer", "to": "viralmetagenome",
+      "source": "diagram", "kind": "reads", "statusClass": "absent-from-table",
+      "routable": false, "unit": "runs", "carries": ["WGS"],
+      "note": "Drawn in the PLAN.md metro map but absent from the validation table. It is the ONLY edge feeding viralmetagenome, so no tracked handoff reaches this station at all.",
+      "caveat": null
+    },
+    {
+      "id": "detaxizer__metatdenovo", "from": "detaxizer", "to": "metatdenovo",
+      "source": "diagram", "kind": "reads", "statusClass": "absent-from-table",
+      "routable": false, "unit": "runs", "carries": ["RNA-Seq"],
+      "note": "Drawn in the PLAN.md metro map but absent from the validation table.", "caveat": null
+    },
+    {
+      "id": "reference-genomes__createtaxdb", "from": "reference-genomes", "to": "createtaxdb",
+      "source": "site", "kind": "db", "statusClass": "site-annotation",
+      "routable": false, "unit": "-", "carries": [],
+      "note": "Site annotation, not a repo claim. createtaxdb 3.1.0 takes id + taxid + fasta_dna/fasta_aa, so its input comes from a reference set rather than from the read stream.",
+      "caveat": null
+    },
+    {
+      "id": "createtaxdb__taxprofiler", "from": "createtaxdb", "to": "taxprofiler",
+      "source": "table", "kind": "db", "repoStatus": "OPEN", "statusClass": "untested",
+      "routable": false, "unit": "database", "carries": [],
+      "note": "db output path referenced in taxprofiler params",
+      "caveat": "This supplies taxprofiler's --databases sheet, not its reads. No sequencing runs travel this edge."
+    },
+    {
+      "id": "mag__magmap", "from": "mag", "to": "magmap",
+      "source": "table", "kind": "artifact", "repoStatus": "OPEN", "statusClass": "untested",
+      "routable": false, "unit": "MAGs", "carries": [],
+      "note": "MAG FASTA -> magmap reference input",
+      "caveat": "magmap 1.1.0 needs --genomeinfo (accno, genome_fna) plus its own read samplesheet - two inputs, not one handoff."
+    },
+    {
+      "id": "mag__funcscan", "from": "mag", "to": "funcscan",
+      "source": "table", "kind": "artifact", "repoStatus": "OPEN", "statusClass": "untested",
+      "routable": false, "unit": "contigs", "carries": [],
+      "note": "MAG/contig FASTA -> funcscan input", "caveat": null
+    },
+    {
+      "id": "mag__phageannotator", "from": "mag", "to": "phageannotator",
+      "source": "table", "kind": "artifact", "repoStatus": "OPEN", "statusClass": "untested",
+      "routable": false, "unit": "contigs", "carries": [],
+      "note": "contig FASTA -> phageannotator input",
+      "caveat": "phageannotator has no tagged release, so there is no pinned contract to validate against."
+    },
+    {
+      "id": "mag__phyloplace", "from": "mag", "to": "phyloplace",
+      "source": "table", "kind": "artifact", "repoStatus": "OPEN", "statusClass": "untested",
+      "routable": false, "unit": "contigs", "carries": [],
+      "note": "contig FASTA -> phyloplace input", "caveat": null
+    },
+    {
+      "id": "mag__metapep", "rowKey": "mag__proteins", "from": "mag", "to": "metapep",
+      "source": "table", "kind": "artifact", "repoStatus": "OPEN", "statusClass": "untested",
+      "routable": false, "unit": "proteins", "carries": [],
+      "note": "One validation-table row covers metapep, proteinfamilies and proteinfold together; drawn here as three edges sharing that status.",
+      "caveat": "MISSING STEP: mag does not emit protein FASTA. An ORF-calling / protein-extraction step sits between these stations and is not shown in the metro map."
+    },
+    {
+      "id": "mag__proteinfamilies", "rowKey": "mag__proteins", "from": "mag", "to": "proteinfamilies",
+      "source": "table", "kind": "artifact", "repoStatus": "OPEN", "statusClass": "untested",
+      "routable": false, "unit": "proteins", "carries": [],
+      "note": "One validation-table row covers metapep, proteinfamilies and proteinfold together; drawn here as three edges sharing that status.",
+      "caveat": "MISSING STEP: mag does not emit protein FASTA. An ORF-calling / protein-extraction step sits between these stations and is not shown in the metro map."
+    },
+    {
+      "id": "mag__proteinfold", "rowKey": "mag__proteins", "from": "mag", "to": "proteinfold",
+      "source": "table", "kind": "artifact", "repoStatus": "OPEN", "statusClass": "untested",
+      "routable": false, "unit": "proteins", "carries": [],
+      "note": "One validation-table row covers metapep, proteinfamilies and proteinfold together; drawn here as three edges sharing that status.",
+      "caveat": "MISSING STEP: mag does not emit protein FASTA. An ORF-calling / protein-extraction step sits between these stations and is not shown in the metro map."
+    },
+    {
+      "id": "taxprofiler__differentialabundance", "from": "taxprofiler", "to": "differentialabundance",
+      "source": "table", "kind": "artifact", "repoStatus": "OPEN", "statusClass": "untested",
+      "routable": false, "unit": "profiles", "carries": [],
+      "note": "abundance profile -> differentialabundance input",
+      "caveat": "differentialabundance 2.0.0 needs a matrix, an observations sheet AND a contrasts file. One arrow understates the handoff."
+    },
+    {
+      "id": "ampliseq__differentialabundance", "from": "ampliseq", "to": "differentialabundance",
+      "source": "table", "kind": "artifact", "repoStatus": "OPEN", "statusClass": "untested",
+      "routable": false, "unit": "profiles", "carries": [],
+      "note": "QIIME2/BIOM profile -> differentialabundance input",
+      "caveat": "differentialabundance 2.0.0 consumes a features-by-observations matrix plus a contrasts file, not a raw QIIME2/BIOM artefact. A conversion is implied but has not been tested."
+    },
+    {
+      "id": "magmap__differentialabundance", "from": "magmap", "to": "differentialabundance",
+      "source": "table", "kind": "artifact", "repoStatus": "OPEN", "statusClass": "untested",
+      "routable": false, "unit": "profiles", "carries": [],
+      "note": "coverage profiles -> differentialabundance input", "caveat": null
+    }
+  ],
+
+  "datasets": [
+    {
+      "id": "lmo-pilot",
+      "label": "LMO pilot (provisional)",
+      "selectable": true,
+      "gate": "pass",
+      "summary": "Linnaeus Microbial Observatory, Baltic Sea brackish water at 2 m. Three collection dates carrying all three omics layers, 12 runs, 34.5 GB.",
+      "notice": "Working recommendation only - the SIG dataset decision is still open, and the LMO sample-count discrepancy in DATASETS.md is unresolved.",
+      "routingBasis": "Illustrative: items are routed by library_strategy alone. That is a drawing rule, not evidence that a run is suitable for a given pipeline.",
+      "activeRoute": ["fetchngs__ampliseq", "fetchngs__taxprofiler", "fetchngs__mag", "fetchngs__metatdenovo"],
+      "runs": [
+        { "acc": "ERR9715801",  "strategy": "AMPLICON", "layer": "amplicon",          "collectionDate": "2016-03-15", "study": "PRJEB52780", "instrument": "MiSeq",       "fraction": "0.2", "fractionSource": "selection-criteria", "gb": 0.42 },
+        { "acc": "ERR12258632", "strategy": "RNA-Seq",  "layer": "metatranscriptome", "collectionDate": "2016-03-15", "study": "PRJEB69280", "instrument": "HiSeq 2500",  "fraction": "0.2", "fractionSource": "selection-criteria", "gb": 2.22 },
+        { "acc": "ERR12258633", "strategy": "RNA-Seq",  "layer": "metatranscriptome", "collectionDate": "2016-03-15", "study": "PRJEB69280", "instrument": "HiSeq 2500",  "fraction": "0.2", "fractionSource": "selection-criteria", "gb": 2.16 },
+        { "acc": "ERR13967264", "strategy": "WGS",      "layer": "metagenome",        "collectionDate": "2016-03-15", "study": "PRJEB82694", "instrument": "NovaSeq 6000","fraction": "0.2", "fractionSource": "selection-criteria", "gb": 5.74 },
+        { "acc": "ERR9717120",  "strategy": "AMPLICON", "layer": "amplicon",          "collectionDate": "2016-08-03", "study": "PRJEB52782", "instrument": "MiSeq",       "fraction": "0.2", "fractionSource": "selection-criteria", "gb": 0.09 },
+        { "acc": "ERR12258650", "strategy": "RNA-Seq",  "layer": "metatranscriptome", "collectionDate": "2016-08-03", "study": "PRJEB69280", "instrument": "HiSeq 2500",  "fraction": "0.2", "fractionSource": "selection-criteria", "gb": 3.25 },
+        { "acc": "ERR12258651", "strategy": "RNA-Seq",  "layer": "metatranscriptome", "collectionDate": "2016-08-03", "study": "PRJEB69280", "instrument": "HiSeq 2500",  "fraction": "0.2", "fractionSource": "selection-criteria", "gb": 2.83 },
+        { "acc": "ERR13967258", "strategy": "WGS",      "layer": "metagenome",        "collectionDate": "2016-08-03", "study": "PRJEB82694", "instrument": "NovaSeq 6000","fraction": "0.2", "fractionSource": "selection-criteria", "gb": 5.70 },
+        { "acc": "ERR9726503",  "strategy": "AMPLICON", "layer": "amplicon",          "collectionDate": "2017-10-31", "study": "PRJEB52828", "instrument": "MiSeq",       "fraction": "0.2", "fractionSource": "selection-criteria", "gb": 0.05 },
+        { "acc": "ERR12258626", "strategy": "RNA-Seq",  "layer": "metatranscriptome", "collectionDate": "2017-10-31", "study": "PRJEB69280", "instrument": "HiSeq 2500",  "fraction": "0.2", "fractionSource": "selection-criteria", "gb": 3.96 },
+        { "acc": "ERR12258627", "strategy": "RNA-Seq",  "layer": "metatranscriptome", "collectionDate": "2017-10-31", "study": "PRJEB69280", "instrument": "HiSeq 2500",  "fraction": "0.2", "fractionSource": "selection-criteria", "gb": 3.70 },
+        { "acc": "ERR13967244", "strategy": "WGS",      "layer": "metagenome",        "collectionDate": "2017-10-31", "study": "PRJEB82694", "instrument": "NovaSeq 6000","fraction": "0.2", "fractionSource": "selection-criteria", "gb": 4.37 }
+      ],
+      "siteState": {
+        "fetchngs": {
+          "state": "configured", "in": 12, "out": null, "version": "1.12.0",
+          "note": "ids.csv and params.yml exist, but params.yml still carries /path/to/ placeholders. Nothing has been fetched."
+        },
+        "detaxizer": {
+          "state": "not-selected", "in": null, "out": null, "version": null,
+          "note": "Not run for this pilot. PLAN.md conditions detaxizer on host-related data, and LMO is Baltic brackish seawater. Note this is a scoping choice - detaxizer is a general contamination screen that defaults to human, so this is not a claim that contamination is absent."
+        },
+        "differentialabundance": {
+          "state": "unavailable", "in": null, "out": null, "version": null,
+          "note": "The pilot has one amplicon and one metagenome run per date across three dates, metatranscriptome replicates that are library-level, and no condition or contrast metadata. differentialabundance 2.0.0 requires a contrasts file that cannot be built from this."
+        },
+        "viralmetagenome": {
+          "state": "pending", "in": null, "out": null, "version": null,
+          "note": "Unreachable in this pilot: the only edge feeding viralmetagenome comes from detaxizer, which is not selected, and no validation-table edge feeds it at all."
+        }
+      }
+    }
+  ],
+
+  "candidates": [
+    { "label": "Herold wastewater", "gate": "pass", "reason": "16S + MG + MT + MP; 5 replicates per condition; 1.5 TB, environmental (wastewater)", "accessions": "PRJNA230567 + PXD013655" },
+    { "label": "Culture KS", "gate": "pass", "reason": "Full stack with replicates, but a cultured enrichment - not host-related; old vintage", "accessions": "PRJNA682552" },
+    { "label": "Culture BP", "gate": "pass", "reason": "Largest experiment count and 13 pre-assembled genomes, same cultured-enrichment system as KS", "accessions": "PRJNA693457" },
+    { "label": "MetaGT HumanGut", "gate": "fail", "reason": "No amplicon layer", "accessions": "SRR10175815, SRR10175826" },
+    { "label": "MetaGT Mock16", "gate": "fail", "reason": "No amplicon layer; synthetic community", "accessions": "SRR5947833, SRR5947907" },
+    { "label": "MetaGT SnailGut", "gate": "fail", "reason": "No amplicon layer", "accessions": "SRR8397925, SRR8416101" },
+    { "label": "Heintz-Buschart T1DM", "gate": "fail", "reason": "No amplicon layer, despite being the most host-relevant candidate", "accessions": "PRJNA289586 + PRIDE TBC" },
+    { "label": "Granata oral cancer", "gate": "fail", "reason": "No shotgun MG or MT", "accessions": "PRJNA700849 + PXD022859" },
+    { "label": "Rausch et al. 2019", "gate": "fail", "reason": "16S + MG only; no MT", "accessions": "PMID 31521200" }
+  ]
+}
