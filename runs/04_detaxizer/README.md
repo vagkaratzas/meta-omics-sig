@@ -172,9 +172,10 @@ and makes the phiX number unrecoverable.
 | `fetchngs → detaxizer` samplesheet conversion | **DONE** — `--target detaxizer`, accepted by detaxizer 1.3.0 |
 | detaxizer run | **SUCCESS** 2026-08-11 — **172 phiX pairs out of 161,043,840** (0.000107%) |
 | `taxprofiler.csv` emitted | **VALID** against taxprofiler 2.0.1, not yet consumed |
-| `mag-pe.csv` emitted | **REJECTED** by mag 5.5.0 — empty `group`, missing `short_reads_platform` |
-| `detaxizer → metatdenovo` samplesheet conversion | **READY** — `detaxizer_to_reads_samplesheet.py`, selftested, not yet run |
-| metatdenovo re-run on filtered reads | **NOT JUSTIFIED** by 0.000107% alone — settle it by searching run 02's existing assembly for phiX first |
+| `mag-pe.csv` emitted | **REJECTED** by mag 5.5.0 — empty `group`, missing `short_reads_platform`. Filed as [detaxizer#100](https://github.com/nf-core/detaxizer/issues/100) |
+| phiX in the run 02 assembly | **NONE** — `seqkit locate -m 5` against the megahit contigs returns no hits |
+| `detaxizer → metatdenovo` samplesheet conversion | **READY** — `detaxizer_to_reads_samplesheet.py`, selftested, unused |
+| metatdenovo / proteinfamilies re-run | **NOT DONE, NOT NEEDED** — phiX never reached assembly depth, so runs 02 and 03 stand |
 
 Provenance: <https://cloud.seqera.io/user/vangelis/watch/5qFu9n8YSLmCxP>
 

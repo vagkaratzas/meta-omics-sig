@@ -245,12 +245,14 @@ upstream, or shipped as reusable converters.
 >   run — with both classifiers on, `MERGE_IDS` unions their hits and the filter would
 >   remove human-classified reads along with phiX.
 >
-> **Run 04 executed 2026-08-11: 172 phiX read pairs out of 161,043,840 (0.000107%).** Low
-> enough that re-running metatdenovo and proteinfamilies on the filtered reads is not
-> justified by the fraction alone — but 172 pairs is an upper bound of 8× coverage of a
-> 5,386 bp genome pooled across the co-assembly, so "negligible" and "absent from the
-> assembly" are separate claims. The second is settled by searching run 02's existing
-> contigs, not by rebuilding them. Detail in [RUNS.md](RUNS.md).
+> **Run 04 executed 2026-08-11: 172 phiX read pairs out of 161,043,840 (0.000107%).**
+> "Negligible fraction" and "absent from the assembly" are separate claims — 172 pairs is an
+> upper bound of 8× coverage of a 5,386 bp genome pooled across the co-assembly, above
+> megahit's floor — so the second was checked directly: `seqkit locate` of φX174 against run
+> 02's existing contigs at up to 5 mismatches returns **no hits**. phiX never reached
+> assembly depth, none of run 03's 405 families can carry a phiX ORF, and **metatdenovo and
+> proteinfamilies are not re-run**. A documented negative rather than an assumption; detail
+> in [RUNS.md](RUNS.md).
 >
 > **The run's real finding is upstream, and it is the first time anything has consumed a
 > detaxizer-generated samplesheet.** `taxprofiler.csv` validates against taxprofiler 2.0.1;
@@ -260,7 +262,8 @@ upstream, or shipped as reusable converters.
 > empty strings or dropped, so this is not an nf-schema edge case: detaxizer 1.3.0's mag
 > emitter writes the column set mag wanted at an earlier release. **This is the concrete
 > evidence for the standardisation argument** — a native emitter is only as good as its
-> currency with the target's schema, and nothing tells either side when that drifts.
+> currency with the target's schema, and nothing tells either side when that drifts. Filed
+> as [nf-core/detaxizer#100](https://github.com/nf-core/detaxizer/issues/100).
 >
 > **Detect-only and the native samplesheet emitter are mutually exclusive in 1.3.0.**
 > `GENERATE_DOWNSTREAM_SAMPLESHEETS` is fed `ch_filtered_reads`, which stays

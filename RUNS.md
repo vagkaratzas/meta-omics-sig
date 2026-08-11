@@ -291,18 +291,23 @@ exactly 126, so ENA counts single reads while detaxizer's ids are pair-level aft
 **0.000107% of pairs** — consistent with a well-loaded HiSeq run whose spike-in is mostly
 bled off at demultiplexing. This is the number the 2026-08-10 scope decision lacked.
 
-**It does not follow that run 02 is unaffected.** 172 pairs × 2 × 126 bp is 43,344 bp
-against a 5,386 bp genome — an upper bound of **8× coverage** pooled across the
-co-assembly, which is above megahit's floor. Whether a phiX contig exists in run 02, and
-whether its ORFs reached run 03's 405 families, is a question to answer by searching the
-**existing** assembly, not by re-running it:
+A low fraction does not by itself mean the assembly is clean: 172 pairs × 2 × 126 bp is
+43,344 bp against a 5,386 bp genome — an upper bound of **8× coverage** pooled across the
+co-assembly, which is above megahit's floor. So the question was settled against run 02's
+**existing** assembly rather than by rebuilding it:
 
-```bash
-zcat <02-outdir>/megahit/*.contigs.fa.gz | seqkit locate -f phix174_NC_001422.1.fasta -m 5 | head
+```console
+$ zcat megahit_assembly.contigs.fa.gz | seqkit locate -f phix174_NC_001422.1.fasta -m 5 | head
+seqID   patternName     pattern strand  start   end     matched
 ```
 
-Re-running metatdenovo and proteinfamilies on the filtered reads is **not** justified by
-0.000107%; it would be justified only if that search finds phiX in the assembly.
+**No hits — header row only, at up to 5 mismatches.** phiX is absent from the run 02
+co-assembly, so none of run 03's 405 families can contain a phiX-derived ORF.
+
+**Conclusion: metatdenovo and proteinfamilies are NOT re-run.** Runs 02 and 03 stand as
+executed, and the phiX filter is now a documented negative rather than an assumption — the
+0.000107% never reached assembly depth. Had this search hit, the fix would still have been
+to discount the offending contig's ORFs, not to rebuild a six-library co-assembly.
 
 ### The finding: detaxizer's native mag samplesheet is rejected by mag
 
@@ -323,8 +328,10 @@ mag 5.5.0 refuses `mag-pe.csv` because:
 
 Both hold whether empty CSV cells are read as empty strings or dropped, so this is not an
 nf-schema edge case. detaxizer 1.3.0's mag emitter is writing the column set mag wanted at
-some earlier release. To file against nf-core/detaxizer, after
-[#99](https://github.com/nf-core/detaxizer/issues/99).
+some earlier release. Filed 2026-08-11 as
+[nf-core/detaxizer#100](https://github.com/nf-core/detaxizer/issues/100), with a fix that
+reuses the platform expression already present 45 lines above in `SAMPLESHEET_TAXPROFILER`
+— its `ILLUMINA` / `OXFORD_NANOPORE` values are exactly what mag's enums accept.
 
 The taxprofiler sheet is valid but still cannot drive a run on its own: taxprofiler also
 requires a `--databases` sheet, which detaxizer cannot produce.
