@@ -232,6 +232,27 @@
       "caveat": "Confirmed in the 2026-08-10 pilot run: the sample column is the ENA experiment accession, so a rename is required alongside the column conversion. The six RNA-Seq runs are two library-level replicates per date, which metatdenovo will treat as six independent samples unless merged first."
     },
     {
+      "id": "fetchngs__viralmetagenome", "from": "fetchngs", "to": "viralmetagenome",
+      "source": "table", "kind": "reads", "repoStatus": "CONVERSION REQUIRED", "statusClass": "conversion-required",
+      "routable": true, "unit": "runs", "carries": ["WGS"],
+      "note": "generic samplesheet.csv; no --nf_core_pipeline option",
+      "caveat": "viralmetagenome 1.1.3 requires sample + fastq_1 (fastq_2 optional), gzipped only - the same three columns metatdenovo takes, so scripts/converters/fetchngs_to_reads_samplesheet.py covers this edge unchanged. The sample rename off collection_date applies here too, since fetchngs supplies the ERX accession."
+    },
+    {
+      "id": "viralmetagenome__phageannotator", "from": "viralmetagenome", "to": "phageannotator",
+      "source": "table", "kind": "artifact", "repoStatus": "CONVERSION REQUIRED - two-source join", "statusClass": "conversion-required",
+      "routable": false, "unit": "viral contigs", "carries": [],
+      "note": "viral contig FASTA -> phageannotator input, alongside the reads that produced it",
+      "caveat": "phageannotator's samplesheet requires sample, group, fastq_1 AND fasta, so this is not a one-file handoff: the contigs come from viralmetagenome, the reads from upstream, and group is a label neither pipeline emits. Extension matters too - the per-assembler contigs are published gzipped (<id>_spades.fa.gz) and pass, but tools_combined/<id>.combined.fa is not gzipped and phageannotator's pattern demands .gz. phageannotator also has no tagged release, so there is no pinned contract to validate against."
+    },
+    {
+      "id": "viralmetagenome__phyloplace", "from": "viralmetagenome", "to": "phyloplace",
+      "source": "table", "kind": "artifact", "repoStatus": "CONVERSION REQUIRED - external reference needed", "statusClass": "conversion-required",
+      "routable": false, "unit": "viral contigs", "carries": [],
+      "note": "viral contig FASTA -> phyloplace queryseqfile",
+      "caveat": "phyloplace 2.1.0 requires sample, queryseqfile, refseqfile, refphylogeny and model on every row. Only queryseqfile comes from viralmetagenome; the reference alignment, tree and substitution model are external inputs no upstream pipeline in this chain emits, and they have to be chosen per query clade. The same gap applies to the mag -> phyloplace row, which is still recorded as OPEN."
+    },
+    {
       "id": "detaxizer__ampliseq", "from": "detaxizer", "to": "ampliseq",
       "source": "table", "kind": "reads", "repoStatus": "CONVERSION REQUIRED", "statusClass": "conversion-required",
       "routable": false, "unit": "runs", "carries": ["AMPLICON"],
@@ -406,7 +427,7 @@
         },
         "viralmetagenome": {
           "state": "pending", "in": null, "out": null, "version": null,
-          "note": "Unreachable in this pilot: no edge feeds viralmetagenome at all, in the validation table or the metro map, so there is no tracked route into it."
+          "note": "Not run. Reachable now that fetchngs -> viralmetagenome is tracked: the three WGS runs would feed it through the same converter metatdenovo used. Not on this pilot's active route, so no dots are drawn into it."
         },
         "seqsubmit": {
           "state": "pending", "in": null, "out": null, "version": null,

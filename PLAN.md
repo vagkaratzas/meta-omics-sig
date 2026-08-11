@@ -84,6 +84,8 @@ fetchngs (SRA accessions)
         │     └─► metapep / proteinfamilies (predicted proteins) [UNTESTED]
         │           └─► proteinfold (family representatives → structures) [UNTESTED]
         ├─► viralmetagenome (shotgun MG reads → viral contigs) [UNTESTED]
+        │     ├─► phageannotator (viral contigs + reads → phage annotation) [UNTESTED]
+        │     └─► phyloplace (viral contigs → placement on a reference tree) [UNTESTED]
         └─► metatdenovo (shotgun MT reads → metatranscriptome assembly) [UNTESTED]
               └─► proteinfamilies (prodigal .faa.gz → protein families) [NOT IN METRO MAP]
 ```
@@ -208,6 +210,7 @@ upstream, or shipped as reusable converters.
 | fetchngs | taxprofiler | `--nf_core_pipeline taxprofiler` emits a purpose-built samplesheet | OPEN — flag exists, output not yet verified |
 | fetchngs | mag | generic `samplesheet.csv`; **no `--nf_core_pipeline` option** | **CONVERSION REQUIRED** |
 | fetchngs | metatdenovo | generic `samplesheet.csv`; **no `--nf_core_pipeline` option** | **CONVERSION REQUIRED** — exercised 2026-08-11 via `scripts/converters/fetchngs_to_reads_samplesheet.py`; metatdenovo 1.4.0 ran to completion on the converted sheet |
+| **fetchngs** | **viralmetagenome** | generic `samplesheet.csv`; **no `--nf_core_pipeline` option**; wants `sample,fastq_1[,fastq_2]` — the same shape metatdenovo takes | **CONVERSION REQUIRED** — existing converter covers it unchanged |
 | detaxizer | ampliseq | filtered FASTQ → ampliseq samplesheet; **excluded** from `--generate_pipeline_samplesheets` | **CONVERSION REQUIRED** |
 | detaxizer | taxprofiler | `--generate_downstream_samplesheets` emits a taxprofiler samplesheet natively | OPEN — native emitter exists, output not yet verified |
 | detaxizer | mag | `--generate_downstream_samplesheets` emits a mag samplesheet natively | OPEN — native emitter exists, output not yet verified |
@@ -219,6 +222,8 @@ upstream, or shipped as reusable converters.
 | mag | magmap | MAG FASTA → magmap reference input | OPEN |
 | mag | metapep / proteinfamilies | predicted proteins FASTA → input | OPEN |
 | **metatdenovo** | **proteinfamilies** | `--orf_caller prodigal` publishes `prodigal/<assembly>.faa.gz`, an extension proteinfamilies accepts | **CONVERSION REQUIRED** — one-row samplesheet, no reformatting; exercised 2026-08-11, 198,252 proteins accepted by proteinfamilies 2.5.0 |
+| **viralmetagenome** | **phageannotator** | viral contig FASTA → input, but the sheet also wants `group` and `fastq_1` | **CONVERSION REQUIRED** — two-source join, and `.combined.fa` is not gzipped |
+| **viralmetagenome** | **phyloplace** | viral contig FASTA → `queryseqfile` | **CONVERSION REQUIRED** — `refseqfile`, `refphylogeny`, `model` are external per-row inputs |
 | proteinfamilies | proteinfold | representative sequence per family → protein FASTA input | OPEN |
 | taxprofiler | differentialabundance | abundance profile → differentialabundance input | OPEN |
 | ampliseq | differentialabundance | QIIME2/BIOM profile → differentialabundance input | OPEN |
