@@ -135,8 +135,8 @@
         "--input samplesheet: sample, fasta (amino acid FASTA)",
         "fasta extension must be .fa / .fasta / .faa / .fas, optionally .gz - a .pep file is rejected"
       ],
-      "requiresReadFrom": "2.4.0",
-      "release": "2.4.0", "docs": "https://nf-co.re/proteinfamilies/2.4.0/", "devNote": null
+      "requiresReadFrom": "2.5.0",
+      "release": "2.5.0", "docs": "https://nf-co.re/proteinfamilies/2.5.0/", "devNote": null
     },
     {
       "id": "proteinfold", "label": "proteinfold", "kind": "pipeline", "x": 860, "y": 542,
@@ -396,7 +396,7 @@
           "note": "Prepared, not yet run. The six RNA-Seq libraries are converted to a sample,fastq_1,fastq_2 sheet by scripts/converters/fetchngs_to_reads_samplesheet.py, which renames samples off collection_date rather than the ERX accession fetchngs supplies. Configured as a single megahit co-assembly with prodigal ORF calling, specifically so a proteinfamilies-compatible .faa.gz is produced; eggnog, kofamscan and eukulele are skipped for this run."
         },
         "proteinfamilies": {
-          "state": "configured", "in": 1, "out": null, "version": "2.4.0",
+          "state": "configured", "in": 1, "out": null, "version": "2.5.0",
           "note": "Prepared, not yet run, blocked on metatdenovo. One input row, because metatdenovo co-assembles into a single protein FASTA. Fed from metatdenovo rather than from mag, since mag emits no protein FASTA."
         }
       }

@@ -3,7 +3,7 @@
 Third pipeline of the chain. Clusters the protein sequences predicted by
 [run 02, metatdenovo](../02_metatdenovo/README.md) into families and builds family models.
 
-- Pipeline: `nf-core/proteinfamilies` **2.4.0** (requires Nextflow `>=25.10.4`)
+- Pipeline: `nf-core/proteinfamilies` **2.5.0** (requires Nextflow `>=26.04.0`)
 - Input: `samplesheet.csv`, **generated on the cluster** — not committed
 - Params: [`params.yml`](params.yml)
 
@@ -44,7 +44,7 @@ exactly one protein FASTA and therefore exactly one row. The converter:
 
 ```bash
 nextflow run nf-core/proteinfamilies \
-  -r 2.4.0 \
+  -r 2.5.0 \
   -profile slurm,singularity \
   -c /path/to/your-site.config \
   -params-file params.yml \
@@ -64,6 +64,7 @@ results are interpreted:
 | `cluster_seq_identity` | 0.3 | Family granularity. |
 | `cluster_coverage` | 0.5 | Family granularity. |
 | `cluster_size_threshold` | 25 | Minimum cluster size to seed an MSA. |
+| `family_generation_algorithm` | `standard` | New in 2.5.0. `iterative` hands chunks of clusters to mgnifam, repeating HMM build / recruit / realign until each family converges. Left at `standard` for the handoff test. |
 
 ## Verify
 

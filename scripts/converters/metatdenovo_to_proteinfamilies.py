@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Build an nf-core/proteinfamilies samplesheet from an nf-core/metatdenovo output dir.
 
-proteinfamilies 2.4.0 `assets/schema_input.json` requires `sample,fasta`, where `fasta` is
+proteinfamilies 2.5.0 `assets/schema_input.json` requires `sample,fasta`, where `fasta` is
 an amino-acid FASTA whose extension matches `.fa|.fasta|.faa|.fas` (optionally `.gz`).
 
 metatdenovo publishes its protein FASTA in a location and with an extension that depends
@@ -23,11 +23,15 @@ Usage:
 
 import argparse
 import csv
+import re
 import sys
 from pathlib import Path
 
-# Extensions proteinfamilies 2.4.0 accepts, per its schema_input.json pattern.
+# Extensions proteinfamilies 2.5.0 accepts, per its schema_input.json pattern.
 ACCEPTED = (".fa", ".fasta", ".faa", ".fas")
+
+# 2.5.0 restricted sample names to letters, digits, dots, underscores and dashes.
+SAMPLE_PATTERN = re.compile(r"^[a-zA-Z0-9._-]+$")
 
 # Where each ORF caller leaves its protein FASTA, in preference order.
 CANDIDATES = ("prodigal/*.faa.gz", "prokka/*.faa.gz", "transdecoder/*.pep.gz")
@@ -52,6 +56,11 @@ def find_protein_fasta(outdir):
 
 
 def build(outdir, sample):
+    if not SAMPLE_PATTERN.match(sample):
+        raise SystemExit(
+            f"sample name {sample!r} has characters proteinfamilies 2.5.0 rejects. "
+            "Only letters, digits, dots, underscores and dashes are allowed."
+        )
     hits = find_protein_fasta(outdir)
     if len(hits) > 1:
         raise SystemExit(
@@ -108,6 +117,14 @@ def selftest():
             assert "proteinfamilies rejects" in str(exc), exc
         else:
             raise AssertionError(".pep.gz was not rejected")
+
+        # 2.5.0 rejects sample names outside [a-zA-Z0-9._-]
+        try:
+            build(root2.parent, "LMO MT")
+        except SystemExit as exc:
+            assert "rejects" in str(exc), exc
+        else:
+            raise AssertionError("illegal sample name was not rejected")
 
         # no ORF output at all is a clear error, not an empty samplesheet
         try:

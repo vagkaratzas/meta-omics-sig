@@ -22,7 +22,7 @@ site-specific and go stale; the Seqera link preserves the full execution record.
 |---|----------|----------|------|-------|--------|------------|
 | 01 | nf-core/fetchngs | 1.12.0 | 2026-08-10 | LMO pilot — 3 dates × 3 omics layers | **SUCCESS** | [Seqera run](https://cloud.seqera.io/user/vangelis/watch/1Hd5FAdXhle9M9) |
 | 02 | nf-core/metatdenovo | 1.4.0 | — | 6 MT libraries → one co-assembly + protein FASTA | PREPARED | — |
-| 03 | nf-core/proteinfamilies | 2.4.0 | — | protein families from the run-02 ORFs | PREPARED, blocked on 02 | — |
+| 03 | nf-core/proteinfamilies | 2.5.0 | — | protein families from the run-02 ORFs | PREPARED, blocked on 02 | — |
 
 ---
 
@@ -162,7 +162,7 @@ memory-brutal; megahit is built for this shape.
 `orf_caller: prodigal` — this single parameter is what makes the proteinfamilies handoff
 work:
 
-| ORF caller | Published protein file | Accepted by proteinfamilies 2.4.0 |
+| ORF caller | Published protein file | Accepted by proteinfamilies 2.5.0 |
 |------------|------------------------|-----------------------------------|
 | **prodigal** | `prodigal/<assembly>.faa.gz` | **yes** |
 | prokka | `prokka/prokka.faa.gz` | yes, but much slower here |
@@ -188,8 +188,8 @@ whose LMO metagenome dates are stale:
 
 | | |
 |---|---|
-| Pipeline | `nf-core/proteinfamilies` `-r 2.4.0` (Jun 2026) |
-| Nextflow | requires `>=25.10.4`; modern template |
+| Pipeline | `nf-core/proteinfamilies` `-r 2.5.0` (Aug 2026) |
+| Nextflow | requires `>=26.04.0`; modern template |
 | Input | one row — metatdenovo co-assembles, so there is a single protein FASTA |
 | Samplesheet | generated on-cluster by `scripts/converters/metatdenovo_to_proteinfamilies.py` |
 | Params | [`runs/03_proteinfamilies/params.yml`](runs/03_proteinfamilies/params.yml) |

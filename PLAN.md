@@ -130,7 +130,7 @@ upstream, or shipped as reusable converters.
 
 > **Candidate new edge — `metatdenovo → proteinfamilies` (schemas checked 2026-08-10):**
 > not yet on the metro map, and worth adding. metatdenovo 1.4.0 with
-> `--orf_caller prodigal` publishes `prodigal/<assembly>.faa.gz`; proteinfamilies 2.4.0
+> `--orf_caller prodigal` publishes `prodigal/<assembly>.faa.gz`; proteinfamilies 2.5.0
 > accepts `.fa|.fasta|.faa|.fas` (± `.gz`), so the protein FASTA transfers with no
 > reformatting — only a one-row `sample,fasta` samplesheet. The mapped route,
 > `mag → proteinfamilies`, needs one more piece: mag does not itself emit protein FASTA,
