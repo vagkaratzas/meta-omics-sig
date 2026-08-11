@@ -147,6 +147,7 @@ docs before generating any samplesheet or parameter file.
 | metapep | Peptide analysis from (meta)proteomes | Protein FASTA | Peptide predictions |
 | proteinfamilies | Protein family inference | Protein FASTA | Protein family clusters |
 | proteinfold | Protein structure prediction | Protein FASTA | Predicted structures |
+| seqsubmit | ENA submission of reads, assemblies, MAGs and bins | MAG/bin FASTA + submission metadata | ENA accessions |
 
 > **Note on eager:** Designed for ancient/degraded DNA. Its inclusion in a modern
 > environmental or clinical dataset workflow is unlikely to be biologically appropriate.

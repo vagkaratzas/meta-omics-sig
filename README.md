@@ -54,6 +54,7 @@ The pipelines in scope are organized by stage:
 | Peptide / protein analysis | metapep | Predicted proteins / FASTA |
 | Protein family inference | proteinfamilies | Predicted proteins / FASTA |
 | Protein structure prediction | proteinfold | Predicted proteins / FASTA |
+| ENA submission | seqsubmit | MAGs / bins / assemblies / reads |
 
 ## Key Open Questions
 

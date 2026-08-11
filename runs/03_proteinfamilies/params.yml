@@ -1,11 +1,11 @@
-# nf-core/proteinfamilies 2.4.0 — LMO pilot, families from metatranscriptome ORFs
+# nf-core/proteinfamilies 2.5.0 — LMO pilot, families from metatranscriptome ORFs
 #
 # Build the samplesheet first (one row, absolute path, so not committed):
 #
 #   python3 scripts/converters/metatdenovo_to_proteinfamilies.py \
 #       <metatdenovo-outdir> runs/03_proteinfamilies/samplesheet.csv
 #
-# Modern nf-core template. Requires Nextflow >= 25.10.4; no NXF_SYNTAX_PARSER needed.
+# Modern nf-core template. Requires Nextflow >= 26.04.0; no NXF_SYNTAX_PARSER needed.
 
 input: "/path/to/runs/03_proteinfamilies/samplesheet.csv"
 outdir: "/path/to/results/03_proteinfamilies"

@@ -76,6 +76,7 @@ fetchngs (SRA accessions)
         │     └─► taxprofiler (shotgun MG reads → taxonomy profiles) [UNTESTED]
         │           └─► differentialabundance [UNTESTED]
         ├─► mag (shotgun MG reads → MAGs/contigs) [UNTESTED]
+        │     ├─► seqsubmit (MAGs/bins → ENA accessions) [NOT IN METRO MAP]
         │     ├─► magmap (MAGs → read abundance profiles) [UNTESTED]
         │     ├─► funcscan (contigs → functional annotation) [UNTESTED]
         │     ├─► phageannotator (contigs → phage annotation) [UNTESTED]
@@ -83,6 +84,8 @@ fetchngs (SRA accessions)
         │     └─► metapep / proteinfamilies (predicted proteins) [UNTESTED]
         │           └─► proteinfold (family representatives → structures) [UNTESTED]
         ├─► viralmetagenome (shotgun MG reads → viral contigs) [UNTESTED]
+        │     ├─► phageannotator (viral contigs + reads → phage annotation) [UNTESTED]
+        │     └─► phyloplace (viral contigs → placement on a reference tree) [UNTESTED]
         └─► metatdenovo (shotgun MT reads → metatranscriptome assembly) [UNTESTED]
               └─► proteinfamilies (prodigal .faa.gz → protein families) [NOT IN METRO MAP]
 ```
@@ -91,6 +94,10 @@ fetchngs (SRA accessions)
 > here because metatdenovo is the only pipeline in the chain that emits protein FASTA
 > directly, which makes it the shortest schema-compatible route into the protein nodes —
 > a candidate addition to propose to the SIG.
+
+> `mag → seqsubmit` is not on the metro map either — seqsubmit 1.0.0 was released on
+> 2026-08-04, after the map was drawn. It is the chain's only exit back to the archive:
+> everything else consumes ENA data, this one deposits into it.
 
 ### Core chain (high confidence, data-driven)
 fetchngs → [ampliseq | taxprofiler | mag | metatdenovo]
@@ -128,9 +135,12 @@ upstream, or shipped as reusable converters.
 > conversion is small (column rename/subset), and extending the `--nf_core_pipeline` enum
 > would remove it for a lot of users: a good feature request, filed as such.
 
-> **Candidate new edge — `metatdenovo → proteinfamilies` (schemas checked 2026-08-10):**
-> not yet on the metro map, and worth adding. metatdenovo 1.4.0 with
-> `--orf_caller prodigal` publishes `prodigal/<assembly>.faa.gz`; proteinfamilies 2.4.0
+> **Candidate new edge — `metatdenovo → proteinfamilies` (schemas checked 2026-08-10,
+> handoff executed 2026-08-11):** not yet on the metro map, and worth adding — the case is
+> now a run rather than a schema reading: metatdenovo's 198,252 predicted proteins were
+> handed to proteinfamilies 2.5.0 through a generated one-row samplesheet, which the
+> pipeline accepted. metatdenovo 1.4.0 with
+> `--orf_caller prodigal` publishes `prodigal/<assembly>.faa.gz`; proteinfamilies 2.5.0
 > accepts `.fa|.fasta|.faa|.fas` (± `.gz`), so the protein FASTA transfers with no
 > reformatting — only a one-row `sample,fasta` samplesheet. The mapped route,
 > `mag → proteinfamilies`, needs one more piece: mag does not itself emit protein FASTA,
@@ -138,6 +148,23 @@ upstream, or shipped as reusable converters.
 > `transdecoder` publishes `*.transdecoder.pep.gz`, and `.pep` is not in proteinfamilies'
 > accepted extensions — a one-line schema addition upstream would make that route work
 > too.
+
+> **Candidate new edge — `mag → seqsubmit` (schemas checked 2026-08-11):** nf-core/seqsubmit
+> 1.0.0 (released 2026-08-04) submits reads, metagenomic assemblies, MAGs and bins to ENA,
+> and it is the only pipeline in the chain that closes the loop back to the archive
+> `fetchngs` pulls from. In `mags`/`bins` mode it takes gzipped MAG FASTA, which is what mag
+> emits, so the *files* transfer unchanged. The row around each file is the work:
+> `accession` (the ENA run or assembly the MAG derives from), `assembly_software` and
+> `binning_software` with versions, `binning_parameters`, and four ENVO/MIxS environment
+> fields — `metagenome`, `broad_environment`, `local_environment`, `environmental_medium`.
+> None of that is in mag's output. A converter can fill the software and accession columns
+> from run provenance the chain already has; the environment terms are a per-dataset human
+> judgement. `completeness`/`contamination` are optional — seqsubmit recomputes them with
+> CheckM2 when absent. Two further prerequisites: `ENA_WEBIN`/`ENA_WEBIN_PASSWORD` as
+> Nextflow secrets, and the source reads or assembly already deposited (seqsubmit's own
+> `reads` and `metagenomic_assemblies` modes do that step). Submitting MAGs built from
+> public LMO reads is legitimate — they are new derived records with their own accessions —
+> and `--upload_tpa` exists to flag third-party assemblies.
 
 > **detaxizer already ships a downstream samplesheet generator — a pattern worth
 > propagating** (detaxizer 1.3.0 `nextflow_schema.json`, checked 2026-08-10). It exposes
@@ -168,23 +195,35 @@ upstream, or shipped as reusable converters.
 > `scripts/converters/`, each with an assert-based `--selftest`. They are the deliverable
 > that turns "CONVERSION REQUIRED" from a finding into a working handoff.
 
+> **Reading the Status column:** the status itself is the **mechanism** — whether the
+> upstream pipeline hands its successor a ready-made samplesheet (OPEN, pending
+> verification) or a converter has to sit between them (CONVERSION REQUIRED). Running the
+> chain never changes that: a handoff that needed a converter still needs one afterwards.
+> Execution is recorded as a separate **exercised `<date>`** clause, which says a real run
+> consumed the handed-over file. On the metro map the mechanism is the edge colour and
+> execution is the moving dot, so the two never overwrite each other.
+
 | From | To | Samplesheet handoff mechanism | Status |
 |------|----|-------------------------------|--------|
 | fetchngs | detaxizer | generic `samplesheet.csv`; no `--nf_core_pipeline` support, and detaxizer's columns are `short_reads_fastq_1/2`, not `fastq_1/2` | **CONVERSION REQUIRED** |
 | fetchngs | ampliseq | generic `samplesheet.csv`; **no `--nf_core_pipeline` option** | **CONVERSION REQUIRED** |
 | fetchngs | taxprofiler | `--nf_core_pipeline taxprofiler` emits a purpose-built samplesheet | OPEN — flag exists, output not yet verified |
 | fetchngs | mag | generic `samplesheet.csv`; **no `--nf_core_pipeline` option** | **CONVERSION REQUIRED** |
-| fetchngs | metatdenovo | generic `samplesheet.csv`; **no `--nf_core_pipeline` option** | **CONVERSION REQUIRED** |
+| fetchngs | metatdenovo | generic `samplesheet.csv`; **no `--nf_core_pipeline` option** | **CONVERSION REQUIRED** — exercised 2026-08-11 via `scripts/converters/fetchngs_to_reads_samplesheet.py`; metatdenovo 1.4.0 ran to completion on the converted sheet |
+| **fetchngs** | **viralmetagenome** | generic `samplesheet.csv`; **no `--nf_core_pipeline` option**; wants `sample,fastq_1[,fastq_2]` — the same shape metatdenovo takes | **CONVERSION REQUIRED** — existing converter covers it unchanged |
 | detaxizer | ampliseq | filtered FASTQ → ampliseq samplesheet; **excluded** from `--generate_pipeline_samplesheets` | **CONVERSION REQUIRED** |
 | detaxizer | taxprofiler | `--generate_downstream_samplesheets` emits a taxprofiler samplesheet natively | OPEN — native emitter exists, output not yet verified |
 | detaxizer | mag | `--generate_downstream_samplesheets` emits a mag samplesheet natively | OPEN — native emitter exists, output not yet verified |
 | createtaxdb | taxprofiler | db output path referenced in taxprofiler params | OPEN |
+| **mag** | **seqsubmit** | MAG/bin FASTA → `--mode mags\|bins` (`schema_input_genome.json`); gzipped FASTA transfers unchanged | **CONVERSION REQUIRED** — metadata, not just columns |
 | mag | funcscan | MAG/contig FASTA → funcscan input | OPEN |
 | mag | phageannotator | contig FASTA → phageannotator input | OPEN |
 | mag | phyloplace | contig FASTA → phyloplace input | OPEN |
 | mag | magmap | MAG FASTA → magmap reference input | OPEN |
 | mag | metapep / proteinfamilies | predicted proteins FASTA → input | OPEN |
-| **metatdenovo** | **proteinfamilies** | `--orf_caller prodigal` publishes `prodigal/<assembly>.faa.gz`, an extension proteinfamilies accepts | **CONVERSION REQUIRED** — one-row samplesheet, no reformatting |
+| **metatdenovo** | **proteinfamilies** | `--orf_caller prodigal` publishes `prodigal/<assembly>.faa.gz`, an extension proteinfamilies accepts | **CONVERSION REQUIRED** — one-row samplesheet, no reformatting; exercised 2026-08-11, 198,252 proteins accepted by proteinfamilies 2.5.0 |
+| **viralmetagenome** | **phageannotator** | viral contig FASTA → input, but the sheet also wants `group` and `fastq_1` | **CONVERSION REQUIRED** — two-source join, and `.combined.fa` is not gzipped |
+| **viralmetagenome** | **phyloplace** | viral contig FASTA → `queryseqfile` | **CONVERSION REQUIRED** — `refseqfile`, `refphylogeny`, `model` are external per-row inputs |
 | proteinfamilies | proteinfold | representative sequence per family → protein FASTA input | OPEN |
 | taxprofiler | differentialabundance | abundance profile → differentialabundance input | OPEN |
 | ampliseq | differentialabundance | QIIME2/BIOM profile → differentialabundance input | OPEN |
