@@ -7,7 +7,7 @@ Four failures this catches, all of which have actually happened here:
 2. Missing images - `![alt](path)` pointing at a file that is not there. Images are not
    graph edges, so they are checked for existence only and never counted as links.
 3. Orphans - a file with no inbound links. Invisible in Obsidian's graph and effectively
-   undiscoverable. ACRONYMS.md and LOG.md sat orphaned until 2026-08-10.
+   undiscoverable. ACRONYMS.md sat orphaned until 2026-08-10.
 4. Wikilinks - `[[target]]` syntax. Obsidian offers it by autocomplete, but it renders as
    literal brackets on GitHub and in the docs/ Pages site, so this repo forbids it
    (see AGENTS.md). Obsidian builds its graph from ordinary relative Markdown links.

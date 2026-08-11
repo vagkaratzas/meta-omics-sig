@@ -9,16 +9,12 @@ Third pipeline of the chain. Clusters the protein sequences predicted by
 
 ## Why this edge exists
 
-The metro map routes proteins into proteinfamilies **from mag**, and PLAN.md's validation
-table has a single `mag → metapep / proteinfamilies` row. That route needs one more piece:
-mag does not itself emit protein FASTA, so an ORF-calling step belongs between the two
-stations — which is why the row is still OPEN.
-
 metatdenovo, with `--orf_caller prodigal`, emits protein FASTA directly:
 `prodigal/<assembly>.faa.gz`, an extension proteinfamilies accepts without modification.
 That makes `metatdenovo → proteinfamilies` a short, schema-compatible route into the
-protein nodes, and one not yet drawn on the metro map — a candidate addition to propose to
-the SIG. Recorded as a new row in
+protein nodes. It was proposed to the SIG off the back of this run and **is now drawn on
+the metro map** — metatdenovo feeds the shared `fasta` interchange, which is what the
+protein stations hang off. Recorded as a row in
 [PLAN.md](../../PLAN.md#samplesheet-chaining--validation-table).
 
 ## Build the samplesheet
@@ -66,6 +62,37 @@ results are interpreted:
 | `cluster_size_threshold` | 25 | Minimum cluster size to seed an MSA. |
 | `family_generation_algorithm` | `standard` | New in 2.5.0. `iterative` hands chunks of clusters to mgnifam, repeating HMM build / recruit / realign until each family converges. Left at `standard` for the handoff test. |
 
+## The two parameters that are *not* left at default
+
+```yaml
+skip_proteinfold_samplesheet: false
+skip_proteinannotator_samplesheet: false
+```
+
+Both default to `true`. Turning them off makes proteinfamilies 2.5.0 publish a ready-made
+samplesheet for its two successors — the thing this whole project is trying to find more of:
+
+| Published path | Consumer | Columns |
+|----------------|----------|---------|
+| `proteinfold/samplesheet.csv` | [nf-core/proteinfold](https://nf-co.re/proteinfold) | `id,fasta` |
+| `proteinannotator/samplesheet.csv` | [nf-core/proteinannotator](https://nf-co.re/proteinannotator) | `id,fasta` |
+
+Both sheets are built from the same channel (`main.nf`, `publish:` block) and point at the
+family representatives, `<samplename>/<samplename>_reps.faa`. Before this run, **detaxizer
+was the only pipeline in the chain known to emit downstream samplesheets natively**; it is
+now the second of two. That claim is corrected wherever it appeared —
+[PLAN.md](../../PLAN.md) and the [project site](https://vagkaratzas.github.io/meta-omics-sig/).
+
+Two things to check before feeding either sheet onward:
+
+- **proteinfold version matters.** proteinfold **2.0.0** accepts an `id` column
+  (`anyOf: sequence|id`) and a `.faa` extension, so the sheet transfers unmodified.
+  proteinfold **1.1.1** requires the column to be named `sequence` and the file to match
+  `^\S+\.fa(sta)?$` — `.faa` is rejected. Pin 2.0.0 or the native sheet is not native.
+  proteinannotator 1.1.0 takes `id` + `.fa|.fasta|.faa|.fas` (± `.gz`), so it has no such trap.
+- **`_reps.faa` is one multi-FASTA holding every family representative**, not one file per
+  structure. proteinfold's own documented invocation for this sheet adds `--split_fasta`.
+
 ## Verify
 
 ```bash
@@ -74,6 +101,10 @@ zcat <metatdenovo-outdir>/prodigal/*.faa.gz | grep -c '^>'
 
 # families produced
 ls <outdir>/
+
+# downstream samplesheets, and the representatives they point at
+cat <outdir>/proteinfold/samplesheet.csv <outdir>/proteinannotator/samplesheet.csv
+grep -c '^>' <outdir>/proteinfold/*/*_reps.faa
 ```
 
 ## Status
@@ -81,6 +112,9 @@ ls <outdir>/
 | Step | Status |
 |------|--------|
 | Samplesheet conversion | **DONE** — one row, 198,252 proteins, accepted by proteinfamilies 2.5.0 |
-| proteinfamilies run | RUNNING since 2026-08-11 |
+| proteinfamilies run | **SUCCESS** 2026-08-11 — **405 protein families** |
+| Downstream samplesheets | **EMITTED** — `proteinfold/` and `proteinannotator/`, neither consumed by a run yet |
 
-Full run record and provenance: [RUNS.md](../../RUNS.md).
+Provenance: <https://cloud.seqera.io/user/vangelis/watch/H1MTwbD6IUKz3>
+
+Full run record: [RUNS.md](../../RUNS.md).

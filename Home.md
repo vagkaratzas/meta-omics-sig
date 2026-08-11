@@ -36,7 +36,6 @@ Start at [README.md](README.md) for the overview.
 | What has actually been executed, with what provenance? | [RUNS.md](RUNS.md) |
 | How should an AI agent work in this repo? Conventions, guardrails, environment gotchas | [AGENTS.md](AGENTS.md) |
 | What does this acronym mean? | [ACRONYMS.md](ACRONYMS.md) |
-| What happened when? | [LOG.md](LOG.md) |
 
 [CLAUDE.md](CLAUDE.md) exists only to point at [AGENTS.md](AGENTS.md), so that every
 coding agent reads the same file.
@@ -51,6 +50,7 @@ with the Seqera Platform provenance link lives in [RUNS.md](RUNS.md).
 | 01 | fetchngs | [runs/01_fetchngs/README.md](runs/01_fetchngs/README.md) |
 | 02 | metatdenovo | [runs/02_metatdenovo/README.md](runs/02_metatdenovo/README.md) |
 | 03 | proteinfamilies | [runs/03_proteinfamilies/README.md](runs/03_proteinfamilies/README.md) |
+| 04 | detaxizer | [runs/04_detaxizer/README.md](runs/04_detaxizer/README.md) — prepared, not run |
 
 ## Scripts
 
