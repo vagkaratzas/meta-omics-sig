@@ -76,6 +76,7 @@ fetchngs (SRA accessions)
         │     └─► taxprofiler (shotgun MG reads → taxonomy profiles) [UNTESTED]
         │           └─► differentialabundance [UNTESTED]
         ├─► mag (shotgun MG reads → MAGs/contigs) [UNTESTED]
+        │     ├─► seqsubmit (MAGs/bins → ENA accessions) [NOT IN METRO MAP]
         │     ├─► magmap (MAGs → read abundance profiles) [UNTESTED]
         │     ├─► funcscan (contigs → functional annotation) [UNTESTED]
         │     ├─► phageannotator (contigs → phage annotation) [UNTESTED]
@@ -91,6 +92,10 @@ fetchngs (SRA accessions)
 > here because metatdenovo is the only pipeline in the chain that emits protein FASTA
 > directly, which makes it the shortest schema-compatible route into the protein nodes —
 > a candidate addition to propose to the SIG.
+
+> `mag → seqsubmit` is not on the metro map either — seqsubmit 1.0.0 was released on
+> 2026-08-04, after the map was drawn. It is the chain's only exit back to the archive:
+> everything else consumes ENA data, this one deposits into it.
 
 ### Core chain (high confidence, data-driven)
 fetchngs → [ampliseq | taxprofiler | mag | metatdenovo]
@@ -142,6 +147,23 @@ upstream, or shipped as reusable converters.
 > accepted extensions — a one-line schema addition upstream would make that route work
 > too.
 
+> **Candidate new edge — `mag → seqsubmit` (schemas checked 2026-08-11):** nf-core/seqsubmit
+> 1.0.0 (released 2026-08-04) submits reads, metagenomic assemblies, MAGs and bins to ENA,
+> and it is the only pipeline in the chain that closes the loop back to the archive
+> `fetchngs` pulls from. In `mags`/`bins` mode it takes gzipped MAG FASTA, which is what mag
+> emits, so the *files* transfer unchanged. The row around each file is the work:
+> `accession` (the ENA run or assembly the MAG derives from), `assembly_software` and
+> `binning_software` with versions, `binning_parameters`, and four ENVO/MIxS environment
+> fields — `metagenome`, `broad_environment`, `local_environment`, `environmental_medium`.
+> None of that is in mag's output. A converter can fill the software and accession columns
+> from run provenance the chain already has; the environment terms are a per-dataset human
+> judgement. `completeness`/`contamination` are optional — seqsubmit recomputes them with
+> CheckM2 when absent. Two further prerequisites: `ENA_WEBIN`/`ENA_WEBIN_PASSWORD` as
+> Nextflow secrets, and the source reads or assembly already deposited (seqsubmit's own
+> `reads` and `metagenomic_assemblies` modes do that step). Submitting MAGs built from
+> public LMO reads is legitimate — they are new derived records with their own accessions —
+> and `--upload_tpa` exists to flag third-party assemblies.
+
 > **detaxizer already ships a downstream samplesheet generator — a pattern worth
 > propagating** (detaxizer 1.3.0 `nextflow_schema.json`, checked 2026-08-10). It exposes
 > `--generate_downstream_samplesheets`, with `--generate_pipeline_samplesheets` defaulting
@@ -190,6 +212,7 @@ upstream, or shipped as reusable converters.
 | detaxizer | taxprofiler | `--generate_downstream_samplesheets` emits a taxprofiler samplesheet natively | OPEN — native emitter exists, output not yet verified |
 | detaxizer | mag | `--generate_downstream_samplesheets` emits a mag samplesheet natively | OPEN — native emitter exists, output not yet verified |
 | createtaxdb | taxprofiler | db output path referenced in taxprofiler params | OPEN |
+| **mag** | **seqsubmit** | MAG/bin FASTA → `--mode mags\|bins` (`schema_input_genome.json`); gzipped FASTA transfers unchanged | **CONVERSION REQUIRED** — metadata, not just columns |
 | mag | funcscan | MAG/contig FASTA → funcscan input | OPEN |
 | mag | phageannotator | contig FASTA → phageannotator input | OPEN |
 | mag | phyloplace | contig FASTA → phyloplace input | OPEN |

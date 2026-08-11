@@ -139,6 +139,21 @@
       "release": "2.5.0", "docs": "https://nf-co.re/proteinfamilies/2.5.0/", "devNote": null
     },
     {
+      "id": "seqsubmit", "label": "seqsubmit", "kind": "pipeline", "x": 620, "y": 178,
+      "blurb": "Submits reads, metagenomic assemblies, MAGs and bins to ENA, registering the study and brokering the upload through Webin-CLI.",
+      "io": { "in": "MAG/bin FASTA + submission metadata", "out": "ENA accessions" },
+      "requires": [
+        "--mode mags|bins|metagenomic_assemblies|reads - each mode has its own samplesheet schema",
+        "mags/bins --input samplesheet: id, fasta, accession, assembly_software, binning_software, binning_parameters, metagenome, co-assembly, broad_environment, local_environment, environmental_medium (+ optional fastq_1/2, completeness, contamination, genome_coverage, stats_generation_software, RNA_presence, NCBI_lineage)",
+        "fasta must be gzipped: .fa.gz / .fasta.gz / .fna.gz - an uncompressed FASTA is rejected",
+        "accession - the ENA run or assembly accession the MAG was derived from; that source must already be in ENA",
+        "ENA_WEBIN and ENA_WEBIN_PASSWORD supplied as Nextflow secrets",
+        "CheckM2 and CAT_pack databases (--checkm2_db, --cat_db) when completeness/contamination or lineage are not given"
+      ],
+      "requiresReadFrom": "1.0.0",
+      "release": "1.0.0", "docs": "https://nf-co.re/seqsubmit/1.0.0/", "devNote": null
+    },
+    {
       "id": "proteinfold", "label": "proteinfold", "kind": "pipeline", "x": 860, "y": 542,
       "blurb": "Predicts protein structures from amino-acid sequences. Computationally expensive; a stretch node.",
       "io": { "in": "Protein FASTA", "out": "Predicted structures" },
@@ -247,13 +262,6 @@
       "caveat": "Appears inconsistent with createtaxdb's documented input contract: at 3.1.0 it consumes reference FASTA plus taxids, not filtered reads. Raised for SIG review; the site does not resolve it."
     },
     {
-      "id": "detaxizer__viralmetagenome", "from": "detaxizer", "to": "viralmetagenome",
-      "source": "diagram", "kind": "reads", "statusClass": "absent-from-table",
-      "routable": false, "unit": "runs", "carries": ["WGS"],
-      "note": "Drawn in the PLAN.md metro map but absent from the validation table. It is the ONLY edge feeding viralmetagenome, so no tracked handoff reaches this station at all.",
-      "caveat": null
-    },
-    {
       "id": "detaxizer__metatdenovo", "from": "detaxizer", "to": "metatdenovo",
       "source": "diagram", "kind": "reads", "statusClass": "absent-from-table",
       "routable": false, "unit": "runs", "carries": ["RNA-Seq"],
@@ -279,6 +287,13 @@
       "routable": false, "unit": "MAGs", "carries": [],
       "note": "MAG FASTA -> magmap reference input",
       "caveat": "magmap 1.1.0 needs --genomeinfo (accno, genome_fna) plus its own read samplesheet - two inputs, not one handoff."
+    },
+    {
+      "id": "mag__seqsubmit", "from": "mag", "to": "seqsubmit",
+      "source": "table", "kind": "artifact", "repoStatus": "CONVERSION REQUIRED - metadata, not just columns", "statusClass": "conversion-required",
+      "routable": false, "unit": "MAGs/bins", "carries": [],
+      "note": "MAG/bin FASTA -> seqsubmit --mode mags|bins (assets/schema_input_genome.json). mag's bins are gzipped FASTA, which the schema accepts, so the sequence files transfer unchanged.",
+      "caveat": "The hard part is not the file, it is the row around it. seqsubmit requires per-MAG submission metadata mag does not emit: the ENA run or assembly accession the MAG derives from, assembly_software and binning_software with versions, binning_parameters, and four ENVO/MIxS environment fields (metagenome, broad_environment, local_environment, environmental_medium). Completeness and contamination can come from mag's own BUSCO/CheckM output or be recomputed by seqsubmit via CheckM2. A converter can fill the software and accession columns from the run provenance; the environment terms are a human judgement per dataset. Also needs ENA_WEBIN credentials as Nextflow secrets, so this edge cannot be exercised by a dry run."
     },
     {
       "id": "mag__funcscan", "from": "mag", "to": "funcscan",
@@ -391,7 +406,11 @@
         },
         "viralmetagenome": {
           "state": "pending", "in": null, "out": null, "version": null,
-          "note": "Unreachable in this pilot: the only edge feeding viralmetagenome comes from detaxizer, which is not selected, and no validation-table edge feeds it at all."
+          "note": "Unreachable in this pilot: no edge feeds viralmetagenome at all, in the validation table or the metro map, so there is no tracked route into it."
+        },
+        "seqsubmit": {
+          "state": "pending", "in": null, "out": null, "version": null,
+          "note": "Not run yet, and downstream of mag, which the pilot has not run either. Submission is meaningful even though the LMO reads came from ENA: the MAGs are new derived data and get their own accessions, referencing the source run accessions run 01 already collected. Needs ENA_WEBIN credentials as Nextflow secrets before it can be exercised."
         },
         "metatdenovo": {
           "state": "run", "in": 6, "out": 198252, "version": "1.4.0",
