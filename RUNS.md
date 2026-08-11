@@ -23,6 +23,7 @@ site-specific and go stale; the Seqera link preserves the full execution record.
 | 01 | nf-core/fetchngs | 1.12.0 | 2026-08-10 | LMO pilot — 3 dates × 3 omics layers | **SUCCESS** | [Seqera run](https://cloud.seqera.io/user/vangelis/watch/1Hd5FAdXhle9M9) |
 | 02 | nf-core/metatdenovo | 1.4.0 | 2026-08-11 | 6 MT libraries → one co-assembly + protein FASTA | **SUCCESS** — 198,252 proteins | [Seqera run](https://cloud.seqera.io/user/vangelis/watch/dR2OkpNzn3QwP) |
 | 03 | nf-core/proteinfamilies | 2.5.0 | 2026-08-11 | protein families from the run-02 ORFs | **SUCCESS** — 405 families | [Seqera run](https://cloud.seqera.io/user/vangelis/watch/H1MTwbD6IUKz3) |
+| 04 | nf-core/detaxizer | 1.3.0 | 2026-08-11 | phiX removal from the 6 MT libraries | **SUCCESS** — 172 phiX pairs in 161 M | [Seqera run](https://cloud.seqera.io/user/vangelis/watch/5qFu9n8YSLmCxP) |
 
 ---
 
@@ -252,6 +253,88 @@ The sheets were emitted, not yet consumed — no proteinfold or proteinannotator
 them. One version trap is already visible from the schemas: proteinfold **2.0.0** accepts
 `id` and `.faa`, but **1.1.1** requires a `sequence` column and `.fa`/`.fasta` only, so the
 native sheet is only native against 2.0.0. proteinannotator 1.1.0 accepts it as-is.
+
+---
+
+## 04 — detaxizer, phiX removal from the metatranscriptome libraries
+
+**Status: SUCCESS, 2026-08-11.**
+
+**Provenance:** <https://cloud.seqera.io/user/vangelis/watch/5qFu9n8YSLmCxP>
+
+| | |
+|---|---|
+| Pipeline | `nf-core/detaxizer` `-r 1.3.0` |
+| Input | the 6 RNA-Seq libraries from run 01 |
+| Samplesheet | generated on-cluster by `scripts/converters/fetchngs_to_reads_samplesheet.py --target detaxizer` |
+| Params | [`runs/04_detaxizer/params.yml`](runs/04_detaxizer/params.yml) |
+| Contaminant | phiX174 `NC_001422.1` (5,386 bp) via `--classification_bbduk`; **no kraken2 database** |
+| Date | 2026-08-11 |
+| Outcome | Success — **172 phiX read pairs out of 161,043,840**, and downstream samplesheets for taxprofiler and mag |
+
+### How much phiX was actually there
+
+`summary.tsv`, against ENA `read_count` for each run (halved: `base_count/read_count` is
+exactly 126, so ENA counts single reads while detaxizer's ids are pair-level after
+`MERGE_IDS`).
+
+| Library | phiX pairs | Total pairs | 1 in |
+|---|---|---|---|
+| LMO_20160315_MT_a | 1 | 20,903,392 | 20,903,392 |
+| LMO_20160315_MT_b | 21 | 19,313,852 | 919,707 |
+| LMO_20160803_MT_a | 6 | 25,895,996 | 4,315,999 |
+| LMO_20160803_MT_b | 4 | 22,008,804 | 5,502,201 |
+| LMO_20171031_MT_a | 35 | 38,553,488 | 1,101,528 |
+| LMO_20171031_MT_b | 105 | 34,368,308 | 327,317 |
+| **Total** | **172** | **161,043,840** | **936,301** |
+
+**0.000107% of pairs** — consistent with a well-loaded HiSeq run whose spike-in is mostly
+bled off at demultiplexing. This is the number the 2026-08-10 scope decision lacked.
+
+**It does not follow that run 02 is unaffected.** 172 pairs × 2 × 126 bp is 43,344 bp
+against a 5,386 bp genome — an upper bound of **8× coverage** pooled across the
+co-assembly, which is above megahit's floor. Whether a phiX contig exists in run 02, and
+whether its ORFs reached run 03's 405 families, is a question to answer by searching the
+**existing** assembly, not by re-running it:
+
+```bash
+zcat <02-outdir>/megahit/*.contigs.fa.gz | seqkit locate -f phix174_NC_001422.1.fasta -m 5 | head
+```
+
+Re-running metatdenovo and proteinfamilies on the filtered reads is **not** justified by
+0.000107%; it would be justified only if that search finds phiX in the assembly.
+
+### The finding: detaxizer's native mag samplesheet is rejected by mag
+
+This is the first time anything has consumed a detaxizer-generated samplesheet. The two
+sheets were validated against their targets' `schema_input.json`:
+
+| Generated sheet | Target | Verdict |
+|---|---|---|
+| `downstream_samplesheets/taxprofiler.csv` | taxprofiler 2.0.1 | **PASSES** — `sample`, `run_accession`, `instrument_platform: ILLUMINA` all satisfy the schema, paths match `^\S+\.f(ast)?q\.gz$` |
+| `downstream_samplesheets/mag-pe.csv` | mag 5.5.0 | **REJECTED**, two independent violations |
+
+mag 5.5.0 refuses `mag-pe.csv` because:
+
+1. **`group` is a required property** with pattern `^\S+$`, and detaxizer hardcodes
+   `def group = ""` in `SAMPLESHEET_MAG` ("only used for co-abundance in binning").
+2. **`short_reads_platform` is `dependentRequired` on `short_reads_1`**, and detaxizer does
+   not emit that column at all.
+
+Both hold whether empty CSV cells are read as empty strings or dropped, so this is not an
+nf-schema edge case. detaxizer 1.3.0's mag emitter is writing the column set mag wanted at
+some earlier release. To file against nf-core/detaxizer, after
+[#99](https://github.com/nf-core/detaxizer/issues/99).
+
+The taxprofiler sheet is valid but still cannot drive a run on its own: taxprofiler also
+requires a `--databases` sheet, which detaxizer cannot produce.
+
+### Why these sheets are not the ones to run mag and taxprofiler from
+
+Both point at **metatranscriptome** reads, because this run used `--strategy RNA-Seq`.
+Binning transcripts into MAGs is not meaningful, and the chain intends taxprofiler for the
+metagenome layer. Reaching those two stations properly means a second detaxizer run with
+`--strategy WGS` over the 3 metagenome libraries — same `params.yml` otherwise.
 
 ---
 

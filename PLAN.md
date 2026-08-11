@@ -245,8 +245,22 @@ upstream, or shipped as reusable converters.
 >   run — with both classifiers on, `MERGE_IDS` unions their hits and the filter would
 >   remove human-classified reads along with phiX.
 >
-> The run is prepared as **run 04** and not yet executed. Its statuses below are still
-> recorded from schemas and source, not from a run.
+> **Run 04 executed 2026-08-11: 172 phiX read pairs out of 161,043,840 (0.000107%).** Low
+> enough that re-running metatdenovo and proteinfamilies on the filtered reads is not
+> justified by the fraction alone — but 172 pairs is an upper bound of 8× coverage of a
+> 5,386 bp genome pooled across the co-assembly, so "negligible" and "absent from the
+> assembly" are separate claims. The second is settled by searching run 02's existing
+> contigs, not by rebuilding them. Detail in [RUNS.md](RUNS.md).
+>
+> **The run's real finding is upstream, and it is the first time anything has consumed a
+> detaxizer-generated samplesheet.** `taxprofiler.csv` validates against taxprofiler 2.0.1;
+> `mag-pe.csv` is **rejected** by mag 5.5.0 on two counts — `group` is a required `^\S+$`
+> property that detaxizer writes as `""`, and `short_reads_platform` is `dependentRequired`
+> on `short_reads_1` but is never emitted. Both hold whether empty CSV cells are read as
+> empty strings or dropped, so this is not an nf-schema edge case: detaxizer 1.3.0's mag
+> emitter writes the column set mag wanted at an earlier release. **This is the concrete
+> evidence for the standardisation argument** — a native emitter is only as good as its
+> currency with the target's schema, and nothing tells either side when that drifts.
 >
 > **Detect-only and the native samplesheet emitter are mutually exclusive in 1.3.0.**
 > `GENERATE_DOWNSTREAM_SAMPLESHEETS` is fed `ch_filtered_reads`, which stays
@@ -283,15 +297,15 @@ upstream, or shipped as reusable converters.
 
 | From | To | Samplesheet handoff mechanism | Status |
 |------|----|-------------------------------|--------|
-| **fetchngs** | **detaxizer** | generic `samplesheet.csv`; no `--nf_core_pipeline` support, and detaxizer's columns are `short_reads_fastq_1/2`, not `fastq_1/2` | **CONVERSION REQUIRED** — covered by `scripts/converters/fetchngs_to_reads_samplesheet.py --target detaxizer`; column rename only, sample names shared with the `--target reads` output |
+| **fetchngs** | **detaxizer** | generic `samplesheet.csv`; no `--nf_core_pipeline` support, and detaxizer's columns are `short_reads_fastq_1/2`, not `fastq_1/2` | **CONVERSION REQUIRED** — covered by `scripts/converters/fetchngs_to_reads_samplesheet.py --target detaxizer`; column rename only, sample names shared with the `--target reads` output; exercised 2026-08-11, detaxizer 1.3.0 ran to completion on the converted sheet |
 | fetchngs | ampliseq | generic `samplesheet.csv`; **no `--nf_core_pipeline` option** | **CONVERSION REQUIRED** |
 | fetchngs | taxprofiler | `--nf_core_pipeline taxprofiler` emits a purpose-built samplesheet | OPEN — flag exists, output not yet verified |
 | fetchngs | mag | generic `samplesheet.csv`; **no `--nf_core_pipeline` option** | **CONVERSION REQUIRED** |
 | fetchngs | metatdenovo | generic `samplesheet.csv`; **no `--nf_core_pipeline` option** | **CONVERSION REQUIRED** — exercised 2026-08-11 via `scripts/converters/fetchngs_to_reads_samplesheet.py`; metatdenovo 1.4.0 ran to completion on the converted sheet |
 | **fetchngs** | **viralmetagenome** | generic `samplesheet.csv`; **no `--nf_core_pipeline` option**; wants `sample,fastq_1[,fastq_2]` — the same shape metatdenovo takes | **CONVERSION REQUIRED** — existing converter covers it unchanged |
 | detaxizer | ampliseq | filtered FASTQ → ampliseq samplesheet; **excluded** from `--generate_pipeline_samplesheets` | **CONVERSION REQUIRED** |
-| detaxizer | taxprofiler | `--generate_downstream_samplesheets` emits a taxprofiler samplesheet natively | OPEN — native emitter exists, output not yet verified |
-| detaxizer | mag | `--generate_downstream_samplesheets` emits a mag samplesheet natively | OPEN — native emitter exists, output not yet verified |
+| **detaxizer** | **taxprofiler** | `--generate_downstream_samplesheets` emits `taxprofiler.csv` natively — `sample,run_accession,instrument_platform,fastq_1,fastq_2,fasta` | **NATIVE** — emitted 2026-08-11, validates against taxprofiler 2.0.1, not yet exercised; taxprofiler additionally needs a `--databases` sheet detaxizer cannot produce |
+| **detaxizer** | **mag** | `--generate_downstream_samplesheets` emits `mag-pe.csv` natively | **NATIVE, REJECTED BY TARGET** — emitted 2026-08-11 and mag 5.5.0 refuses it: `group` is required but written empty, and `short_reads_platform` is `dependentRequired` on `short_reads_1` but never emitted |
 | **detaxizer** | **metatdenovo** | filtered FASTQ → `sample,fastq_1,fastq_2`; **excluded** from `--generate_pipeline_samplesheets`, whose pattern admits only `taxprofiler` and `mag` | **CONVERSION REQUIRED** — covered by `scripts/converters/detaxizer_to_reads_samplesheet.py`; mates verified synchronised in 1.3.0 source (`MERGE_IDS` unions hits, `filter.nf` applies one id list to both mates) |
 | createtaxdb | taxprofiler | db output path referenced in taxprofiler params | OPEN |
 | **mag** | **seqsubmit** | MAG/bin FASTA → `--mode mags\|bins` (`schema_input_genome.json`); gzipped FASTA transfers unchanged | **CONVERSION REQUIRED** — metadata, not just columns |

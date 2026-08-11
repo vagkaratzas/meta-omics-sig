@@ -169,10 +169,13 @@ and makes the phiX number unrecoverable.
 
 | Step | Status |
 |------|--------|
-| `fetchngs → detaxizer` samplesheet conversion | **READY** — `--target detaxizer`, selftested, not yet run |
+| `fetchngs → detaxizer` samplesheet conversion | **DONE** — `--target detaxizer`, accepted by detaxizer 1.3.0 |
+| detaxizer run | **SUCCESS** 2026-08-11 — **172 phiX pairs out of 161,043,840** (0.000107%) |
+| `taxprofiler.csv` emitted | **VALID** against taxprofiler 2.0.1, not yet consumed |
+| `mag-pe.csv` emitted | **REJECTED** by mag 5.5.0 — empty `group`, missing `short_reads_platform` |
 | `detaxizer → metatdenovo` samplesheet conversion | **READY** — `detaxizer_to_reads_samplesheet.py`, selftested, not yet run |
-| phiX reference | Fetch on the cluster, see above |
-| detaxizer run | **NOT RUN** |
-| metatdenovo re-run on filtered reads | **NOT RUN** — blocked on the above |
+| metatdenovo re-run on filtered reads | **NOT JUSTIFIED** by 0.000107% alone — settle it by searching run 02's existing assembly for phiX first |
 
-Full run record and provenance, once executed: [RUNS.md](../../RUNS.md).
+Provenance: <https://cloud.seqera.io/user/vangelis/watch/5qFu9n8YSLmCxP>
+
+Full run record: [RUNS.md](../../RUNS.md).

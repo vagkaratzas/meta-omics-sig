@@ -220,9 +220,10 @@
       "source": "table", "kind": "reads",
       "repoStatus": "CONVERSION REQUIRED - covered by scripts/converters/fetchngs_to_reads_samplesheet.py --target detaxizer",
       "statusClass": "conversion-required",
-      "routable": true, "unit": "runs", "carries": ["RNA-Seq"],
-      "note": "generic samplesheet.csv; no --nf_core_pipeline support, and detaxizer's own input columns are short_reads_fastq_1 / short_reads_fastq_2 / long_reads_fastq_1, not fastq_1 / fastq_2. The converter renames only those two columns, so sample names are identical to the --target reads output and run 02 stays comparable with run 04.",
-      "caveat": "Status derived from comparing the two schemas, not from an execution - run 04 is prepared but has not been run. Carries only RNA-Seq here because the pilot's detaxizer run targets the metatranscriptome libraries; the same conversion covers the amplicon and WGS layers unchanged."
+      "executed": true,
+      "routable": true, "unit": "runs", "carries": ["RNA-Seq"], "dotCount": 6,
+      "note": "generic samplesheet.csv; no --nf_core_pipeline support, and detaxizer's own input columns are short_reads_fastq_1 / short_reads_fastq_2 / long_reads_fastq_1, not fastq_1 / fastq_2. The converter renames only those two columns, so sample names are identical to the --target reads output and run 02 stays comparable with run 04. Exercised 2026-08-11: detaxizer 1.3.0 ran to completion on the converted sheet.",
+      "caveat": "Carries only RNA-Seq here because run 04 targeted the metatranscriptome libraries; the same conversion covers the amplicon and WGS layers unchanged."
     },
     {
       "id": "fetchngs__ampliseq", "from": "fetchngs", "to": "ampliseq",
@@ -284,18 +285,18 @@
     {
       "id": "detaxizer__taxprofiler", "from": "detaxizer", "to": "taxprofiler",
       "source": "table", "kind": "reads",
-      "repoStatus": "OPEN - native emitter exists, output not yet verified", "statusClass": "untested",
+      "repoStatus": "NATIVE - emitted 2026-08-11, validates against taxprofiler 2.0.1, not yet exercised", "statusClass": "validated",
       "routable": false, "unit": "runs", "carries": ["WGS"],
-      "note": "--generate_downstream_samplesheets emits a taxprofiler samplesheet natively. detaxizer is one of two pipelines in this chain that ship a downstream samplesheet generator - proteinfamilies 2.5.0 is the other, via per-target skip_*_samplesheet flags rather than a pipeline-name enum.",
-      "caveat": "Whether taxprofiler accepts the generated sheet unmodified is untested. Deferred with detaxizer to the first host-related dataset."
+      "note": "--generate_downstream_samplesheets emits downstream_samplesheets/taxprofiler.csv natively - sample, run_accession, instrument_platform, fastq_1, fastq_2, fasta. Run 04 produced it on 2026-08-11 and it validates against taxprofiler 2.0.1 schema_input.json: instrument_platform is written as ILLUMINA, which is in the enum, and the paths match the gzipped-FASTQ pattern. detaxizer is one of two pipelines in this chain that ship a downstream samplesheet generator - proteinfamilies 2.5.0 is the other, via per-target skip_*_samplesheet flags rather than a pipeline-name enum.",
+      "caveat": "Valid but not sufficient on its own: taxprofiler also requires a --databases sheet, which detaxizer cannot produce. Run 04's sheet also points at metatranscriptome libraries, because that run used --strategy RNA-Seq; the chain intends taxprofiler for the metagenome layer, so driving it properly needs a second detaxizer run over the WGS libraries."
     },
     {
       "id": "detaxizer__mag", "from": "detaxizer", "to": "mag",
       "source": "table", "kind": "reads",
-      "repoStatus": "OPEN - native emitter exists, output not yet verified", "statusClass": "untested",
+      "repoStatus": "NATIVE, REJECTED BY TARGET - emitted 2026-08-11 and mag 5.5.0 refuses it: group is required but written empty, and short_reads_platform is dependentRequired on short_reads_1 but never emitted", "statusClass": "conversion-required",
       "routable": false, "unit": "runs", "carries": ["WGS"],
-      "note": "--generate_downstream_samplesheets emits a mag samplesheet natively, including the group and short_reads_platform columns mag requires and the generic fetchngs sheet lacks.",
-      "caveat": "Whether mag accepts the generated sheet unmodified is untested. Deferred with detaxizer to the first host-related dataset."
+      "note": "--generate_downstream_samplesheets emits downstream_samplesheets/mag-pe.csv natively. Run 04 produced it on 2026-08-11 - the first time this project consumed a detaxizer-generated samplesheet - and mag 5.5.0 rejects it. This entry previously claimed the sheet carried the group and short_reads_platform columns mag requires; the run disproved that.",
+      "caveat": "Two independent schema violations, both holding whether empty CSV cells are read as empty strings or dropped, so this is not an nf-schema edge case. (1) group is a required property with pattern ^\\S+$, and detaxizer's SAMPLESHEET_MAG hardcodes group = \"\" because it is only used for co-abundance binning. (2) short_reads_platform is dependentRequired on short_reads_1, and detaxizer never emits that column. detaxizer 1.3.0 is writing the column set mag wanted at an earlier release - a native emitter is only as good as its currency with the target's schema, and nothing tells either side when that drifts. That is the concrete argument for standardising the pattern rather than reimplementing it per pipeline."
     },
     {
       "id": "detaxizer__metatdenovo", "from": "detaxizer", "to": "metatdenovo",
@@ -424,7 +425,7 @@
       "summary": "Linnaeus Microbial Observatory, Baltic Sea brackish water at 2 m. Three collection dates carrying all three omics layers, 12 runs, 34.5 GB.",
       "notice": "Working recommendation only - the SIG dataset decision is still open, and the LMO sample-count discrepancy in DATASETS.md is unresolved.",
       "routingBasis": "Illustrative: items are routed by library_strategy alone. That is a drawing rule, not evidence that a run is suitable for a given pipeline.",
-      "activeRoute": ["fetchngs__ampliseq", "fetchngs__taxprofiler", "fetchngs__mag", "fetchngs__metatdenovo", "metatdenovo__proteinfamilies"],
+      "activeRoute": ["fetchngs__ampliseq", "fetchngs__taxprofiler", "fetchngs__mag", "fetchngs__metatdenovo", "fetchngs__detaxizer", "metatdenovo__proteinfamilies"],
       "runs": [
         { "acc": "ERR9715801",  "strategy": "AMPLICON", "layer": "amplicon",          "collectionDate": "2016-03-15", "study": "PRJEB52780", "instrument": "MiSeq",       "fraction": "0.2", "fractionSource": "selection-criteria", "gb": 0.42 },
         { "acc": "ERR12258632", "strategy": "RNA-Seq",  "layer": "metatranscriptome", "collectionDate": "2016-03-15", "study": "PRJEB69280", "instrument": "HiSeq 2500",  "fraction": "0.2", "fractionSource": "selection-criteria", "gb": 2.22 },
@@ -445,8 +446,8 @@
           "note": "Run 2026-08-10 on SLURM with Singularity. All 12 runs downloaded and md5-verified: 555,738,002 reads, 79,977,308,002 bases, 34.5 GB. Emitted samplesheet.csv is 12 rows by 39 columns, with collection_date at column 35. Three environment workarounds were needed (Nextflow 26.04 strict config parser, whitespace in ena_metadata_fields, and a wget container with no /etc/resolv.conf) - all recorded in RUNS.md and AGENTS.md. Provenance link in RUNS.md."
         },
         "detaxizer": {
-          "state": "configured", "in": 6, "out": null, "version": "1.3.0",
-          "note": "Prepared as run 04 on 2026-08-11, not yet executed. Reverses part of the 2026-08-10 decision to skip it: that decision was about filtering LMO against Homo sapiens, which is still declined - no host, and dropping metatranscriptome reads on human k-mer hits ahead of a co-assembly risks taking conserved and low-complexity microbial reads with them. What changed is the contaminant. Run 04 filters phiX (NC_001422.1, 5,386 bp) via --classification_bbduk instead: a sequencing spike-in that is supposed to be absent, that assembles into contigs, and whose ORFs went into run 03's 198,252 proteins. No biological risk, and no 60 GB kraken2 database, because KRAKEN2PREPARATION never runs with kraken2 classification off. Quantifying human content is now tracked as a separate measurement rather than a filter."
+          "state": "run", "in": 6, "out": 172, "version": "1.3.0",
+          "note": "Run 2026-08-11 on the 6 metatranscriptome libraries. Out is 172 phiX read pairs removed from 161,043,840 - 0.000107%, one pair in 936,301. This reverses part of the 2026-08-10 decision to skip detaxizer: that decision was about filtering LMO against Homo sapiens, which is still declined - no host, and dropping metatranscriptome reads on human k-mer hits ahead of a co-assembly risks taking conserved and low-complexity microbial reads with them. What changed is the contaminant. This run filtered phiX (NC_001422.1, 5,386 bp) via --classification_bbduk, so no 60 GB kraken2 database was needed - KRAKEN2PREPARATION never runs with kraken2 classification off. The fraction alone does not justify re-running metatdenovo and proteinfamilies, but 172 pairs is an upper bound of 8x coverage of the phiX genome pooled across the co-assembly, so whether a phiX contig reached run 02 is a question to settle against the existing assembly rather than by rebuilding it. The run's larger result is upstream: its natively generated taxprofiler sheet validates, its mag sheet does not."
         },
         "differentialabundance": {
           "state": "unavailable", "in": null, "out": null, "version": null,
