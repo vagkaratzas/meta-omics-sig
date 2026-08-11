@@ -241,10 +241,12 @@
     },
     {
       "id": "fetchngs__mag", "from": "fetchngs", "to": "mag",
-      "source": "table", "kind": "reads", "repoStatus": "CONVERSION REQUIRED", "statusClass": "conversion-required",
+      "source": "table", "kind": "reads",
+      "repoStatus": "CONVERSION REQUIRED - covered by scripts/converters/fetchngs_to_reads_samplesheet.py --target mag",
+      "statusClass": "conversion-required",
       "routable": true, "unit": "runs", "carries": ["WGS"],
-      "note": "generic samplesheet.csv; no --nf_core_pipeline option",
-      "caveat": "mag 5.5.0 also needs group and short_reads_platform columns that the generic sheet does not carry. Not yet tested. The 2026-08-10 pilot also confirmed the sample column is the ENA experiment accession, so a rename is required as well."
+      "note": "generic samplesheet.csv; no --nf_core_pipeline option. A reshape rather than a rename: mag 5.5.0 also requires group and short_reads_platform. The converter copies short_reads_platform from the fetchngs instrument_platform column (ENA uses mag's own spellings, so ILLUMINA transfers unchanged) and takes group from a --group argument. Output validated against mag 5.5.0 schema_input.json.",
+      "caveat": "group is the one column no upstream pipeline can supply - it selects which samples share a co-abundance binning set, a study-design decision rather than a property of the reads. It is also the column detaxizer 1.3.0 writes empty. The 2026-08-10 pilot confirmed the fetchngs sample column is the ENA experiment accession, so a rename is required as well. Prepared as run 05, not yet executed."
     },
     {
       "id": "fetchngs__metatdenovo", "from": "fetchngs", "to": "metatdenovo",
@@ -356,17 +358,21 @@
     },
     {
       "id": "mag__metapep", "rowKey": "mag__proteins", "from": "mag", "to": "metapep",
-      "source": "table", "kind": "artifact", "repoStatus": "OPEN", "statusClass": "untested",
+      "source": "table", "kind": "artifact",
+      "repoStatus": "CONVERSION REQUIRED - samplesheet only, no ORF-calling step",
+      "statusClass": "conversion-required",
       "routable": false, "unit": "proteins", "carries": [],
-      "note": "predicted proteins FASTA -> input. One validation-table row covers metapep and proteinfamilies together; drawn here as two edges sharing that status.",
-      "intermediateStep": "ORF calling", "caveat": "mag does not itself emit protein FASTA, so an ORF-calling / protein-extraction step belongs between these two stations. Worth proposing as an addition to the map."
+      "note": "Prodigal and Prokka run by default (skip_prodigal and skip_prokka both off), publishing Annotation/Prodigal/<assembler>-<sample>.faa.gz at assembly level and Annotation/Prokka/<assembler>/<bin>/<...>.faa per bin - both extensions proteinfamilies accepts. One validation-table row covers metapep and proteinfamilies together; drawn here as two edges sharing that status.",
+      "caveat": "mag's assembly-level Prodigal file is the same tool, scope and extension as metatdenovo's, so this edge is directly comparable with the executed metatdenovo -> proteinfamilies route."
     },
     {
       "id": "mag__proteinfamilies", "rowKey": "mag__proteins", "from": "mag", "to": "proteinfamilies",
-      "source": "table", "kind": "artifact", "repoStatus": "OPEN", "statusClass": "untested",
+      "source": "table", "kind": "artifact",
+      "repoStatus": "CONVERSION REQUIRED - samplesheet only, no ORF-calling step",
+      "statusClass": "conversion-required",
       "routable": false, "unit": "proteins", "carries": [],
-      "note": "predicted proteins FASTA -> input. One validation-table row covers metapep and proteinfamilies together; drawn here as two edges sharing that status.",
-      "intermediateStep": "ORF calling", "caveat": "mag does not itself emit protein FASTA, so an ORF-calling / protein-extraction step belongs between these two stations. Worth proposing as an addition to the map."
+      "note": "Prodigal and Prokka run by default (skip_prodigal and skip_prokka both off), publishing Annotation/Prodigal/<assembler>-<sample>.faa.gz at assembly level and Annotation/Prokka/<assembler>/<bin>/<...>.faa per bin - both extensions proteinfamilies accepts. One validation-table row covers metapep and proteinfamilies together; drawn here as two edges sharing that status.",
+      "caveat": "mag's assembly-level Prodigal file is the same tool, scope and extension as metatdenovo's, so this edge is directly comparable with the executed metatdenovo -> proteinfamilies route."
     },
     {
       "id": "metatdenovo__proteinfamilies", "from": "metatdenovo", "to": "proteinfamilies",
@@ -448,6 +454,10 @@
         "detaxizer": {
           "state": "run", "in": 6, "out": 172, "version": "1.3.0",
           "note": "Run 2026-08-11 on the 6 metatranscriptome libraries. Out is 172 phiX read pairs removed from 161,043,840 - 0.000107%, one pair in 936,301. This reverses part of the 2026-08-10 decision to skip detaxizer: that decision was about filtering LMO against Homo sapiens, which is still declined - no host, and dropping metatranscriptome reads on human k-mer hits ahead of a co-assembly risks taking conserved and low-complexity microbial reads with them. What changed is the contaminant. This run filtered phiX (NC_001422.1, 5,386 bp) via --classification_bbduk, so no 60 GB kraken2 database was needed - KRAKEN2PREPARATION never runs with kraken2 classification off. The fraction alone does not justify re-running metatdenovo and proteinfamilies, but 172 pairs is an upper bound of 8x coverage of the phiX genome pooled across the co-assembly, so that was checked directly: seqkit locate of phiX174 against run 02's existing megahit contigs, at up to 5 mismatches, returns no hits. phiX never reached assembly depth, so runs 02 and 03 stand as executed and neither is re-run. The run's larger result is upstream: its natively generated taxprofiler sheet validates, its mag sheet does not."
+        },
+        "mag": {
+          "state": "configured", "in": 3, "out": null, "version": "5.5.0",
+          "note": "Prepared as run 05 on 2026-08-11, not yet executed. Three WGS libraries, one per collection date, all in binning group 0 so every assembly gets the differential coverage of the whole series. Assembled per sample with megahit rather than co-assembled, because binning depends on between-sample coverage contrast. MetaBAT2 only, not mag's six default binners, and GTDB-Tk skipped because its database is over 100 GB and this run exists to produce contigs, bins and the protein FASTA that feeds proteinfamilies. detaxizer is deliberately not upstream: mag removes phiX itself by default, so run 04 in front of it would duplicate the step."
         },
         "differentialabundance": {
           "state": "unavailable", "in": null, "out": null, "version": null,

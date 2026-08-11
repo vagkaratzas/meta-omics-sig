@@ -1,0 +1,95 @@
+# nf-core/mag 5.5.0 — LMO pilot, metagenome assembly and binning
+#
+# Generate the samplesheet first (absolute cluster paths, so it is not committed):
+#
+#   python3 scripts/converters/fetchngs_to_reads_samplesheet.py \
+#       <fetchngs-outdir>/samplesheet/samplesheet.csv \
+#       runs/05_mag/samplesheet.csv \
+#       --strategy WGS --target mag --group 0
+#
+# --target mag is not a pure column rename: short_reads_platform is copied from the
+# fetchngs instrument_platform column and checked against mag's enum, and group is supplied
+# by --group because no upstream pipeline can know it.
+#
+# detaxizer is deliberately NOT upstream of this run: mag removes phiX itself (keep_phix is
+# off by default, with a bundled phix_reference), so a detaxizer phiX pass would duplicate
+# a step mag already performs. See runs/04_detaxizer/README.md.
+
+input: "/path/to/runs/05_mag/samplesheet.csv"
+outdir: "/path/to/results/05_mag"
+
+# --- Assembly ---------------------------------------------------------------------------
+#
+# Three samples, one per date. coassemble_group is left OFF, so this is three separate
+# assemblies rather than one — the opposite of run 02's metatdenovo co-assembly, and
+# deliberately so: binning needs per-sample assemblies with differential coverage across
+# samples to separate genomes. Co-assembly would collapse that signal.
+#
+# megahit only. SPAdes on a NovaSeq metagenome is memory-brutal for no benefit this run
+# needs, and it is the same choice made for run 02, which keeps the two assemblies
+# comparable as method as well as data.
+skip_spades: true
+skip_spadeshybrid: true
+skip_megahit: false
+
+# --- Binning ----------------------------------------------------------------------------
+#
+# mag 5.5.0 runs SIX binners by default (MetaBAT2, MaxBin2, CONCOCT, COMEBin, MetaBinner,
+# SemiBin2). That is a benchmark of binners, which is not what this run is for. MetaBAT2 is
+# kept as the single well-established default; the rest are skipped. Turn them back on with
+# refine_bins_dastool once the chain is validated and bin quality is the question.
+skip_metabat2: false
+skip_maxbin2: true
+skip_concoct: true
+skip_comebin: true
+skip_metabinner: true
+skip_semibin: true
+
+# binning_map_mode defaults to 'group', which is why --group matters: every sample in group
+# 0 contributes coverage to every assembly's binning. With three dates from one station that
+# is the right call — more differential coverage, better bins.
+binning_map_mode: "group"
+
+# --- Bin QC -----------------------------------------------------------------------------
+#
+# BUSCO is on by default and downloads its lineage datasets on demand (small). CheckM and
+# CheckM2 are off by default and each wants its own database; left off. Note seqsubmit can
+# recompute completeness/contamination with CheckM2 later if the mag -> seqsubmit edge is
+# ever exercised, so nothing is lost by skipping them here.
+run_busco: true
+run_checkm: false
+run_checkm2: false
+
+# --- Taxonomic classification: OFF, and this is the expensive decision --------------------
+#
+# GTDB-Tk runs BY DEFAULT and auto-downloads the GTDB database — well over 100 GB, and the
+# single largest cost in this pipeline. This run exists to produce contigs, bins and the
+# protein FASTA that feeds proteinfamilies; none of that needs GTDB. Turn it back on when
+# the bins are being interpreted rather than handed onward.
+skip_gtdbtk: true
+
+# CAT is off unless cat_db is given, so nothing to skip — but leaving it unset also means
+# no NCBI_lineage column for a future seqsubmit submission, which would then need CAT.
+
+# --- Gene prediction: ON, and the reason this run matters for the chain -------------------
+#
+# Prodigal publishes Annotation/Prodigal/<assembler>-<sample>.faa.gz — assembly-level
+# protein FASTA, gzipped, exactly the extension proteinfamilies accepts. Prokka publishes
+# per-bin Annotation/Prokka/<assembler>/<bin>/<...>.faa.
+#
+# The Prodigal file is the same tool and same shape as metatdenovo's, which makes
+# run 05 -> proteinfamilies directly comparable with run 03 (MG proteins vs MT proteins,
+# one ORF caller, one clustering pipeline).
+skip_prodigal: false
+skip_prokka: false
+
+# --- Off, deliberately --------------------------------------------------------------------
+#
+#   run_virus_identification  false  geNomad needs its own database. Noted because it is a
+#                                    cheaper route to viral contigs than nf-core/viralmetagenome,
+#                                    whose consensus-genome design does not fit this dataset
+#   ancient_dna               false  not aDNA
+#   bbnorm                    false  normalisation changes coverage, which binning depends on
+#   host_genome / host_fasta  unset  Baltic seawater, no host. phiX removal stays on and is
+#                                    handled by mag itself
+#   refine_bins_dastool       false  needs >1 binner to refine between

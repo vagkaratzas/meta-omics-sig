@@ -223,9 +223,7 @@ that way until the QC numbers in `runs/03_proteinfamilies/README.md#verify` are 
 now on the metro map** — metatdenovo feeds the shared `fasta` interchange that the protein
 stations hang off. The proposal rested on an executed handoff rather than a schema reading:
 metatdenovo with prodigal emits `.faa.gz` directly, so it needed only a one-row samplesheet
-and no reformatting. The originally-mapped route, `mag → proteinfamilies`, still needs one
-more piece: mag does not itself emit protein FASTA, so an ORF-calling step belongs between
-those two stations. Row in
+and no reformatting. Row in
 [PLAN.md](PLAN.md#samplesheet-chaining--validation-table).
 
 ### proteinfamilies emits downstream samplesheets natively — the second pipeline found that does
@@ -352,7 +350,7 @@ assert-based `--selftest` that runs with no arguments and no fixtures:
 
 | Script | Edge | Guards against |
 |--------|------|----------------|
-| `fetchngs_to_reads_samplesheet.py` | fetchngs → metatdenovo / ampliseq / viralmetagenome (`--target reads`) and fetchngs → detaxizer (`--target detaxizer`) | stale `sample_alias` dates leaking into sample names; duplicate sample names silently merging samples. `--target` only renames the two FASTQ columns, so every target keeps identical sample names — which is what makes run 02 and run 04 comparable |
+| `fetchngs_to_reads_samplesheet.py` | fetchngs → metatdenovo / ampliseq / viralmetagenome (`--target reads`), → detaxizer (`--target detaxizer`), → mag (`--target mag`) | stale `sample_alias` dates leaking into sample names; duplicate sample names silently merging samples. Sample names are identical across targets, which is what makes runs 02, 04 and 05 comparable. `--target mag` additionally refuses a long-read `instrument_platform` in `short_reads_platform`, and refuses an empty `group` — the column mag requires and [detaxizer#100](https://github.com/nf-core/detaxizer/issues/100) writes blank |
 | `metatdenovo_to_proteinfamilies.py` | metatdenovo → proteinfamilies | emitting a samplesheet proteinfamilies would reject (the transdecoder `.pep` case); more than one protein FASTA, which would mean the co-assembly assumption broke |
 | `detaxizer_to_reads_samplesheet.py` | detaxizer → metatdenovo / ampliseq / viralmetagenome | picking up `filter/removed/` instead of `filter/filtered/`; an orphaned mate reaching a co-assembler; silently writing an empty sheet when `--skip_filter` meant no filtered reads were ever published. Handles both `--filtering_tool` naming schemes |
 
