@@ -73,7 +73,8 @@ the surrounding loop is written as though `array2` were per-mate, and if detaxiz
 passes per-mate id files, R2 would be silently filtered with R1's ids and the output would
 desynchronise — exactly the failure a co-assembler cannot detect. One-character fix.
 
-To file against nf-core/detaxizer, alongside the `metatdenovo` enum request.
+Filed 2026-08-11: [nf-core/detaxizer#99](https://github.com/nf-core/detaxizer/issues/99).
+The `metatdenovo` addition to `--generate_pipeline_samplesheets` is still to file.
 
 ## Build the samplesheet
 

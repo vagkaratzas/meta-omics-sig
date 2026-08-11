@@ -261,8 +261,10 @@ upstream, or shipped as reusable converters.
 > string, which bash coerces to `0`. Harmless and in fact correct today, because `MERGE_IDS`
 > emits one id file per sample and `0` is the only valid index; a latent hazard if detaxizer
 > ever passes per-mate id files, since R2 would then be filtered with R1's ids and the pairs
-> would desynchronise undetectably. One-character fix, to file alongside the `metatdenovo`
-> enum request.
+> would desynchronise undetectably. One-character fix. **Filed 2026-08-11 as
+> [nf-core/detaxizer#99](https://github.com/nf-core/detaxizer/issues/99)** — the first
+> upstream issue this project has actually filed rather than drafted. The `metatdenovo` enum
+> request is still unfiled.
 
 > **Conversion scripts:** the conversions this table calls for live in
 > `scripts/converters/`, each with an assert-based `--selftest`. They are the deliverable
