@@ -21,8 +21,8 @@ site-specific and go stale; the Seqera link preserves the full execution record.
 | # | Pipeline | Revision | Date | Scope | Status | Provenance |
 |---|----------|----------|------|-------|--------|------------|
 | 01 | nf-core/fetchngs | 1.12.0 | 2026-08-10 | LMO pilot — 3 dates × 3 omics layers | **SUCCESS** | [Seqera run](https://cloud.seqera.io/user/vangelis/watch/1Hd5FAdXhle9M9) |
-| 02 | nf-core/metatdenovo | 1.4.0 | — | 6 MT libraries → one co-assembly + protein FASTA | PREPARED | — |
-| 03 | nf-core/proteinfamilies | 2.5.0 | — | protein families from the run-02 ORFs | PREPARED, blocked on 02 | — |
+| 02 | nf-core/metatdenovo | 1.4.0 | 2026-08-11 | 6 MT libraries → one co-assembly + protein FASTA | **SUCCESS** — 198,252 proteins | — |
+| 03 | nf-core/proteinfamilies | 2.5.0 | 2026-08-11 | protein families from the run-02 ORFs | RUNNING | — |
 
 ---
 
@@ -143,7 +143,7 @@ unreleased change. Detail and suggested wording in the section below.
 
 ## 02 — metatdenovo, LMO metatranscriptome co-assembly
 
-**Status: prepared, not yet run.** No provenance link until it executes.
+**Status: SUCCESS, 2026-08-11.**
 
 | | |
 |---|---|
@@ -152,6 +152,15 @@ unreleased change. Detail and suggested wording in the section below.
 | Input | 6 RNA-Seq libraries from run 01, ~27 GB |
 | Samplesheet | generated on-cluster by `scripts/converters/fetchngs_to_reads_samplesheet.py` |
 | Params | [`runs/02_metatdenovo/params.yml`](runs/02_metatdenovo/params.yml) |
+| Date | 2026-08-11 |
+| Outcome | Success — one megahit co-assembly, prodigal ORF calling, **198,252 predicted proteins** in `prodigal/*.faa.gz` |
+
+This exercises the `fetchngs → metatdenovo` edge: the converted samplesheet was accepted
+and the pipeline ran to completion on it. The row in
+[PLAN.md](PLAN.md#samplesheet-chaining--validation-table) stays **CONVERSION REQUIRED** —
+that is the mechanism and running the chain does not change it — and now carries an
+`exercised 2026-08-11` clause. Extending `--nf_core_pipeline` to metatdenovo is what would
+turn it green.
 
 ### Why the parameters are what they are
 
@@ -184,21 +193,24 @@ whose LMO metagenome dates are stale:
 
 ## 03 — proteinfamilies, families from the metatranscriptome ORFs
 
-**Status: prepared, blocked on run 02.**
+**Status: RUNNING, started 2026-08-11.** The handoff itself is settled — the generated
+samplesheet was accepted and the run started on all 198,252 proteins. Family counts and
+outcome follow when it finishes.
 
 | | |
 |---|---|
 | Pipeline | `nf-core/proteinfamilies` `-r 2.5.0` (Aug 2026) |
 | Nextflow | requires `>=26.04.0`; modern template |
-| Input | one row — metatdenovo co-assembles, so there is a single protein FASTA |
+| Input | one row, 198,252 proteins — metatdenovo co-assembles, so there is a single protein FASTA |
 | Samplesheet | generated on-cluster by `scripts/converters/metatdenovo_to_proteinfamilies.py` |
 | Params | [`runs/03_proteinfamilies/params.yml`](runs/03_proteinfamilies/params.yml) |
 
 ### New edge, not in the metro map
 
-`metatdenovo → proteinfamilies` is not yet on the metro map, and looks worth adding.
-metatdenovo with prodigal emits `.faa.gz` directly, so the handoff needs only a one-row
-samplesheet and no reformatting. The mapped route, `mag → proteinfamilies`, needs one more
+`metatdenovo → proteinfamilies` is not yet on the metro map, and looks worth adding — the
+proposal now rests on an executed handoff, not on a schema reading. metatdenovo with
+prodigal emits `.faa.gz` directly, so the handoff needs only a one-row samplesheet and no
+reformatting. The mapped route, `mag → proteinfamilies`, needs one more
 piece first: mag does not itself emit protein FASTA, so an ORF-calling step belongs between
 those two stations. Recorded as a new row in
 [PLAN.md](PLAN.md#samplesheet-chaining--validation-table) and proposed to the SIG.

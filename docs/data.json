@@ -210,9 +210,10 @@
     },
     {
       "id": "fetchngs__metatdenovo", "from": "fetchngs", "to": "metatdenovo",
-      "source": "table", "kind": "reads", "repoStatus": "CONVERSION REQUIRED", "statusClass": "conversion-required",
+      "source": "table", "kind": "reads", "repoStatus": "CONVERSION REQUIRED - exercised 2026-08-11 via scripts/converters/fetchngs_to_reads_samplesheet.py", "statusClass": "conversion-required",
+      "executed": true,
       "routable": true, "unit": "runs", "carries": ["RNA-Seq"],
-      "note": "generic samplesheet.csv; no --nf_core_pipeline option",
+      "note": "generic samplesheet.csv; no --nf_core_pipeline option. Converted sheet was accepted and metatdenovo 1.4.0 ran to completion on it.",
       "caveat": "Confirmed in the 2026-08-10 pilot run: the sample column is the ENA experiment accession, so a rename is required alongside the column conversion. The six RNA-Seq runs are two library-level replicates per date, which metatdenovo will treat as six independent samples unless merged first."
     },
     {
@@ -315,10 +316,11 @@
     {
       "id": "metatdenovo__proteinfamilies", "from": "metatdenovo", "to": "proteinfamilies",
       "source": "table", "kind": "artifact",
-      "repoStatus": "CONVERSION REQUIRED - one-row samplesheet, no reformatting",
+      "repoStatus": "CONVERSION REQUIRED - one-row samplesheet, no reformatting; exercised 2026-08-11",
       "statusClass": "conversion-required",
-      "routable": false, "unit": "proteins", "carries": [],
-      "note": "--orf_caller prodigal publishes prodigal/<assembly>.faa.gz, an extension proteinfamilies accepts. Only a one-row sample,fasta samplesheet is needed; the sequences themselves transfer unchanged.",
+      "executed": true,
+      "routable": true, "unit": "proteins", "carries": [], "dotCount": 1,
+      "note": "--orf_caller prodigal publishes prodigal/<assembly>.faa.gz, an extension proteinfamilies accepts. Only a one-row sample,fasta samplesheet is needed; the sequences themselves transfer unchanged. Executed: 198,252 predicted proteins handed over via scripts/converters/metatdenovo_to_proteinfamilies.py, sheet accepted by proteinfamilies 2.5.0.",
       "caveat": "Not yet on the metro map; a candidate addition, since metatdenovo is the only pipeline here that emits protein FASTA directly. The mapped route via mag needs an ORF-calling step first. The ORF caller matters: transdecoder publishes *.transdecoder.pep.gz, and .pep is not among proteinfamilies' accepted extensions - adding it upstream would make that route work too."
     },
     {
@@ -359,7 +361,7 @@
       "summary": "Linnaeus Microbial Observatory, Baltic Sea brackish water at 2 m. Three collection dates carrying all three omics layers, 12 runs, 34.5 GB.",
       "notice": "Working recommendation only - the SIG dataset decision is still open, and the LMO sample-count discrepancy in DATASETS.md is unresolved.",
       "routingBasis": "Illustrative: items are routed by library_strategy alone. That is a drawing rule, not evidence that a run is suitable for a given pipeline.",
-      "activeRoute": ["fetchngs__ampliseq", "fetchngs__taxprofiler", "fetchngs__mag", "fetchngs__metatdenovo"],
+      "activeRoute": ["fetchngs__ampliseq", "fetchngs__taxprofiler", "fetchngs__mag", "fetchngs__metatdenovo", "metatdenovo__proteinfamilies"],
       "runs": [
         { "acc": "ERR9715801",  "strategy": "AMPLICON", "layer": "amplicon",          "collectionDate": "2016-03-15", "study": "PRJEB52780", "instrument": "MiSeq",       "fraction": "0.2", "fractionSource": "selection-criteria", "gb": 0.42 },
         { "acc": "ERR12258632", "strategy": "RNA-Seq",  "layer": "metatranscriptome", "collectionDate": "2016-03-15", "study": "PRJEB69280", "instrument": "HiSeq 2500",  "fraction": "0.2", "fractionSource": "selection-criteria", "gb": 2.22 },
@@ -392,12 +394,12 @@
           "note": "Unreachable in this pilot: the only edge feeding viralmetagenome comes from detaxizer, which is not selected, and no validation-table edge feeds it at all."
         },
         "metatdenovo": {
-          "state": "configured", "in": 6, "out": null, "version": "1.4.0",
-          "note": "Prepared, not yet run. The six RNA-Seq libraries are converted to a sample,fastq_1,fastq_2 sheet by scripts/converters/fetchngs_to_reads_samplesheet.py, which renames samples off collection_date rather than the ERX accession fetchngs supplies. Configured as a single megahit co-assembly with prodigal ORF calling, specifically so a proteinfamilies-compatible .faa.gz is produced; eggnog, kofamscan and eukulele are skipped for this run."
+          "state": "run", "in": 6, "out": 198252, "version": "1.4.0",
+          "note": "Run 2026-08-11. The six RNA-Seq libraries were converted to a sample,fastq_1,fastq_2 sheet by scripts/converters/fetchngs_to_reads_samplesheet.py, which renames samples off collection_date rather than the ERX accession fetchngs supplies. Single megahit co-assembly with prodigal ORF calling, specifically so a proteinfamilies-compatible .faa.gz is produced; eggnog, kofamscan and eukulele skipped. Out is 198,252 predicted proteins in one FASTA, not a sample count."
         },
         "proteinfamilies": {
-          "state": "configured", "in": 1, "out": null, "version": "2.5.0",
-          "note": "Prepared, not yet run, blocked on metatdenovo. One input row, because metatdenovo co-assembles into a single protein FASTA. Fed from metatdenovo rather than from mag, since mag emits no protein FASTA."
+          "state": "running", "in": 1, "out": null, "version": "2.5.0",
+          "note": "Started 2026-08-11 on the 198,252 proteins from metatdenovo. One input row, because metatdenovo co-assembles into a single protein FASTA. Fed from metatdenovo rather than from mag, since mag emits no protein FASTA. The samplesheet handoff is validated - it was accepted and the run started; family counts follow when it finishes."
         }
       }
     }

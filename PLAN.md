@@ -128,8 +128,11 @@ upstream, or shipped as reusable converters.
 > conversion is small (column rename/subset), and extending the `--nf_core_pipeline` enum
 > would remove it for a lot of users: a good feature request, filed as such.
 
-> **Candidate new edge — `metatdenovo → proteinfamilies` (schemas checked 2026-08-10):**
-> not yet on the metro map, and worth adding. metatdenovo 1.4.0 with
+> **Candidate new edge — `metatdenovo → proteinfamilies` (schemas checked 2026-08-10,
+> handoff executed 2026-08-11):** not yet on the metro map, and worth adding — the case is
+> now a run rather than a schema reading: metatdenovo's 198,252 predicted proteins were
+> handed to proteinfamilies 2.5.0 through a generated one-row samplesheet, which the
+> pipeline accepted. metatdenovo 1.4.0 with
 > `--orf_caller prodigal` publishes `prodigal/<assembly>.faa.gz`; proteinfamilies 2.5.0
 > accepts `.fa|.fasta|.faa|.fas` (± `.gz`), so the protein FASTA transfers with no
 > reformatting — only a one-row `sample,fasta` samplesheet. The mapped route,
@@ -168,13 +171,21 @@ upstream, or shipped as reusable converters.
 > `scripts/converters/`, each with an assert-based `--selftest`. They are the deliverable
 > that turns "CONVERSION REQUIRED" from a finding into a working handoff.
 
+> **Reading the Status column:** the status itself is the **mechanism** — whether the
+> upstream pipeline hands its successor a ready-made samplesheet (OPEN, pending
+> verification) or a converter has to sit between them (CONVERSION REQUIRED). Running the
+> chain never changes that: a handoff that needed a converter still needs one afterwards.
+> Execution is recorded as a separate **exercised `<date>`** clause, which says a real run
+> consumed the handed-over file. On the metro map the mechanism is the edge colour and
+> execution is the moving dot, so the two never overwrite each other.
+
 | From | To | Samplesheet handoff mechanism | Status |
 |------|----|-------------------------------|--------|
 | fetchngs | detaxizer | generic `samplesheet.csv`; no `--nf_core_pipeline` support, and detaxizer's columns are `short_reads_fastq_1/2`, not `fastq_1/2` | **CONVERSION REQUIRED** |
 | fetchngs | ampliseq | generic `samplesheet.csv`; **no `--nf_core_pipeline` option** | **CONVERSION REQUIRED** |
 | fetchngs | taxprofiler | `--nf_core_pipeline taxprofiler` emits a purpose-built samplesheet | OPEN — flag exists, output not yet verified |
 | fetchngs | mag | generic `samplesheet.csv`; **no `--nf_core_pipeline` option** | **CONVERSION REQUIRED** |
-| fetchngs | metatdenovo | generic `samplesheet.csv`; **no `--nf_core_pipeline` option** | **CONVERSION REQUIRED** |
+| fetchngs | metatdenovo | generic `samplesheet.csv`; **no `--nf_core_pipeline` option** | **CONVERSION REQUIRED** — exercised 2026-08-11 via `scripts/converters/fetchngs_to_reads_samplesheet.py`; metatdenovo 1.4.0 ran to completion on the converted sheet |
 | detaxizer | ampliseq | filtered FASTQ → ampliseq samplesheet; **excluded** from `--generate_pipeline_samplesheets` | **CONVERSION REQUIRED** |
 | detaxizer | taxprofiler | `--generate_downstream_samplesheets` emits a taxprofiler samplesheet natively | OPEN — native emitter exists, output not yet verified |
 | detaxizer | mag | `--generate_downstream_samplesheets` emits a mag samplesheet natively | OPEN — native emitter exists, output not yet verified |
@@ -184,7 +195,7 @@ upstream, or shipped as reusable converters.
 | mag | phyloplace | contig FASTA → phyloplace input | OPEN |
 | mag | magmap | MAG FASTA → magmap reference input | OPEN |
 | mag | metapep / proteinfamilies | predicted proteins FASTA → input | OPEN |
-| **metatdenovo** | **proteinfamilies** | `--orf_caller prodigal` publishes `prodigal/<assembly>.faa.gz`, an extension proteinfamilies accepts | **CONVERSION REQUIRED** — one-row samplesheet, no reformatting |
+| **metatdenovo** | **proteinfamilies** | `--orf_caller prodigal` publishes `prodigal/<assembly>.faa.gz`, an extension proteinfamilies accepts | **CONVERSION REQUIRED** — one-row samplesheet, no reformatting; exercised 2026-08-11, 198,252 proteins accepted by proteinfamilies 2.5.0 |
 | proteinfamilies | proteinfold | representative sequence per family → protein FASTA input | OPEN |
 | taxprofiler | differentialabundance | abundance profile → differentialabundance input | OPEN |
 | ampliseq | differentialabundance | QIIME2/BIOM profile → differentialabundance input | OPEN |

@@ -80,7 +80,7 @@ ls <outdir>/
 
 | Step | Status |
 |------|--------|
-| Samplesheet conversion | **READY** — converter written and selftested |
-| proteinfamilies run | BLOCKED on run 02 |
+| Samplesheet conversion | **DONE** — one row, 198,252 proteins, accepted by proteinfamilies 2.5.0 |
+| proteinfamilies run | RUNNING since 2026-08-11 |
 
 Full run record and provenance: [RUNS.md](../../RUNS.md).

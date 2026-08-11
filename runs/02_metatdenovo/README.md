@@ -102,8 +102,8 @@ ls <outdir>/prodigal/ | grep -E '\.(fa|fasta|faa|fas)(\.gz)?$'
 
 | Step | Status |
 |------|--------|
-| Samplesheet conversion | **READY** — converter written and selftested |
-| metatdenovo co-assembly + ORF calling | NOT YET RUN |
-| `.faa.gz` handed to proteinfamilies | BLOCKED on the run |
+| Samplesheet conversion | **DONE** — converted sheet accepted by metatdenovo |
+| metatdenovo co-assembly + ORF calling | **SUCCESS** 2026-08-11 — 198,252 predicted proteins |
+| `.faa.gz` handed to proteinfamilies | **DONE** — run 03 started on it |
 
 Full run record and provenance: [RUNS.md](../../RUNS.md).

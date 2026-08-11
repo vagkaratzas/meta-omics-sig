@@ -157,9 +157,9 @@ function boot() {
 
 function legend() {
   const items = [
-    ["c-validated", "&#10003;", "handoff exercised end to end"],
+    ["c-validated", "&#10003;", "works as-is &mdash; upstream emits the downstream samplesheet"],
     ["c-conversion-required", "&#9873;", "works, with a conversion step"],
-    ["c-untested", "?", "tracked route, not yet exercised"],
+    ["c-untested", "?", "tracked route, mechanism read from schemas only"],
     ["c-absent-from-table", "&#8709;", "on the metro map, not yet tracked here"],
     ["c-site-annotation", "&#9678;", "our note, not a pipeline's own status"],
     ["", "&#9711;", "planned input &mdash; not yet fetched"],
@@ -191,13 +191,17 @@ function counts() {
 /* ---- routing -------------------------------------------------------------
    A dot exists on an edge only if the edge is in this dataset's activeRoute,
    the run's strategy is carried, and the SOURCE station has actually run.
-   Dots never continue past a station that has not run, so today they travel
-   exactly one hop and every dot is "planned" rather than "actual".          */
+   Dots never continue past a station that has not run, so a dot travels one hop
+   per station that has produced real output.                                */
 function dotsFor(edge, st) {
   if (!edge.routable || !ds.activeRoute.includes(edge.id)) return [];
   if (st(edge.from).state === "unavailable" || st(edge.from).state === "not-selected") return [];
-  const runs = ds.runs.filter(r => (edge.carries || []).includes(r.strategy));
   const actual = st(edge.from).state === "run";
+  // Not every edge carries one item per sequencing run: a co-assembly collapses six
+  // libraries into a single protein FASTA, so that edge states its item count directly
+  // rather than being counted out of ds.runs.
+  if (edge.dotCount) return Array.from({ length: edge.dotCount }, () => ({ actual, total: edge.dotCount }));
+  const runs = ds.runs.filter(r => (edge.carries || []).includes(r.strategy));
   return runs.slice(0, MAXDOTS).map(r => ({ run: r, actual, total: runs.length }));
 }
 
@@ -306,11 +310,17 @@ function badge(st) {
          .forEach(e => rows.set(e.rowKey || e.id, e.statusClass));
   const tbl = [...rows.values()];
   const c = k => tbl.filter(x => x === k).length;
+  // Two independent axes: statusClass is the MECHANISM (does this handoff need a
+  // converter), `executed` is whether a real run has consumed the handed-over file.
+  // A conversion-required edge can be exercised; a native one can still be untried.
+  const done = new Set(D.edges.filter(e => e.source === "table" && e.executed)
+                              .map(e => e.rowKey || e.id)).size;
   const absent = D.edges.filter(e => e.source === "diagram").length;
   const run = D.stations.filter(s => s.kind === "pipeline" && st(s.id).state === "run").length;
   const pipes = D.stations.filter(s => s.kind === "pipeline").length;
   document.getElementById("badge").innerHTML =
-    `<b>${c("validated")}/${tbl.length}</b> handoffs validated &middot;
+    `<b>${done}/${tbl.length}</b> handoffs exercised &middot;
+     <b>${c("validated")}</b> native, no conversion &middot;
      <b>${c("conversion-required")}</b> need conversion &middot;
      <b>${c("untested")}</b> untested &middot;
      <b>${absent}</b> in the metro map but not the table &middot;
