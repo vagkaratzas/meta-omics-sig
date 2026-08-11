@@ -23,9 +23,10 @@
       "blurb": "Screens reads for contaminant or host sequence and can filter them out. Defaults to human contamination screening (tax2filter = Homo sapiens), but the target taxon and reference are configurable. It can also emit samplesheets for downstream pipelines - one of two pipelines in this chain that do, the other being proteinfamilies.",
       "io": { "in": "FASTQ", "out": "Filtered FASTQ + optional downstream samplesheets" },
       "requires": [
-        "--input samplesheet: sample, short_reads_fastq_1, short_reads_fastq_2, long_reads_fastq_1",
-        "--kraken2db - defaults to downloading k2_standard (~80 GB) from S3; point at a local copy",
-        "--skip_filter for detect-only mode, assessing contamination without altering reads",
+        "--input samplesheet: sample, short_reads_fastq_1, short_reads_fastq_2, long_reads_fastq_1 - gzipped FASTQ only",
+        "--kraken2db - defaults to downloading k2_standard (~60 GB) from S3; point at a local copy. Only fetched when kraken2 classification actually runs",
+        "--classification_bbduk with --fasta_bbduk takes an arbitrary contaminant FASTA instead, so a small target (phiX, 5.4 kb) needs no kraken2 database at all",
+        "--skip_filter for detect-only mode - but it also disables the downstream samplesheet emitter, which is fed a channel that stays empty unless the filter ran",
         "--generate_downstream_samplesheets with --generate_pipeline_samplesheets (taxprofiler and/or mag only)"
       ],
       "requiresReadFrom": "1.3.0",
@@ -216,10 +217,12 @@
   "edges": [
     {
       "id": "fetchngs__detaxizer", "from": "fetchngs", "to": "detaxizer",
-      "source": "table", "kind": "reads", "repoStatus": "CONVERSION REQUIRED", "statusClass": "conversion-required",
-      "routable": false, "unit": "runs", "carries": ["AMPLICON", "WGS", "RNA-Seq"],
-      "note": "generic samplesheet.csv; no --nf_core_pipeline support, and detaxizer's own input columns are short_reads_fastq_1 / short_reads_fastq_2 / long_reads_fastq_1, not fastq_1 / fastq_2.",
-      "caveat": "Status derived from comparing the two schemas, not from an execution - detaxizer is not run for the LMO pilot."
+      "source": "table", "kind": "reads",
+      "repoStatus": "CONVERSION REQUIRED - covered by scripts/converters/fetchngs_to_reads_samplesheet.py --target detaxizer",
+      "statusClass": "conversion-required",
+      "routable": true, "unit": "runs", "carries": ["RNA-Seq"],
+      "note": "generic samplesheet.csv; no --nf_core_pipeline support, and detaxizer's own input columns are short_reads_fastq_1 / short_reads_fastq_2 / long_reads_fastq_1, not fastq_1 / fastq_2. The converter renames only those two columns, so sample names are identical to the --target reads output and run 02 stays comparable with run 04.",
+      "caveat": "Status derived from comparing the two schemas, not from an execution - run 04 is prepared but has not been run. Carries only RNA-Seq here because the pilot's detaxizer run targets the metatranscriptome libraries; the same conversion covers the amplicon and WGS layers unchanged."
     },
     {
       "id": "fetchngs__ampliseq", "from": "fetchngs", "to": "ampliseq",
@@ -296,9 +299,12 @@
     },
     {
       "id": "detaxizer__metatdenovo", "from": "detaxizer", "to": "metatdenovo",
-      "source": "diagram", "kind": "reads", "statusClass": "absent-from-table",
+      "source": "table", "kind": "reads",
+      "repoStatus": "CONVERSION REQUIRED - covered by scripts/converters/detaxizer_to_reads_samplesheet.py",
+      "statusClass": "conversion-required",
       "routable": false, "unit": "runs", "carries": ["RNA-Seq"],
-      "note": "Drawn in the PLAN.md metro map but absent from the validation table.", "caveat": null
+      "note": "Filtered FASTQ -> sample,fastq_1,fastq_2. metatdenovo is excluded from --generate_pipeline_samplesheets, whose pattern admits only taxprofiler and mag, so the native emitter does not reach it. Added to the validation table 2026-08-11, when detaxizer re-entered the pilot as run 04.",
+      "caveat": "Mate synchronisation was verified in detaxizer 1.3.0 source rather than assumed, because a co-assembler cannot detect desynchronised pairs: MERGE_IDS unions the per-mate and per-classifier hit lists into one id file per sample, and modules/local/filter.nf applies that same list to both mates. Status derived from schemas and source, not from an execution - run 04 is prepared but has not been run."
     },
     {
       "id": "reference-genomes__createtaxdb", "from": "reference-genomes", "to": "createtaxdb",
@@ -439,8 +445,8 @@
           "note": "Run 2026-08-10 on SLURM with Singularity. All 12 runs downloaded and md5-verified: 555,738,002 reads, 79,977,308,002 bases, 34.5 GB. Emitted samplesheet.csv is 12 rows by 39 columns, with collection_date at column 35. Three environment workarounds were needed (Nextflow 26.04 strict config parser, whitespace in ena_metadata_fields, and a wget container with no /etc/resolv.conf) - all recorded in RUNS.md and AGENTS.md. Provenance link in RUNS.md."
         },
         "detaxizer": {
-          "state": "not-selected", "in": null, "out": null, "version": null,
-          "note": "Deliberately not run for this pilot, decided 2026-08-10. LMO is Baltic brackish seawater with no host, tax2filter defaults to Homo sapiens, and filtering ahead of a metatranscriptome co-assembly risks removing conserved or low-complexity reads for no expected biological gain. A scoping choice, not a claim that contamination is absent. Deferred to the first host-related dataset, where it also unlocks a test of its native --generate_downstream_samplesheets emitter for taxprofiler and mag. It is no longer the only pipeline in this chain that ships a generator - proteinfamilies 2.5.0 is the second, and run 03 already emitted its two sheets - but detaxizer's are still the only generated sheets nothing has produced yet."
+          "state": "configured", "in": 6, "out": null, "version": "1.3.0",
+          "note": "Prepared as run 04 on 2026-08-11, not yet executed. Reverses part of the 2026-08-10 decision to skip it: that decision was about filtering LMO against Homo sapiens, which is still declined - no host, and dropping metatranscriptome reads on human k-mer hits ahead of a co-assembly risks taking conserved and low-complexity microbial reads with them. What changed is the contaminant. Run 04 filters phiX (NC_001422.1, 5,386 bp) via --classification_bbduk instead: a sequencing spike-in that is supposed to be absent, that assembles into contigs, and whose ORFs went into run 03's 198,252 proteins. No biological risk, and no 60 GB kraken2 database, because KRAKEN2PREPARATION never runs with kraken2 classification off. Quantifying human content is now tracked as a separate measurement rather than a filter."
         },
         "differentialabundance": {
           "state": "unavailable", "in": null, "out": null, "version": null,

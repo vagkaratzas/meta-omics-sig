@@ -50,6 +50,7 @@ with the Seqera Platform provenance link lives in [RUNS.md](RUNS.md).
 | 01 | fetchngs | [runs/01_fetchngs/README.md](runs/01_fetchngs/README.md) |
 | 02 | metatdenovo | [runs/02_metatdenovo/README.md](runs/02_metatdenovo/README.md) |
 | 03 | proteinfamilies | [runs/03_proteinfamilies/README.md](runs/03_proteinfamilies/README.md) |
+| 04 | detaxizer | [runs/04_detaxizer/README.md](runs/04_detaxizer/README.md) — prepared, not run |
 
 ## Scripts
 

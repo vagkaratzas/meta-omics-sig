@@ -69,7 +69,7 @@ that we have not yet exercised on real data.
 
 ```
 fetchngs (SRA accessions)
-  └─► detaxizer (remove host reads, if host-related data) [UNTESTED — NOT RUN FOR LMO]
+  └─► detaxizer (remove contaminant reads — phiX spike-in for LMO, host for host data) [PREPARED, RUN 04]
         ├─► ampliseq (amplicon reads → taxonomy profiles) [UNTESTED]
         │     └─► differentialabundance (profiles, condition comparison) [UNTESTED]
         ├─► createtaxdb (build custom reference DB) [UNTESTED]
@@ -113,9 +113,12 @@ fetchngs (SRA accessions)
 ### Core chain (high confidence, data-driven)
 fetchngs → [ampliseq | taxprofiler | mag | metatdenovo]
 
-detaxizer is omitted from the LMO core chain — no host, so nothing to remove. It re-enters
-the chain for the first host-related dataset, where it also unlocks a test of its native
-`--generate_downstream_samplesheets` emitter.
+detaxizer was omitted from the LMO core chain on 2026-08-10 — no host, so nothing to remove.
+Revised 2026-08-11: it re-enters as **run 04** with phiX rather than *Homo sapiens* as the
+contaminant, which is a filter with a downstream consequence and no biological risk, and
+which also unlocks the first test of its native `--generate_downstream_samplesheets` emitter
+without waiting for a host-related dataset. Human decontamination remains deferred; see the
+scope-decision note in the validation table below.
 
 ### Stretch nodes (additional omics layers or heavy compute)
 - eager: for ancient DNA preprocessing — likely out of scope for modern environmental/clinical data
@@ -219,13 +222,47 @@ upstream, or shipped as reusable converters.
 > `sample, short_reads_fastq_1, short_reads_fastq_2, long_reads_fastq_1` — not
 > `sample, fastq_1, fastq_2` — so `fetchngs → detaxizer` needs a conversion too.
 >
-> **Scope decision (2026-08-10):** detaxizer is **not run for the LMO pilot.** LMO is
-> Baltic brackish seawater with no host, `tax2filter` defaults to *Homo sapiens*, and
-> filtering before a metatranscriptome co-assembly risks removing conserved or
-> low-complexity reads for no expected biological gain. Deferred to a future
-> host-related dataset (human gut is the obvious candidate) where the step has biological
-> meaning as well as validation value. Its statuses above are recorded from schemas, not
-> from a run.
+> **Scope decision (2026-08-10), revised (2026-08-11):** detaxizer was deferred out of the
+> LMO pilot because LMO is Baltic brackish seawater with no host, `tax2filter` defaults to
+> *Homo sapiens*, and filtering before a metatranscriptome co-assembly risks removing
+> conserved or low-complexity reads for no expected biological gain. **That reasoning still
+> holds for human filtering and is unchanged.** What it missed is that detaxizer's
+> contaminant is a parameter, not a fixed target. Prompted by the detaxizer maintainer,
+> the pilot now includes a detaxizer run with a different contaminant:
+>
+> - **phiX, not human.** `--classification_bbduk` with `--fasta_bbduk` pointed at φX174
+>   (NC_001422.1, 5,386 bp) filters the Illumina spike-in control. phiX is not biology —
+>   it is *supposed* to be absent, it assembles into contigs, and those contigs yielded
+>   ORFs that went into run 03's 198,252 proteins. There is no case for keeping it, so the
+>   filter carries none of the risk the human filter does. With `--classification_kraken2
+>   false` the `KRAKEN2PREPARATION` block never runs, so this costs a 5.4 kb FASTA rather
+>   than the ~60 GB `k2_standard` database.
+> - **Human becomes a measurement, not a filter.** "How much human is in a Baltic seawater
+>   metatranscriptome" is a publishable number either way, and it is the evidence the
+>   2026-08-10 decision was taken without. It needs kraken2 and therefore the 60 GB
+>   database, so it is tracked as a separate decision in
+>   [`runs/04_detaxizer/README.md`](runs/04_detaxizer/README.md), not bolted onto the phiX
+>   run — with both classifiers on, `MERGE_IDS` unions their hits and the filter would
+>   remove human-classified reads along with phiX.
+>
+> The run is prepared as **run 04** and not yet executed. Its statuses below are still
+> recorded from schemas and source, not from a run.
+>
+> **Detect-only and the native samplesheet emitter are mutually exclusive in 1.3.0.**
+> `GENERATE_DOWNSTREAM_SAMPLESHEETS` is fed `ch_filtered_reads`, which stays
+> `Channel.empty()` unless the filter ran, so `--skip_filter true` silently produces no
+> downstream sheets. Testing the emitter requires actually filtering — which is a second
+> reason the phiX filter, rather than a detect-only human pass, is the run worth doing.
+>
+> **Upstream bug, found reading `modules/local/filter.nf` to confirm mate synchronisation:**
+> the id-file array is indexed with `${array2[$(COUNTER-1)]}` — command substitution running
+> a command literally named `COUNTER-1` — where `$((COUNTER-1))` was meant. Every paired-end
+> FILTER task prints `COUNTER-1: command not found` and the subscript collapses to the empty
+> string, which bash coerces to `0`. Harmless and in fact correct today, because `MERGE_IDS`
+> emits one id file per sample and `0` is the only valid index; a latent hazard if detaxizer
+> ever passes per-mate id files, since R2 would then be filtered with R1's ids and the pairs
+> would desynchronise undetectably. One-character fix, to file alongside the `metatdenovo`
+> enum request.
 
 > **Conversion scripts:** the conversions this table calls for live in
 > `scripts/converters/`, each with an assert-based `--selftest`. They are the deliverable
@@ -244,7 +281,7 @@ upstream, or shipped as reusable converters.
 
 | From | To | Samplesheet handoff mechanism | Status |
 |------|----|-------------------------------|--------|
-| fetchngs | detaxizer | generic `samplesheet.csv`; no `--nf_core_pipeline` support, and detaxizer's columns are `short_reads_fastq_1/2`, not `fastq_1/2` | **CONVERSION REQUIRED** |
+| **fetchngs** | **detaxizer** | generic `samplesheet.csv`; no `--nf_core_pipeline` support, and detaxizer's columns are `short_reads_fastq_1/2`, not `fastq_1/2` | **CONVERSION REQUIRED** — covered by `scripts/converters/fetchngs_to_reads_samplesheet.py --target detaxizer`; column rename only, sample names shared with the `--target reads` output |
 | fetchngs | ampliseq | generic `samplesheet.csv`; **no `--nf_core_pipeline` option** | **CONVERSION REQUIRED** |
 | fetchngs | taxprofiler | `--nf_core_pipeline taxprofiler` emits a purpose-built samplesheet | OPEN — flag exists, output not yet verified |
 | fetchngs | mag | generic `samplesheet.csv`; **no `--nf_core_pipeline` option** | **CONVERSION REQUIRED** |
@@ -253,6 +290,7 @@ upstream, or shipped as reusable converters.
 | detaxizer | ampliseq | filtered FASTQ → ampliseq samplesheet; **excluded** from `--generate_pipeline_samplesheets` | **CONVERSION REQUIRED** |
 | detaxizer | taxprofiler | `--generate_downstream_samplesheets` emits a taxprofiler samplesheet natively | OPEN — native emitter exists, output not yet verified |
 | detaxizer | mag | `--generate_downstream_samplesheets` emits a mag samplesheet natively | OPEN — native emitter exists, output not yet verified |
+| **detaxizer** | **metatdenovo** | filtered FASTQ → `sample,fastq_1,fastq_2`; **excluded** from `--generate_pipeline_samplesheets`, whose pattern admits only `taxprofiler` and `mag` | **CONVERSION REQUIRED** — covered by `scripts/converters/detaxizer_to_reads_samplesheet.py`; mates verified synchronised in 1.3.0 source (`MERGE_IDS` unions hits, `filter.nf` applies one id list to both mates) |
 | createtaxdb | taxprofiler | db output path referenced in taxprofiler params | OPEN |
 | **mag** | **seqsubmit** | MAG/bin FASTA → `--mode mags\|bins` (`schema_input_genome.json`); gzipped FASTA transfers unchanged | **CONVERSION REQUIRED** — metadata, not just columns |
 | mag | funcscan | MAG/contig FASTA → funcscan input | OPEN |
@@ -277,7 +315,7 @@ upstream, or shipped as reusable converters.
 |-------|-------|-------|--------|
 | 0 — Dataset decision | Extend search; score against the matrix in [DATASETS.md](DATASETS.md); SIG vote | `lit-synthesizer`, `ncbi-datasets` | OPEN |
 | 1 — Scaffold | fetchngs run; verify raw data availability; build reference DBs | `ncbi-datasets` (reference genomes) | OPEN |
-| 2 — Core chain | ampliseq / taxprofiler / mag / metatdenovo (detaxizer deferred — no host in LMO) | `claw-metagenomics` (validation runs) | IN PROGRESS — metatdenovo run 2026-08-11 |
+| 2 — Core chain | ampliseq / taxprofiler / mag / metatdenovo; detaxizer re-added as run 04 for phiX removal | `claw-metagenomics` (validation runs) | IN PROGRESS — metatdenovo run 2026-08-11; detaxizer prepared, not run |
 | 2a — Assembly QC | Assess MAG and transcript completeness | `busco-assessor` | OPEN |
 | 3 — Samplesheet handoffs | Test and document each edge in the validation table | — | OPEN |
 | 4 — Secondary analysis | differentialabundance; funcscan; phageannotator; phyloplace | — | OPEN |
@@ -310,11 +348,14 @@ upstream, or shipped as reusable converters.
 8. If LMO is selected: restrict to the 26 all-3-omics matched dates, or use all 44
    amplicon dates and accept ragged layer coverage? Matched-only is cleaner for
    samplesheet-handoff validation.
-9. **Carried forward to the first host-related dataset:** run detaxizer and test
-   `--generate_downstream_samplesheets` against taxprofiler and mag. Deferred from the LMO
-   pilot for lack of a host, not for lack of interest. It is no longer the *only* native
-   emitter in the chain — proteinfamilies 2.5.0 is the second — but it is still the only
-   one whose generated sheets nothing has read yet.
+9. ~~**Carried forward to the first host-related dataset:** run detaxizer and test
+   `--generate_downstream_samplesheets` against taxprofiler and mag.~~
+   **Partly resolved (2026-08-11):** detaxizer no longer waits for a host. Run 04 filters
+   phiX instead of *Homo sapiens*, which puts the emitter test on the LMO pilot's critical
+   path. What is still carried forward is **human** decontamination, which needs a host
+   dataset to be biologically meaningful, and the question of whether taxprofiler and mag
+   accept the generated sheets unmodified — run 04 produces them, but nothing consumes them
+   until those two pipelines run.
 10. **Do the two sheets proteinfamilies emitted actually run?** Run 03 produced
     `proteinfold/samplesheet.csv` and `proteinannotator/samplesheet.csv` on 2026-08-11 and
     nothing has consumed either. Feeding them straight into proteinfold 2.0.0 and

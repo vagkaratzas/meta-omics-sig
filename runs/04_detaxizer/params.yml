@@ -1,0 +1,84 @@
+# nf-core/detaxizer 1.3.0 — LMO pilot, phiX removal from the metatranscriptome reads
+#
+# Generate the samplesheet first (absolute cluster paths, so it is not committed):
+#
+#   python3 scripts/converters/fetchngs_to_reads_samplesheet.py \
+#       <fetchngs-outdir>/samplesheet/samplesheet.csv \
+#       runs/04_detaxizer/samplesheet.csv \
+#       --strategy RNA-Seq --target detaxizer
+#
+# --target detaxizer is what makes this edge work: detaxizer's columns are
+# short_reads_fastq_1 / short_reads_fastq_2, not fastq_1 / fastq_2.
+#
+# detaxizer 1.3.0 predates the modern template in places; if Nextflow rejects
+# nextflow.config with "Unexpected input: '('", export NXF_SYNTAX_PARSER=v1.
+
+input: "/path/to/runs/04_detaxizer/samplesheet.csv"
+outdir: "/path/to/results/04_detaxizer"
+
+# --- What is being removed, and why it is not the default ------------------------------
+#
+# detaxizer defaults to kraken2 + `tax2filter: Homo sapiens` against the ~60 GB k2_standard
+# database. That is NOT what this run does. LMO is Baltic brackish seawater with no host,
+# and the 2026-08-10 scope decision against human filtering still stands for the filtering
+# itself: removing metatranscriptome reads on human k-mer hits risks taking conserved and
+# low-complexity microbial reads with them, ahead of a co-assembly, for no expected gain.
+#
+# phiX is a different animal. It is a sequencing spike-in, not biology: it is *supposed* to
+# be absent from the result, it assembles into contigs, and those contigs yield ORFs that
+# went straight into run 03's 198,252 proteins. Removing it has a defined downstream effect
+# and no biological risk, which is why this run filters on phiX and only detects nothing else.
+classification_bbduk: true
+classification_kraken2: false
+
+# bbduk matches k-mers against an arbitrary contaminant FASTA, so this needs the 5,386 bp
+# phiX174 reference and NOT the 60 GB kraken2 database — with classification_kraken2 false,
+# KRAKEN2PREPARATION never runs and nothing is downloaded. Fetch the reference once:
+#
+#   curl -sL "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nuccore&id=NC_001422.1&rettype=fasta&retmode=text" \
+#       > phix174_NC_001422.1.fasta
+#
+# Illumina's PhiX Control v3 is this genome, so a hit is a spike-in read.
+fasta_bbduk: "/path/to/phix174_NC_001422.1.fasta"
+
+# 27 is the default and is already long enough that a 27-mer shared by chance with a
+# 5.4 kb genome is implausible. Left explicit because it is the only knob that decides
+# what counts as phiX.
+bbduk_kmers: 27
+
+# --- Filtering -------------------------------------------------------------------------
+#
+# Filtering stays ON. --skip_filter would give a detect-only run, but it also disables the
+# downstream samplesheet emitter: GENERATE_DOWNSTREAM_SAMPLESHEETS is fed ch_filtered_reads,
+# which is Channel.empty() unless the filter ran. Detect-only and testing the emitter are
+# mutually exclusive in 1.3.0, and the emitter test is half the point of this run.
+skip_filter: false
+filtering_tool: "seqkit"
+
+# The removed reads ARE the measurement. Without this the run reports how many reads were
+# dropped but not which, and "how much phiX is in an LMO metatranscriptome library" is a
+# number worth putting in the paper.
+output_removed_reads: true
+
+# --- Downstream samplesheets -----------------------------------------------------------
+#
+# The second reason this run exists. detaxizer is one of two pipelines in the chain that
+# hand a successor a ready-made samplesheet, and nothing has ever consumed one of its
+# sheets. The enum is `^(taxprofiler|mag)(?:,(taxprofiler|mag)){0,1}` — metatdenovo is not
+# in it, so metatdenovo still needs scripts/converters/detaxizer_to_reads_samplesheet.py.
+# Both are generated anyway: taxprofiler and mag are pipelines this project will run, and
+# the emitted sheets are the artefact to test.
+generate_downstream_samplesheets: true
+generate_pipeline_samplesheets: "taxprofiler,mag"
+
+# --- Left at default, deliberately -----------------------------------------------------
+#
+#   preprocessing        false  fastp trimming is metatdenovo's job, not this run's; a
+#                               second trim here would change what run 02 is compared against
+#   validation_blastn    false  blastn validation of hits is for ambiguous taxonomic calls.
+#                               A 27-mer exact match to a 5.4 kb phage genome is not ambiguous
+#   filter_trimmed       false  filter the raw reads, so the output is the run-02 input
+#                               minus phiX and nothing else
+#   igenomes_ignore      false  irrelevant here: getGenomeAttribute('fasta') is only
+#                               consulted when classification_bbduk is on AND fasta_bbduk
+#                               is unset. It is set above.

@@ -262,12 +262,14 @@ assert-based `--selftest` that runs with no arguments and no fixtures:
 
 | Script | Edge | Guards against |
 |--------|------|----------------|
-| `fetchngs_to_reads_samplesheet.py` | fetchngs → metatdenovo (and ampliseq, via `--strategy`) | stale `sample_alias` dates leaking into sample names; duplicate sample names silently merging samples |
+| `fetchngs_to_reads_samplesheet.py` | fetchngs → metatdenovo / ampliseq / viralmetagenome (`--target reads`) and fetchngs → detaxizer (`--target detaxizer`) | stale `sample_alias` dates leaking into sample names; duplicate sample names silently merging samples. `--target` only renames the two FASTQ columns, so every target keeps identical sample names — which is what makes run 02 and run 04 comparable |
 | `metatdenovo_to_proteinfamilies.py` | metatdenovo → proteinfamilies | emitting a samplesheet proteinfamilies would reject (the transdecoder `.pep` case); more than one protein FASTA, which would mean the co-assembly assumption broke |
+| `detaxizer_to_reads_samplesheet.py` | detaxizer → metatdenovo / ampliseq / viralmetagenome | picking up `filter/removed/` instead of `filter/filtered/`; an orphaned mate reaching a co-assembler; silently writing an empty sheet when `--skip_filter` meant no filtered reads were ever published. Handles both `--filtering_tool` naming schemes |
 
 ```bash
 python3 scripts/converters/fetchngs_to_reads_samplesheet.py --selftest
 python3 scripts/converters/metatdenovo_to_proteinfamilies.py --selftest
+python3 scripts/converters/detaxizer_to_reads_samplesheet.py --selftest
 ```
 
 Generated samplesheets are **not committed** — they contain absolute cluster paths.
