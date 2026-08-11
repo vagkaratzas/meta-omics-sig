@@ -31,7 +31,7 @@ the metro map requires a specific data layer:
 | metatdenovo | Shotgun metatranscriptomic reads |
 | viralmetagenome | Shotgun metagenomic reads |
 | metapep / proteinfamilies | Predicted proteins (FASTA), downstream of MAG/assembly |
-| proteinfold | Representative sequences emitted by proteinfamilies |
+| proteinfold / proteinannotator | Representative sequences emitted by proteinfamilies |
 | funcscan / phageannotator / phyloplace | Assembled contigs or MAG FASTA |
 | differentialabundance | Abundance profiles, requires ≥2 conditions with replicates |
 
@@ -76,28 +76,39 @@ fetchngs (SRA accessions)
         │     └─► taxprofiler (shotgun MG reads → taxonomy profiles) [UNTESTED]
         │           └─► differentialabundance [UNTESTED]
         ├─► mag (shotgun MG reads → MAGs/contigs) [UNTESTED]
-        │     ├─► seqsubmit (MAGs/bins → ENA accessions) [NOT IN METRO MAP]
+        │     ├─► seqsubmit (MAGs/bins → ENA accessions) [UNTESTED]
         │     ├─► magmap (MAGs → read abundance profiles) [UNTESTED]
         │     ├─► funcscan (contigs → functional annotation) [UNTESTED]
         │     ├─► phageannotator (contigs → phage annotation) [UNTESTED]
         │     ├─► phyloplace (contigs → phylogenetic placement) [UNTESTED]
         │     └─► metapep / proteinfamilies (predicted proteins) [UNTESTED]
-        │           └─► proteinfold (family representatives → structures) [UNTESTED]
         ├─► viralmetagenome (shotgun MG reads → viral contigs) [UNTESTED]
         │     ├─► phageannotator (viral contigs + reads → phage annotation) [UNTESTED]
         │     └─► phyloplace (viral contigs → placement on a reference tree) [UNTESTED]
-        └─► metatdenovo (shotgun MT reads → metatranscriptome assembly) [UNTESTED]
-              └─► proteinfamilies (prodigal .faa.gz → protein families) [NOT IN METRO MAP]
+        └─► metatdenovo (shotgun MT reads → metatranscriptome assembly) [RUN 2026-08-11]
+              └─► proteinfamilies (prodigal .faa.gz → protein families) [RUN 2026-08-11]
+                    ├─► proteinfold (representatives → structures) [SHEET EMITTED, NOT CONSUMED]
+                    └─► proteinannotator (representatives → annotation) [SHEET EMITTED, NOT CONSUMED]
 ```
 
-> The `metatdenovo → proteinfamilies` branch is not yet on the metro map. It is included
-> here because metatdenovo is the only pipeline in the chain that emits protein FASTA
-> directly, which makes it the shortest schema-compatible route into the protein nodes —
-> a candidate addition to propose to the SIG.
-
-> `mag → seqsubmit` is not on the metro map either — seqsubmit 1.0.0 was released on
-> 2026-08-04, after the map was drawn. It is the chain's only exit back to the archive:
-> everything else consumes ENA data, this one deposits into it.
+> **Metro map, updated 2026-08-11.** Two branches that this document previously flagged as
+> `[NOT IN METRO MAP]` are now drawn on it, and the map gained a fourth stage:
+>
+> - `metatdenovo → proteinfamilies` — proposed to the SIG off the back of the run 03
+>   handoff and accepted. metatdenovo now feeds the shared `fasta` interchange that the
+>   protein stations hang off. It is still the only pipeline in the chain that emits
+>   protein FASTA directly, which is what made it the shortest schema-compatible route in.
+> - `mag → seqsubmit` — seqsubmit 1.0.0 was released 2026-08-04, after the previous map was
+>   drawn; it now sits in a new **4. Data upload** stage. It is the chain's only exit back
+>   to the archive: everything else consumes ENA data, this one deposits into it.
+> - `detaxizer → createtaxdb` is **no longer drawn.** The new map feeds createtaxdb from the
+>   reference-FASTA input instead, which matches createtaxdb 3.1.0's documented contract
+>   (`id`, `taxid`, `fasta_dna`/`fasta_aa` — not filtered reads). The inconsistency raised
+>   for SIG review on 2026-08-10 is therefore resolved in the map's favour.
+> - **`proteinfold` is no longer a station on the map**, but stays in scope here and on the
+>   project site as a stretch node — it is reached from proteinfamilies, which emits its
+>   samplesheet natively (see the validation table). `proteinannotator` is new to this
+>   document for the same reason; it is not on the map either.
 
 ### Core chain (high confidence, data-driven)
 fetchngs → [ampliseq | taxprofiler | mag | metatdenovo]
@@ -108,7 +119,10 @@ the chain for the first host-related dataset, where it also unlocks a test of it
 
 ### Stretch nodes (additional omics layers or heavy compute)
 - eager: for ancient DNA preprocessing — likely out of scope for modern environmental/clinical data
-- proteinfold: computationally expensive; optional stretch goal
+- proteinfold: computationally expensive; optional stretch goal. Off the metro map since
+  2026-08-11, kept in scope — its input samplesheet already exists, emitted by run 03
+- proteinannotator: InterProScan-style sequence annotation of the same family
+  representatives; cheaper than proteinfold and its samplesheet also already exists
 - viralmetagenome: only meaningful if viral fraction is a study focus
 
 ### Supporting tools at key chain points
@@ -135,11 +149,11 @@ upstream, or shipped as reusable converters.
 > conversion is small (column rename/subset), and extending the `--nf_core_pipeline` enum
 > would remove it for a lot of users: a good feature request, filed as such.
 
-> **Candidate new edge — `metatdenovo → proteinfamilies` (schemas checked 2026-08-10,
-> handoff executed 2026-08-11):** not yet on the metro map, and worth adding — the case is
-> now a run rather than a schema reading: metatdenovo's 198,252 predicted proteins were
+> **New edge — `metatdenovo → proteinfamilies` (schemas checked 2026-08-10,
+> handoff executed 2026-08-11, added to the metro map 2026-08-11):** the case was
+> a run rather than a schema reading: metatdenovo's 198,252 predicted proteins were
 > handed to proteinfamilies 2.5.0 through a generated one-row samplesheet, which the
-> pipeline accepted. metatdenovo 1.4.0 with
+> pipeline accepted and ran to completion on, producing 405 families. metatdenovo 1.4.0 with
 > `--orf_caller prodigal` publishes `prodigal/<assembly>.faa.gz`; proteinfamilies 2.5.0
 > accepts `.fa|.fasta|.faa|.fas` (± `.gz`), so the protein FASTA transfers with no
 > reformatting — only a one-row `sample,fasta` samplesheet. The mapped route,
@@ -149,7 +163,8 @@ upstream, or shipped as reusable converters.
 > accepted extensions — a one-line schema addition upstream would make that route work
 > too.
 
-> **Candidate new edge — `mag → seqsubmit` (schemas checked 2026-08-11):** nf-core/seqsubmit
+> **New edge — `mag → seqsubmit` (schemas checked 2026-08-11, added to the metro map
+> 2026-08-11):** nf-core/seqsubmit
 > 1.0.0 (released 2026-08-04) submits reads, metagenomic assemblies, MAGs and bins to ENA,
 > and it is the only pipeline in the chain that closes the loop back to the archive
 > `fetchngs` pulls from. In `mags`/`bins` mode it takes gzipped MAG FASTA, which is what mag
@@ -166,16 +181,37 @@ upstream, or shipped as reusable converters.
 > public LMO reads is legitimate — they are new derived records with their own accessions —
 > and `--upload_tpa` exists to flag third-party assemblies.
 
-> **detaxizer already ships a downstream samplesheet generator — a pattern worth
-> propagating** (detaxizer 1.3.0 `nextflow_schema.json`, checked 2026-08-10). It exposes
+> **New edges — `proteinfamilies → proteinfold` and `proteinfamilies → proteinannotator`
+> (emitted 2026-08-11 by run 03):** proteinfamilies 2.5.0 publishes ready-made `id,fasta`
+> samplesheets for both successors, gated behind `--skip_proteinfold_samplesheet` and
+> `--skip_proteinannotator_samplesheet`, **which both default to `true`** — the emitters are
+> off unless you ask for them. Run 03 asked, and got `proteinfold/samplesheet.csv` and
+> `proteinannotator/samplesheet.csv`, each one row pointing at the family representatives
+> `<samplename>_reps.faa`. Both are produced from the same channel via the new Nextflow
+> workflow output syntax (`publish:` in `main.nf`), added in proteinfamilies 2.1.0 and 2.2.0
+> respectively. **No conversion step is involved on either edge** — these are the first two
+> native handoffs this project has actually held in its hands.
+>
+> Two caveats, both from the target schemas rather than the run: proteinfold **2.0.0**
+> accepts an `id` column (`anyOf: sequence|id`) and a `.faa` extension so the sheet
+> transfers unmodified, but proteinfold **1.1.1** requires the column to be named `sequence`
+> and matches `^\S+\.fa(sta)?$`, rejecting `.faa` — the handoff is native only against
+> 2.0.0. And `_reps.faa` is a single multi-FASTA of every representative, so proteinfold's
+> own documented invocation for this sheet adds `--split_fasta`. proteinannotator 1.1.0
+> accepts `id` + `.fa|.fasta|.faa|.fas` (± `.gz`) and needs neither.
+
+> **Two pipelines in the chain now ship downstream samplesheet generators — a pattern worth
+> propagating** (detaxizer 1.3.0 `nextflow_schema.json`, checked 2026-08-10;
+> proteinfamilies 2.5.0, exercised 2026-08-11). detaxizer exposes
 > `--generate_downstream_samplesheets`, with `--generate_pipeline_samplesheets` defaulting
 > to `taxprofiler,mag` and constrained by
-> `^(taxprofiler|mag)(?:,(taxprofiler|mag)){0,1}`. This is the clearest existing example
-> in the chain of a pipeline handing its successor a ready-made input, and it shows the
-> mechanism already works. Generalising it — more source pipelines, more targets — is
-> probably the single highest-leverage improvement available to inter-pipeline chaining
-> in this SIG, and it is worth raising as a cross-pipeline proposal rather than as
-> individual issues.
+> `^(taxprofiler|mag)(?:,(taxprofiler|mag)){0,1}`; proteinfamilies uses one
+> `--skip_<target>_samplesheet` flag per target and the workflow `publish:` block. Two
+> pipelines, two unrelated interfaces for the same idea — which is the argument for
+> standardising it rather than letting each pipeline invent its own. Generalising the
+> pattern — more source pipelines, more targets, one convention — is probably the single
+> highest-leverage improvement available to inter-pipeline chaining in this SIG, and it is
+> worth raising as a cross-pipeline proposal rather than as individual issues.
 >
 > Two limits of that generator: the regex admits at most two pipelines and excludes
 > `ampliseq` and `metatdenovo` entirely, so those edges still need conversion. And
@@ -196,12 +232,15 @@ upstream, or shipped as reusable converters.
 > that turns "CONVERSION REQUIRED" from a finding into a working handoff.
 
 > **Reading the Status column:** the status itself is the **mechanism** — whether the
-> upstream pipeline hands its successor a ready-made samplesheet (OPEN, pending
-> verification) or a converter has to sit between them (CONVERSION REQUIRED). Running the
-> chain never changes that: a handoff that needed a converter still needs one afterwards.
-> Execution is recorded as a separate **exercised `<date>`** clause, which says a real run
-> consumed the handed-over file. On the metro map the mechanism is the edge colour and
-> execution is the moving dot, so the two never overwrite each other.
+> upstream pipeline hands its successor a ready-made samplesheet (NATIVE, or OPEN while the
+> emitter is only known from a schema) or a converter has to sit between them (CONVERSION
+> REQUIRED). Running the chain never changes that: a handoff that needed a converter still
+> needs one afterwards. Execution is recorded as separate clauses, because a samplesheet has
+> two ends: **emitted `<date>`** says the upstream run produced the file, **exercised
+> `<date>`** says a downstream run consumed it. An edge can be emitted without being
+> exercised — that is exactly where `proteinfamilies → proteinfold` sits today. On the metro
+> map the mechanism is the edge colour and execution is the moving dot, so the two never
+> overwrite each other.
 
 | From | To | Samplesheet handoff mechanism | Status |
 |------|----|-------------------------------|--------|
@@ -221,10 +260,11 @@ upstream, or shipped as reusable converters.
 | mag | phyloplace | contig FASTA → phyloplace input | OPEN |
 | mag | magmap | MAG FASTA → magmap reference input | OPEN |
 | mag | metapep / proteinfamilies | predicted proteins FASTA → input | OPEN |
-| **metatdenovo** | **proteinfamilies** | `--orf_caller prodigal` publishes `prodigal/<assembly>.faa.gz`, an extension proteinfamilies accepts | **CONVERSION REQUIRED** — one-row samplesheet, no reformatting; exercised 2026-08-11, 198,252 proteins accepted by proteinfamilies 2.5.0 |
+| **metatdenovo** | **proteinfamilies** | `--orf_caller prodigal` publishes `prodigal/<assembly>.faa.gz`, an extension proteinfamilies accepts | **CONVERSION REQUIRED** — one-row samplesheet, no reformatting; exercised 2026-08-11, 198,252 proteins accepted by proteinfamilies 2.5.0, 405 families out |
 | **viralmetagenome** | **phageannotator** | viral contig FASTA → input, but the sheet also wants `group` and `fastq_1` | **CONVERSION REQUIRED** — two-source join, and `.combined.fa` is not gzipped |
 | **viralmetagenome** | **phyloplace** | viral contig FASTA → `queryseqfile` | **CONVERSION REQUIRED** — `refseqfile`, `refphylogeny`, `model` are external per-row inputs |
-| proteinfamilies | proteinfold | representative sequence per family → protein FASTA input | OPEN |
+| **proteinfamilies** | **proteinfold** | `--skip_proteinfold_samplesheet false` (default `true`) publishes `proteinfold/samplesheet.csv` — `id,fasta`, pointing at the family representatives `<samplename>_reps.faa` | **NATIVE** — emitted 2026-08-11, not yet exercised; native against proteinfold 2.0.0 only, 1.1.1 wants a `sequence` column and rejects `.faa` |
+| **proteinfamilies** | **proteinannotator** | `--skip_proteinannotator_samplesheet false` (default `true`) publishes `proteinannotator/samplesheet.csv` — the same `id,fasta` sheet from the same channel | **NATIVE** — emitted 2026-08-11, not yet exercised; proteinannotator 1.1.0 accepts `id` + `.faa` unmodified |
 | taxprofiler | differentialabundance | abundance profile → differentialabundance input | OPEN |
 | ampliseq | differentialabundance | QIIME2/BIOM profile → differentialabundance input | OPEN |
 | magmap | differentialabundance | coverage profiles → differentialabundance input | OPEN |
@@ -237,11 +277,11 @@ upstream, or shipped as reusable converters.
 |-------|-------|-------|--------|
 | 0 — Dataset decision | Extend search; score against the matrix in [DATASETS.md](DATASETS.md); SIG vote | `lit-synthesizer`, `ncbi-datasets` | OPEN |
 | 1 — Scaffold | fetchngs run; verify raw data availability; build reference DBs | `ncbi-datasets` (reference genomes) | OPEN |
-| 2 — Core chain | ampliseq / taxprofiler / mag / metatdenovo (detaxizer deferred — no host in LMO) | `claw-metagenomics` (validation runs) | OPEN |
+| 2 — Core chain | ampliseq / taxprofiler / mag / metatdenovo (detaxizer deferred — no host in LMO) | `claw-metagenomics` (validation runs) | IN PROGRESS — metatdenovo run 2026-08-11 |
 | 2a — Assembly QC | Assess MAG and transcript completeness | `busco-assessor` | OPEN |
 | 3 — Samplesheet handoffs | Test and document each edge in the validation table | — | OPEN |
 | 4 — Secondary analysis | differentialabundance; funcscan; phageannotator; phyloplace | — | OPEN |
-| 5 — Stretch nodes | metapep; proteinfamilies; viralmetagenome | — | OPEN |
+| 5 — Stretch nodes | metapep; proteinfamilies; viralmetagenome; proteinfold / proteinannotator off the emitted sheets | — | IN PROGRESS — proteinfamilies run 2026-08-11, 405 families |
 | 5a — QC aggregation | Aggregate QC across all pipeline runs | `multiqc-reporter` | OPEN |
 | 6 — Publication | Write-up; confirm authorship; submit to nf-core community journal | `lit-synthesizer` (related work section) | OPEN |
 
@@ -271,8 +311,14 @@ upstream, or shipped as reusable converters.
    amplicon dates and accept ragged layer coverage? Matched-only is cleaner for
    samplesheet-handoff validation.
 9. **Carried forward to the first host-related dataset:** run detaxizer and test
-   `--generate_downstream_samplesheets` against taxprofiler and mag. It is the only
-   pipeline in the chain found so far that emits downstream samplesheets natively, so
-   whether those sheets are accepted unmodified is the sharpest available test of
-   nf-core samplesheet standardisation. Deferred from the LMO pilot for lack of a host,
-   not for lack of interest.
+   `--generate_downstream_samplesheets` against taxprofiler and mag. Deferred from the LMO
+   pilot for lack of a host, not for lack of interest. It is no longer the *only* native
+   emitter in the chain — proteinfamilies 2.5.0 is the second — but it is still the only
+   one whose generated sheets nothing has read yet.
+10. **Do the two sheets proteinfamilies emitted actually run?** Run 03 produced
+    `proteinfold/samplesheet.csv` and `proteinannotator/samplesheet.csv` on 2026-08-11 and
+    nothing has consumed either. Feeding them straight into proteinfold 2.0.0 and
+    proteinannotator 1.1.0 unmodified is the cheapest remaining test of nf-core samplesheet
+    standardisation available to this project — the file already exists, so the only cost is
+    compute. proteinannotator first: proteinfold needs `--split_fasta` and GPU-scale
+    resources, proteinannotator does not.

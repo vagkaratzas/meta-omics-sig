@@ -36,7 +36,6 @@ Start at [README.md](README.md) for the overview.
 | What has actually been executed, with what provenance? | [RUNS.md](RUNS.md) |
 | How should an AI agent work in this repo? Conventions, guardrails, environment gotchas | [AGENTS.md](AGENTS.md) |
 | What does this acronym mean? | [ACRONYMS.md](ACRONYMS.md) |
-| What happened when? | [LOG.md](LOG.md) |
 
 [CLAUDE.md](CLAUDE.md) exists only to point at [AGENTS.md](AGENTS.md), so that every
 coding agent reads the same file.

@@ -21,8 +21,8 @@ site-specific and go stale; the Seqera link preserves the full execution record.
 | # | Pipeline | Revision | Date | Scope | Status | Provenance |
 |---|----------|----------|------|-------|--------|------------|
 | 01 | nf-core/fetchngs | 1.12.0 | 2026-08-10 | LMO pilot — 3 dates × 3 omics layers | **SUCCESS** | [Seqera run](https://cloud.seqera.io/user/vangelis/watch/1Hd5FAdXhle9M9) |
-| 02 | nf-core/metatdenovo | 1.4.0 | 2026-08-11 | 6 MT libraries → one co-assembly + protein FASTA | **SUCCESS** — 198,252 proteins | — |
-| 03 | nf-core/proteinfamilies | 2.5.0 | 2026-08-11 | protein families from the run-02 ORFs | RUNNING | — |
+| 02 | nf-core/metatdenovo | 1.4.0 | 2026-08-11 | 6 MT libraries → one co-assembly + protein FASTA | **SUCCESS** — 198,252 proteins | [Seqera run](https://cloud.seqera.io/user/vangelis/watch/dR2OkpNzn3QwP) |
+| 03 | nf-core/proteinfamilies | 2.5.0 | 2026-08-11 | protein families from the run-02 ORFs | **SUCCESS** — 405 families | [Seqera run](https://cloud.seqera.io/user/vangelis/watch/H1MTwbD6IUKz3) |
 
 ---
 
@@ -145,6 +145,8 @@ unreleased change. Detail and suggested wording in the section below.
 
 **Status: SUCCESS, 2026-08-11.**
 
+**Provenance:** <https://cloud.seqera.io/user/vangelis/watch/dR2OkpNzn3QwP>
+
 | | |
 |---|---|
 | Pipeline | `nf-core/metatdenovo` `-r 1.4.0` (Jun 2026) |
@@ -193,9 +195,9 @@ whose LMO metagenome dates are stale:
 
 ## 03 — proteinfamilies, families from the metatranscriptome ORFs
 
-**Status: RUNNING, started 2026-08-11.** The handoff itself is settled — the generated
-samplesheet was accepted and the run started on all 198,252 proteins. Family counts and
-outcome follow when it finishes.
+**Status: SUCCESS, 2026-08-11.**
+
+**Provenance:** <https://cloud.seqera.io/user/vangelis/watch/H1MTwbD6IUKz3>
 
 | | |
 |---|---|
@@ -204,16 +206,52 @@ outcome follow when it finishes.
 | Input | one row, 198,252 proteins — metatdenovo co-assembles, so there is a single protein FASTA |
 | Samplesheet | generated on-cluster by `scripts/converters/metatdenovo_to_proteinfamilies.py` |
 | Params | [`runs/03_proteinfamilies/params.yml`](runs/03_proteinfamilies/params.yml) |
+| Date | 2026-08-11 |
+| Outcome | Success — **405 protein families** from 198,252 predicted proteins, plus downstream samplesheets for proteinfold and proteinannotator |
 
-### New edge, not in the metro map
+405 families out of 198,252 input proteins is a ~490:1 reduction, but the numerator and
+denominator are not comparable until the length filter and the clustering threshold are
+accounted for: `min_seq_length 30` drops short partial ORFs before clustering, and
+`cluster_size_threshold 25` means only clusters of ≥25 sequences ever seed a family. The
+count is the outcome of a default-parameter handoff run, not a biological result — read it
+that way until the QC numbers in `runs/03_proteinfamilies/README.md#verify` are recorded.
 
-`metatdenovo → proteinfamilies` is not yet on the metro map, and looks worth adding — the
-proposal now rests on an executed handoff, not on a schema reading. metatdenovo with
-prodigal emits `.faa.gz` directly, so the handoff needs only a one-row samplesheet and no
-reformatting. The mapped route, `mag → proteinfamilies`, needs one more
-piece first: mag does not itself emit protein FASTA, so an ORF-calling step belongs between
-those two stations. Recorded as a new row in
-[PLAN.md](PLAN.md#samplesheet-chaining--validation-table) and proposed to the SIG.
+### New edge, now drawn on the metro map
+
+`metatdenovo → proteinfamilies` was proposed to the SIG off the back of this run and **is
+now on the metro map** — metatdenovo feeds the shared `fasta` interchange that the protein
+stations hang off. The proposal rested on an executed handoff rather than a schema reading:
+metatdenovo with prodigal emits `.faa.gz` directly, so it needed only a one-row samplesheet
+and no reformatting. The originally-mapped route, `mag → proteinfamilies`, still needs one
+more piece: mag does not itself emit protein FASTA, so an ORF-calling step belongs between
+those two stations. Row in
+[PLAN.md](PLAN.md#samplesheet-chaining--validation-table).
+
+### proteinfamilies emits downstream samplesheets natively — the second pipeline found that does
+
+This run set the only two non-default parameters in `params.yml`:
+
+```yaml
+skip_proteinfold_samplesheet: false
+skip_proteinannotator_samplesheet: false
+```
+
+Both default to `true`. With them off, proteinfamilies 2.5.0 publishes `id,fasta` sheets at
+`proteinfold/samplesheet.csv` and `proteinannotator/samplesheet.csv`, each pointing at the
+family representatives `<samplename>_reps.faa`. The mechanism is the new Nextflow workflow
+output syntax (`publish:` in `main.nf`), added in proteinfamilies 2.1.0 for proteinfold and
+2.2.0 for proteinannotator.
+
+This retires a claim repeated across this repo since 2026-08-10: that **detaxizer is the
+only pipeline in the chain that ships a downstream samplesheet generator.** It is now one of
+two, and the two use different mechanisms — detaxizer's `--generate_downstream_samplesheets`
+with a pipeline-name enum, proteinfamilies' per-target `skip_*_samplesheet` flags. Both
+corrected in [PLAN.md](PLAN.md) and `docs/data.json`.
+
+The sheets were emitted, not yet consumed — no proteinfold or proteinannotator run has read
+them. One version trap is already visible from the schemas: proteinfold **2.0.0** accepts
+`id` and `.faa`, but **1.1.1** requires a `sequence` column and `.fa`/`.fasta` only, so the
+native sheet is only native against 2.0.0. proteinannotator 1.1.0 accepts it as-is.
 
 ---
 

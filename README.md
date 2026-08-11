@@ -19,12 +19,12 @@ chaining between pipelines. The use case will:
 
 ## The Meta-Omics Metro Map
 
-![The nf-core meta-omics pipeline chaining diagram: three stages left to right — data input
+![The nf-core meta-omics pipeline chaining diagram: four stages left to right — data input
 (fetchngs, detaxizer, createtaxdb), primary analysis (ampliseq, taxprofiler, mag,
-viralmetagenome, metatdenovo, eager, magmap), and secondary analysis (differentialabundance,
-metapep, phageannotator, funcscan, phyloplace, proteinfamilies, proteinfold) — with coloured
-tracks for amplicon reads, shotgun reads and contigs/genomes, and file icons marking where
-FASTQ, FASTA and profile artefacts pass between pipelines.](images/pipeline_chain.png)
+viralmetagenome, metatdenovo, eager, magmap), secondary analysis (differentialabundance,
+metapep, phageannotator, funcscan, phyloplace, proteinfamilies) and data upload (seqsubmit)
+— with coloured tracks for amplicon reads, shotgun reads and contigs/genomes, and file icons
+marking where FASTQ, FASTA and profile artefacts pass between pipelines.](images/nf-core-meta-omics-metromap.png)
 
 The SIG's chaining diagram, and the starting point for this project. It sets out how these
 pipelines **could** chain together — a roadmap of intended synergy, where each track marks a
@@ -53,7 +53,8 @@ The pipelines in scope are organized by stage:
 | Phylogenetic placement | phyloplace | Assembled contigs / FASTA |
 | Peptide / protein analysis | metapep | Predicted proteins / FASTA |
 | Protein family inference | proteinfamilies | Predicted proteins / FASTA |
-| Protein structure prediction | proteinfold | Predicted proteins / FASTA |
+| Protein structure prediction | proteinfold | Family representatives / FASTA |
+| Protein sequence annotation | proteinannotator | Family representatives / FASTA |
 | ENA submission | seqsubmit | MAGs / bins / assemblies / reads |
 
 ## Key Open Questions
@@ -80,7 +81,6 @@ Two decisions gate all downstream work; neither is resolved yet:
 | `docs/` | Source for the [live site](https://vagkaratzas.github.io/meta-omics-sig/); `data.json` mirrors the PLAN.md validation table |
 | [`AGENTS.md`](AGENTS.md) | Bot/AI operational context — conventions, resource pointers, guardrails |
 | [`ACRONYMS.md`](ACRONYMS.md) | Glossary of acronyms used across these documents |
-| [`LOG.md`](LOG.md) | Dated activity log |
 
 ## Obsidian Vault
 

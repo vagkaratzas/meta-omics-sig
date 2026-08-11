@@ -10,7 +10,16 @@
 input: "/path/to/runs/03_proteinfamilies/samplesheet.csv"
 outdir: "/path/to/results/03_proteinfamilies"
 
-# Defaults are kept deliberately. This run's purpose is to prove the
+# Downstream pipeline samplesheet generation. Both default to `true` (skipped), so these
+# two lines are the only non-default parameters in this run — set because emitting the
+# sheets is the point: proteinfamilies 2.5.0 publishes `proteinfold/samplesheet.csv` and
+# `proteinannotator/samplesheet.csv`, each `id,fasta` pointing at the family
+# representatives (`<sample>_reps.faa`). That makes it the second pipeline in the chain
+# after detaxizer to hand its successor a ready-made input.
+skip_proteinfold_samplesheet: false
+skip_proteinannotator_samplesheet: false
+
+# Everything else is kept at default, deliberately. This run's purpose is to prove the
 # metatdenovo -> proteinfamilies handoff, not to tune clustering, so the only reason to
 # set anything here is if the defaults fail on real input. Values that will matter once
 # results are interpreted, recorded so the choice is explicit rather than accidental:

@@ -29,7 +29,7 @@ The repository doubles as an Obsidian vault, which imposes one hard rule:
   `meta.plan` / `meta.datasets_doc` / `meta.runs_doc`.
 - After editing links, run `python3 scripts/check_links.py`. It fails on broken links,
   orphaned files, and wikilinks, and exits non-zero. A file with no inbound links is
-  invisible in the vault — that is how `ACRONYMS.md` and `LOG.md` went unnoticed until
+  invisible in the vault — that is how `ACRONYMS.md` went unnoticed until
   2026-08-10.
 
 ---
@@ -145,8 +145,9 @@ docs before generating any samplesheet or parameter file.
 | phageannotator | Phage identification and annotation | Assembled contigs / FASTA | Phage annotations |
 | phyloplace | Phylogenetic placement | Query FASTA + reference tree | Placement results |
 | metapep | Peptide analysis from (meta)proteomes | Protein FASTA | Peptide predictions |
-| proteinfamilies | Protein family inference | Protein FASTA | Protein family clusters |
+| proteinfamilies | Protein family inference | Protein FASTA | Protein family clusters + optional proteinfold / proteinannotator samplesheets |
 | proteinfold | Protein structure prediction | Protein FASTA | Predicted structures |
+| proteinannotator | Sequence-level annotation of amino acid sequences (InterProScan et al.) | Protein FASTA | Functional annotations per sequence |
 | seqsubmit | ENA submission of reads, assemblies, MAGs and bins | MAG/bin FASTA + submission metadata | ENA accessions |
 
 > **Note on eager:** Designed for ancient/degraded DNA. Its inclusion in a modern
