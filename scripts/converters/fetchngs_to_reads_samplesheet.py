@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
 """Convert an nf-core/fetchngs samplesheet into a downstream read samplesheet.
 
-fetchngs has no `--nf_core_pipeline` option for ampliseq, mag, metatdenovo, detaxizer or
-viralmetagenome (its enum is [rnaseq, atacseq, viralrecon, taxprofiler]), so the generic
-samplesheet must be converted by hand. Everything below is one row per run with a forward
+fetchngs 1.12.0 has no `--nf_core_pipeline` option for ampliseq, mag, metatdenovo,
+detaxizer or viralmetagenome (its enum is [rnaseq, atacseq, viralrecon, taxprofiler]), so
+the generic samplesheet must be converted by hand. fetchngs 1.13.0 (2026-09-15) adds
+ampliseq, mag, metatdenovo and sarek, which retires `--target reads` for ampliseq and
+metatdenovo — but not the rest of this script: detaxizer and viralmetagenome are still
+absent from the enum, 1.13.0's mag emitter writes an empty `group` that mag 5.5.0 rejects
+and names the reads `fastq_1`/`fastq_2` instead of `short_reads_1`/`short_reads_2`, and the
+two renaming fixes below apply to a native sheet exactly as they do to a converted one. Everything below is one row per run with a forward
 and an optional reverse FASTQ; only the column *names* differ, so `--target` picks them:
 
     --target reads      sample, fastq_1, (fastq_2)

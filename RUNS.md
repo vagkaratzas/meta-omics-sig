@@ -33,7 +33,7 @@ site-specific and go stale; the Seqera link preserves the full execution record.
 
 | | |
 |---|---|
-| Pipeline | `nf-core/fetchngs` `-r 1.12.0` (latest release; Feb 2024) |
+| Pipeline | `nf-core/fetchngs` `-r 1.12.0` (latest release at run time; superseded by 1.13.0 on 2026-09-15) |
 | Nextflow | 26.04.4 |
 | Executor / container | SLURM / Singularity |
 | Input manifest | [`runs/01_fetchngs/ids.csv`](runs/01_fetchngs/ids.csv) — 12 ENA run accessions |
@@ -120,7 +120,8 @@ in addition to the column conversion already recorded in
 
 ### Environment workarounds required
 
-All three are now documented in [AGENTS.md](AGENTS.md); none are LMO-specific.
+All three are now documented in [AGENTS.md](AGENTS.md); none are LMO-specific. **All three
+are fixed upstream in fetchngs 1.13.0** (2026-09-15) and apply only to a 1.12.0 run.
 
 | Obstacle | Resolution |
 |----------|------------|
@@ -129,16 +130,49 @@ All three are now documented in [AGENTS.md](AGENTS.md); none are LMO-specific.
 | `wget:1.20.1` container has no `/etc/resolv.conf` → Singularity skips the bind, no DNS, `wget` exit 4 | per-process `container` override to `quay.io/biocontainers/gnu-wget:1.18--h60da905_7` |
 | Execution report render aborts on `-resume` (timestamped filename already exists) | `report.overwrite` / `timeline.overwrite` / `trace.overwrite` / `dag.overwrite` = `true` |
 
-### Upstream issues to file against nf-core/fetchngs
+### Upstream issues against nf-core/fetchngs — all filed, all shipped in 1.13.0
 
-All four verified still present on `dev` as of 2026-08-10 — none are fixed by an
-unreleased change. Detail and suggested wording in the section below.
+Drafted here on 2026-08-10, filed upstream, and **released in
+[fetchngs 1.13.0](https://github.com/nf-core/fetchngs/releases/tag/1.13.0) on 2026-09-15**.
 
-- [ ] Quote `${fields}` in the `SRA_IDS_TO_RUNINFO` command (bug)
-- [ ] `multiqc_mappings_config.py` emits a stray `"` and mangles comma-containing values (bug)
-- [ ] Cut a release with the modern template so 1.x works on Nextflow 26.04+ (release request)
-- [ ] Add `ampliseq` / `mag` / `metatdenovo` to `--nf_core_pipeline` (feature)
-- [ ] `wget` container lacks `/etc/resolv.conf` (bug, needs re-verification against `dev`'s 1.21.4 image)
+- [x] Quote `${fields}` in the `SRA_IDS_TO_RUNINFO` command (bug) — *"ENA metadata fields with spaces no longer cause word-splitting errors"*
+- [x] `multiqc_mappings_config.py` emits a stray `"` and mangles comma-containing values (bug) — *"fixed stray quote and comma handling in CSV parsing"*
+- [x] Cut a release with the modern template so 1.x works on Nextflow 26.04+ (release request) — template synced through nf-core/tools 4.1.0; `nextflowVersion = '!>=25.10.4'`
+- [x] Add `ampliseq` / `mag` / `metatdenovo` to `--nf_core_pipeline` (feature) — enum is now `ampliseq, atacseq, mag, metatdenovo, rnaseq, sarek, taxprofiler, viralrecon`
+- [x] `wget` container lacks `/etc/resolv.conf` (bug) — container updated to `wget` 1.25.0, upstream [#373](https://github.com/nf-core/fetchngs/issues/373)
+
+**Run 01 is not re-run.** It succeeded on 1.12.0 and its outputs feed runs 02–05; the fixes
+change how the run would be *set up*, not what it produced. What 1.13.0 changes for this
+project is recorded in the two notes below.
+
+### What 1.13.0 changes for the chain
+
+**Three of the four environment workarounds are retired.** A 1.13.0 run needs no
+`NXF_SYNTAX_PARSER=v1` (modern template), no whitespace-free `ena_metadata_fields`
+(word-splitting fixed), and no `wget` container override (1.25.0 resolves DNS). The
+`report.overwrite` settings are a Nextflow behaviour, not a fetchngs one, and still apply.
+The override should be dropped from the site config only after a 1.13.0 run confirms it —
+the container change is upstream's claim, not yet our observation.
+
+**The new `--nf_core_pipeline` targets are not all usable.** Checked against
+`subworkflows/local/channel_sra_create_csv/main.nf` and each target's `schema_input.json`:
+
+| Target | Emitted extras | Verdict |
+|---|---|---|
+| `metatdenovo` | none — `sample,fastq_1,fastq_2` + metadata | **usable**; matches metatdenovo 1.4.0's required set |
+| `ampliseq` | `run: ''` | **usable**; ampliseq 2.18.0 accepts the `sample`/`fastq_1` spelling and `run` is optional |
+| `mag` | `group: ''`, `short_reads_platform: 'ILLUMINA'`, `long_reads_platform: ''` | **rejected by mag 5.5.0** — `group` is required with pattern `^\S+$`; the reads are also emitted as `fastq_1`/`fastq_2`, which mag does not read, and the platform is hardcoded rather than taken from `instrument_platform` |
+
+The mag emitter is the **same defect as
+[nf-core/detaxizer#100](https://github.com/nf-core/detaxizer/issues/100)** — an empty `group`
+in a generated mag samplesheet — arriving independently in a second pipeline a month later.
+**Not yet filed against fetchngs.**
+
+And on every target, `sample` is still the ENA experiment accession
+(`buildPipelineMap` takes `meta.id` minus its run suffix), so a native sheet still labels
+results `ERX13368357`. `scripts/converters/fetchngs_to_reads_samplesheet.py` stays necessary
+for mag, detaxizer and viralmetagenome, and stays *useful* everywhere else for the
+`collection_date` renaming.
 
 ---
 

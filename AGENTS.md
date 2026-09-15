@@ -90,7 +90,9 @@ getent hosts <host>                             # host-side resolution
 singularity exec <image> cat /etc/resolv.conf   # container-side resolution
 ```
 
-Usually it is **one bad image**, not the cluster. Confirmed on codon (2026-08-10):
+Usually it is **one bad image**, not the cluster. The diagnosis below stays useful for any
+image; the specific fetchngs case is fixed upstream in 1.13.0 (2026-09-15), which ships
+`wget` 1.25.0, so drop the override once a 1.13.0 run confirms it. Confirmed on codon (2026-08-10):
 `depot.galaxyproject.org/singularity/wget:1.20.1` has no `/etc/resolv.conf`, while
 `quay.io/biocontainers/gnu-wget:1.18--h60da905_7` and the pipeline's Python containers are
 fine. Preferred fix is a per-process `container` override in the site config, which keeps

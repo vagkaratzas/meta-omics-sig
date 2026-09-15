@@ -14,9 +14,13 @@
       "id": "fetchngs", "label": "fetchngs", "kind": "pipeline", "x": 20, "y": 330,
       "blurb": "Fetches public sequencing data from SRA/ENA accessions and emits the FASTQ files plus a generic samplesheet describing them.",
       "io": { "in": "SRA / ENA accessions", "out": "FASTQ + samplesheet.csv" },
-      "requires": ["ids.csv - one accession per line (not a CSV samplesheet)"],
-      "requiresReadFrom": "1.12.0",
-      "release": "1.12.0", "docs": "https://nf-co.re/fetchngs/1.12.0/", "devNote": null
+      "requires": [
+        "ids.csv - one accession per line (not a CSV samplesheet)",
+        "--nf_core_pipeline <target> - since 1.13.0 the enum is ampliseq, atacseq, mag, metatdenovo, rnaseq, sarek, taxprofiler, viralrecon; 1.12.0 had only rnaseq, atacseq, viralrecon, taxprofiler",
+        "the emitted sample column is the ENA experiment accession whatever --nf_core_pipeline is set to, so a rename is still needed downstream"
+      ],
+      "requiresReadFrom": "1.13.0",
+      "release": "1.13.0", "docs": "https://nf-co.re/fetchngs/1.13.0/", "devNote": "1.13.0 (2026-09-15) implements all four issues this project drafted on 2026-08-10, including the --nf_core_pipeline enum request. Run 01 ran on 1.12.0 and is not re-run."
     },
     {
       "id": "detaxizer", "label": "detaxizer", "kind": "pipeline", "x": 200, "y": 430,
@@ -228,10 +232,10 @@
     },
     {
       "id": "fetchngs__ampliseq", "from": "fetchngs", "to": "ampliseq",
-      "source": "table", "kind": "reads", "repoStatus": "CONVERSION REQUIRED", "statusClass": "conversion-required",
+      "source": "table", "kind": "reads", "repoStatus": "NATIVE from 1.13.0 - not yet exercised", "statusClass": "validated",
       "routable": true, "unit": "runs", "carries": ["AMPLICON"],
-      "note": "generic samplesheet.csv; no --nf_core_pipeline option. The enum is [rnaseq, atacseq, viralrecon, taxprofiler] only, so a column rename/subset is required.",
-      "caveat": "Confirmed in the 2026-08-10 pilot run: the emitted sample column is the ENA experiment accession (sample == experiment_accession for all 12 rows), so a sample rename is required on top of the column conversion or every downstream result is labelled ERX..."
+      "note": "--nf_core_pipeline ampliseq, added in 1.13.0, emits sample,fastq_1,fastq_2 plus run and the metadata columns. ampliseq 2.18.0 accepts that spelling (its schema takes either sampleID/forwardReads or sample/fastq_1) and run is optional, so the sheet transfers with no conversion.",
+      "caveat": "Native since 2026-09-15 and not yet exercised: run 01 used 1.12.0, whose enum had no ampliseq option. Native is not the same as usable - fetchngs still writes the ENA experiment accession into the sample column, so results would be labelled ERX13368357 unless renamed from collection_date."
     },
     {
       "id": "fetchngs__taxprofiler", "from": "fetchngs", "to": "taxprofiler",
@@ -243,19 +247,19 @@
     {
       "id": "fetchngs__mag", "from": "fetchngs", "to": "mag",
       "source": "table", "kind": "reads",
-      "repoStatus": "CONVERSION REQUIRED - covered by scripts/converters/fetchngs_to_reads_samplesheet.py --target mag",
+      "repoStatus": "NATIVE, REJECTED BY TARGET - 1.13.0's emitter fails mag 5.5.0's schema; CONVERSION REQUIRED in practice",
       "statusClass": "conversion-required",
       "routable": true, "unit": "runs", "carries": ["WGS"],
-      "note": "generic samplesheet.csv; no --nf_core_pipeline option. A reshape rather than a rename: mag 5.5.0 also requires group and short_reads_platform. The converter copies short_reads_platform from the fetchngs instrument_platform column (ENA uses mag's own spellings, so ILLUMINA transfers unchanged) and takes group from a --group argument. Output validated against mag 5.5.0 schema_input.json.",
-      "caveat": "group is the one column no upstream pipeline can supply - it selects which samples share a co-abundance binning set, a study-design decision rather than a property of the reads. It is also the column detaxizer 1.3.0 writes empty. The 2026-08-10 pilot confirmed the fetchngs sample column is the ENA experiment accession, so a rename is required as well. Prepared as run 05, not yet executed."
+      "note": "--nf_core_pipeline mag, added in 1.13.0, emits sample,fastq_1,fastq_2 plus group, short_reads_platform and long_reads_platform. mag 5.5.0 cannot use it: group is required with pattern ^\\S+$ and is written as the empty string; the reads are named fastq_1/fastq_2 where mag reads short_reads_1/short_reads_2; and short_reads_platform is hardcoded ILLUMINA rather than copied from instrument_platform.",
+      "caveat": "Same defect as nf-core/detaxizer#100 - an empty group in a generated mag samplesheet - arriving independently in a second pipeline a month later, found within a day of the 1.13.0 release. Not yet filed against fetchngs. scripts/converters/fetchngs_to_reads_samplesheet.py --target mag remains the working route: it copies short_reads_platform from instrument_platform, refuses long-read platforms, and requires group to be supplied by hand."
     },
     {
       "id": "fetchngs__metatdenovo", "from": "fetchngs", "to": "metatdenovo",
-      "source": "table", "kind": "reads", "repoStatus": "CONVERSION REQUIRED - exercised 2026-08-11 via scripts/converters/fetchngs_to_reads_samplesheet.py", "statusClass": "conversion-required",
+      "source": "table", "kind": "reads", "repoStatus": "NATIVE from 1.13.0 - not yet exercised natively; exercised 2026-08-11 through the converter against 1.12.0", "statusClass": "validated",
       "executed": true,
       "routable": true, "unit": "runs", "carries": ["RNA-Seq"],
-      "note": "generic samplesheet.csv; no --nf_core_pipeline option. Converted sheet was accepted and metatdenovo 1.4.0 ran to completion on it.",
-      "caveat": "Confirmed in the 2026-08-10 pilot run: the sample column is the ENA experiment accession, so a rename is required alongside the column conversion. The six RNA-Seq runs are two library-level replicates per date, which metatdenovo will treat as six independent samples unless merged first."
+      "note": "--nf_core_pipeline metatdenovo, added in 1.13.0, emits sample,fastq_1,fastq_2 plus the metadata columns - exactly metatdenovo 1.4.0's required set, with no per-pipeline extras added at all. Run 02 predates the release and ran on a converted 1.12.0 sheet.",
+      "caveat": "Native since 2026-09-15, not yet exercised natively. The converter is still what run 02 used and still what builds sample names from collection_date - fetchngs' own sample column is the ENA experiment accession on every target."
     },
     {
       "id": "fetchngs__viralmetagenome", "from": "fetchngs", "to": "viralmetagenome",
@@ -460,7 +464,7 @@
       "siteState": {
         "fetchngs": {
           "state": "run", "in": 12, "out": 12, "version": "1.12.0",
-          "note": "Run 2026-08-10 on SLURM with Singularity. All 12 runs downloaded and md5-verified: 555,738,002 reads, 79,977,308,002 bases, 34.5 GB. Emitted samplesheet.csv is 12 rows by 39 columns, with collection_date at column 35. Three environment workarounds were needed (Nextflow 26.04 strict config parser, whitespace in ena_metadata_fields, and a wget container with no /etc/resolv.conf) - all recorded in RUNS.md and AGENTS.md. Provenance link in RUNS.md."
+          "note": "Run 2026-08-10 on SLURM with Singularity. All 12 runs downloaded and md5-verified: 555,738,002 reads, 79,977,308,002 bases, 34.5 GB. Emitted samplesheet.csv is 12 rows by 39 columns, with collection_date at column 35. Three environment workarounds were needed (Nextflow 26.04 strict config parser, whitespace in ena_metadata_fields, and a wget container with no /etc/resolv.conf) - all recorded in RUNS.md and AGENTS.md, and all three fixed upstream in fetchngs 1.13.0 (2026-09-15). Run 01 is not re-run: the fixes change how a run is set up, not what this one produced. Provenance link in RUNS.md."
         },
         "detaxizer": {
           "state": "run", "in": 6, "out": 172, "version": "1.3.0",

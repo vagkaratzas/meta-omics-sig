@@ -169,9 +169,13 @@ cut -f<alias>,<collection_date> results/01_fetchngs/metadata/*.tsv
   `-profile slurm,conda` (the module declares `conda "conda-forge::wget=1.20.1"`), or ask
   admins to enable overlay in `singularity.conf` so Singularity can create missing mount
   points itself.
-- `--nf_core_pipeline` has no `ampliseq` / `mag` / `metatdenovo` option (enum is
+- `--nf_core_pipeline` has no `ampliseq` / `mag` / `metatdenovo` option in 1.12.0 (enum is
   `rnaseq, atacseq, viralrecon, taxprofiler`). Those three handoffs require a conversion
   step — that is a finding for the validation table, not a blocker.
+  **Resolved upstream:** fetchngs 1.13.0 (2026-09-15) adds all three to the enum. The
+  ampliseq and metatdenovo emitters are usable; the mag one writes an empty `group` and
+  names the reads `fastq_1`/`fastq_2`, so mag 5.5.0 rejects it and the converter is still
+  the working route. See [RUNS.md](../../RUNS.md#what-1130-changes-for-the-chain).
 - fetchngs 1.12.0 predates the nf-core 3.x template, so it uses `--max_cpus` /
   `--max_memory` rather than the newer `resourceLimits` syntax — and needs
   `NXF_SYNTAX_PARSER=v1` on Nextflow 26.04+.

@@ -150,12 +150,40 @@ Each edge is a potential route. This table records what we have exercised, what 
 today, and where a bridge is needed — so that the bridges can be built, contributed
 upstream, or shipped as reusable converters.
 
-> **Evidence (fetchngs 1.12.0, `nextflow_schema.json`, checked 2026-08-10):**
-> `--nf_core_pipeline` accepts `rnaseq`, `atacseq`, `viralrecon`, `taxprofiler`. Three of
-> the four core-chain entry points — ampliseq, mag, metatdenovo — are not yet covered by
-> it, so reaching them from the generic `samplesheet.csv` needs a conversion step. The
-> conversion is small (column rename/subset), and extending the `--nf_core_pipeline` enum
-> would remove it for a lot of users: a good feature request, filed as such.
+> **Superseded by fetchngs 1.13.0 (released 2026-09-15, `nextflow_schema.json` checked the
+> same day).** The 1.12.0 enum was `rnaseq`, `atacseq`, `viralrecon`, `taxprofiler`, which
+> left three of the four core-chain entry points needing a conversion step. **The feature
+> request this project drafted is now implemented:** the enum reads `ampliseq`, `atacseq`,
+> `mag`, `metatdenovo`, `rnaseq`, `sarek`, `taxprofiler`, `viralrecon`. All four fetchngs
+> issues drafted on 2026-08-10 are fixed in this release, along with the `wget` container
+> (now 1.25.0), which retires three of run 01's four environment workarounds.
+>
+> **Two of the three new emitters are correct; the mag one is not, and it fails the same way
+> detaxizer's does.** From `subworkflows/local/channel_sra_create_csv/main.nf`, the
+> per-pipeline extra columns are `mag: [group: '', short_reads_platform: 'ILLUMINA',
+> long_reads_platform: '']`, added to a base row of `sample, fastq_1, fastq_2`. Checked
+> against mag 5.5.0's `assets/schema_input.json`:
+>
+> - **`group` is required with pattern `^\S+$` and is written as the empty string** — the
+>   identical defect filed as [nf-core/detaxizer#100](https://github.com/nf-core/detaxizer/issues/100)
+>   a month earlier, now reproduced independently in a second pipeline. `group` is a
+>   study-design decision; no upstream pipeline can invent it, which is precisely why it
+>   cannot be defaulted to `''`.
+> - **The read columns are named `fastq_1`/`fastq_2`, but mag reads `short_reads_1`/
+>   `short_reads_2`.** mag requires only `sample` and `group`, so the rows would not even
+>   fail loudly on this count — they would validate as samples with no reads attached.
+> - **`short_reads_platform` is hardcoded `ILLUMINA`** rather than copied from
+>   `instrument_platform`, so a non-Illumina accession is silently mislabelled. Our converter
+>   copies the ENA value and refuses long-read platforms outright.
+>
+> `ampliseq` (`run: ''` added to `sample, fastq_1, fastq_2`) and `metatdenovo` (no extras at
+> all) both satisfy their targets' schemas, so those two edges become native with 1.13.0.
+>
+> **What 1.13.0 does not change is the sample naming.** `buildPipelineMap` still sets
+> `sample` to `meta.id` minus its run suffix — the ENA *experiment* accession — so a native
+> samplesheet labels every downstream result `ERX13368357`. A native handoff is not the same
+> as a usable one, and the rename that builds names from `collection_date` is still required
+> on every edge, converter or not.
 
 > **New edge — `metatdenovo → proteinfamilies` (schemas checked 2026-08-10,
 > handoff executed 2026-08-11, added to the metro map 2026-08-11):** the case was
@@ -241,7 +269,7 @@ upstream, or shipped as reusable converters.
 > own documented invocation for this sheet adds `--split_fasta`. proteinannotator 1.1.0
 > accepts `id` + `.fa|.fasta|.faa|.fas` (± `.gz`) and needs neither.
 
-> **Two pipelines in the chain now ship downstream samplesheet generators — a pattern worth
+> **Three pipelines in the chain now ship downstream samplesheet generators — a pattern worth
 > propagating** (detaxizer 1.3.0 `nextflow_schema.json`, checked 2026-08-10;
 > proteinfamilies 2.5.0, exercised 2026-08-11). detaxizer exposes
 > `--generate_downstream_samplesheets`, with `--generate_pipeline_samplesheets` defaulting
@@ -249,7 +277,11 @@ upstream, or shipped as reusable converters.
 > `^(taxprofiler|mag)(?:,(taxprofiler|mag)){0,1}`; proteinfamilies uses one
 > `--skip_<target>_samplesheet` flag per target and the workflow `publish:` block. Two
 > pipelines, two unrelated interfaces for the same idea — which is the argument for
-> standardising it rather than letting each pipeline invent its own. Generalising the
+> standardising it rather than letting each pipeline invent its own. **fetchngs 1.13.0
+> (2026-09-15) makes it three**, with a third interface again — `--nf_core_pipeline <target>`
+> — and its brand-new mag emitter ships the same empty-`group` defect detaxizer's has,
+> found within a day of release. Two independent pipelines emitting the same broken sheet
+> for the same target is not two bugs; it is a missing contract. Generalising the
 > pattern — more source pipelines, more targets, one convention — is probably the single
 > highest-leverage improvement available to inter-pipeline chaining in this SIG, and it is
 > worth raising as a cross-pipeline proposal rather than as individual issues.
@@ -318,8 +350,9 @@ upstream, or shipped as reusable converters.
 > ever passes per-mate id files, since R2 would then be filtered with R1's ids and the pairs
 > would desynchronise undetectably. One-character fix. **Filed 2026-08-11 as
 > [nf-core/detaxizer#99](https://github.com/nf-core/detaxizer/issues/99)** — the first
-> upstream issue this project has actually filed rather than drafted. The `metatdenovo` enum
-> request is still unfiled.
+> upstream issue this project has actually filed rather than drafted. The `--nf_core_pipeline` enum
+> request was filed against fetchngs and **shipped in 1.13.0 on 2026-09-15**, adding
+> `ampliseq`, `mag` and `metatdenovo` to the enum.
 
 > **Conversion scripts:** the conversions this table calls for live in
 > `scripts/converters/`, each with an assert-based `--selftest`. They are the deliverable
@@ -339,10 +372,10 @@ upstream, or shipped as reusable converters.
 | From | To | Samplesheet handoff mechanism | Status |
 |------|----|-------------------------------|--------|
 | **fetchngs** | **detaxizer** | generic `samplesheet.csv`; no `--nf_core_pipeline` support, and detaxizer's columns are `short_reads_fastq_1/2`, not `fastq_1/2` | **CONVERSION REQUIRED** — covered by `scripts/converters/fetchngs_to_reads_samplesheet.py --target detaxizer`; column rename only, sample names shared with the `--target reads` output; exercised 2026-08-11, detaxizer 1.3.0 ran to completion on the converted sheet |
-| fetchngs | ampliseq | generic `samplesheet.csv`; **no `--nf_core_pipeline` option** | **CONVERSION REQUIRED** |
+| **fetchngs** | **ampliseq** | `--nf_core_pipeline ampliseq` (added in 1.13.0) emits `sample,fastq_1,fastq_2,run`; ampliseq 2.18.0 accepts that spelling | **NATIVE from 1.13.0** — not yet exercised; run 01 used 1.12.0, which had no ampliseq option. Sample names are still ENA experiment accessions, so the `collection_date` rename is still needed |
 | fetchngs | taxprofiler | `--nf_core_pipeline taxprofiler` emits a purpose-built samplesheet | OPEN — flag exists, output not yet verified |
-| **fetchngs** | **mag** | generic `samplesheet.csv`; **no `--nf_core_pipeline` option**. mag also wants `group` and `short_reads_platform`, so this is a reshape, not a rename | **CONVERSION REQUIRED** — covered by `scripts/converters/fetchngs_to_reads_samplesheet.py --target mag`; `short_reads_platform` is copied from `instrument_platform`, `group` must be supplied by hand |
-| fetchngs | metatdenovo | generic `samplesheet.csv`; **no `--nf_core_pipeline` option** | **CONVERSION REQUIRED** — exercised 2026-08-11 via `scripts/converters/fetchngs_to_reads_samplesheet.py`; metatdenovo 1.4.0 ran to completion on the converted sheet |
+| **fetchngs** | **mag** | `--nf_core_pipeline mag` (added in 1.13.0) emits a sheet mag cannot use: `group` written empty, read columns named `fastq_1`/`fastq_2` instead of `short_reads_1`/`short_reads_2`, platform hardcoded `ILLUMINA` | **NATIVE, REJECTED BY TARGET** — 1.13.0's emitter fails mag 5.5.0's schema on `group` alone; **CONVERSION REQUIRED** in practice, covered by `scripts/converters/fetchngs_to_reads_samplesheet.py --target mag`. Same defect as [detaxizer#100](https://github.com/nf-core/detaxizer/issues/100), second occurrence; not yet filed against fetchngs |
+| **fetchngs** | **metatdenovo** | `--nf_core_pipeline metatdenovo` (added in 1.13.0) emits `sample,fastq_1,fastq_2` plus the metadata columns, which is exactly metatdenovo 1.4.0's required set | **NATIVE from 1.13.0** — not yet exercised natively; exercised 2026-08-11 through `scripts/converters/fetchngs_to_reads_samplesheet.py` against 1.12.0, which had no metatdenovo option. Sample names are still ENA experiment accessions, so the `collection_date` rename is still needed |
 | **fetchngs** | **viralmetagenome** | generic `samplesheet.csv`; **no `--nf_core_pipeline` option**; wants `sample,fastq_1[,fastq_2]` — the same shape metatdenovo takes | **CONVERSION REQUIRED** — existing converter covers it unchanged |
 | detaxizer | ampliseq | filtered FASTQ → ampliseq samplesheet; **excluded** from `--generate_pipeline_samplesheets` | **CONVERSION REQUIRED** |
 | **detaxizer** | **taxprofiler** | `--generate_downstream_samplesheets` emits `taxprofiler.csv` natively — `sample,run_accession,instrument_platform,fastq_1,fastq_2,fasta` | **NATIVE** — emitted 2026-08-11, validates against taxprofiler 2.0.1, not yet exercised; taxprofiler additionally needs a `--databases` sheet detaxizer cannot produce |
