@@ -166,7 +166,7 @@ the container change is upstream's claim, not yet our observation.
 The mag emitter is the **same defect as
 [nf-core/detaxizer#100](https://github.com/nf-core/detaxizer/issues/100)** — an empty `group`
 in a generated mag samplesheet — arriving independently in a second pipeline a month later.
-**Not yet filed against fetchngs.**
+**Filed 2026-09-15 as [nf-core/fetchngs#401](https://github.com/nf-core/fetchngs/issues/401).**
 
 And on every target, `sample` is still the ENA experiment accession
 (`buildPipelineMap` takes `meta.id` minus its run suffix), so a native sheet still labels

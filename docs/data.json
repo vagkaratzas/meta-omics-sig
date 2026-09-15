@@ -251,7 +251,7 @@
       "statusClass": "conversion-required",
       "routable": true, "unit": "runs", "carries": ["WGS"],
       "note": "--nf_core_pipeline mag, added in 1.13.0, emits sample,fastq_1,fastq_2 plus group, short_reads_platform and long_reads_platform. mag 5.5.0 cannot use it: group is required with pattern ^\\S+$ and is written as the empty string; the reads are named fastq_1/fastq_2 where mag reads short_reads_1/short_reads_2; and short_reads_platform is hardcoded ILLUMINA rather than copied from instrument_platform.",
-      "caveat": "Same defect as nf-core/detaxizer#100 - an empty group in a generated mag samplesheet - arriving independently in a second pipeline a month later, found within a day of the 1.13.0 release. Not yet filed against fetchngs. scripts/converters/fetchngs_to_reads_samplesheet.py --target mag remains the working route: it copies short_reads_platform from instrument_platform, refuses long-read platforms, and requires group to be supplied by hand."
+      "caveat": "Same defect as nf-core/detaxizer#100 - an empty group in a generated mag samplesheet - arriving independently in a second pipeline a month later, found within a day of the 1.13.0 release. Filed 2026-09-15 as nf-core/fetchngs#401. scripts/converters/fetchngs_to_reads_samplesheet.py --target mag remains the working route: it copies short_reads_platform from instrument_platform, refuses long-read platforms, and requires group to be supplied by hand."
     },
     {
       "id": "fetchngs__metatdenovo", "from": "fetchngs", "to": "metatdenovo",
