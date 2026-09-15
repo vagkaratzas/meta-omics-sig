@@ -1,7 +1,7 @@
 {
   "_schema": "Hand-maintained data for the meta-omics SIG conveyor-belt site. Strict JSON: no comments, no trailing commas. Three vocabularies are kept apart and must not be blended. (1) repoStatus = a string copied VERBATIM from the 'Samplesheet Chaining - Validation Table' in PLAN.md; edges not in that table have no repoStatus key at all. (2) Site annotations (caveat, siteState, routable, layer, routingBasis) are this site's own notes and are always rendered as such, never as a status. (3) statusClass is a render class only. Two version fields exist and must not be conflated: stations[].release is the version whose documentation the `requires` list was read from (see requiresReadFrom), while datasets[].siteState[id].version is the version actually used for that dataset. The site shows the executed version, and both when they differ. When you change PLAN.md's validation table, change this file.",
   "meta": {
-    "updated": "2026-08-11",
+    "updated": "2026-09-15",
     "repo": "https://github.com/vagkaratzas/meta-omics-sig",
     "sig": "https://nf-co.re/special-interest-groups/meta-omics",
     "plan": "https://github.com/vagkaratzas/meta-omics-sig/blob/main/PLAN.md",
@@ -148,6 +148,7 @@
       "requires": [
         "--mode mags|bins|metagenomic_assemblies|reads - each mode has its own samplesheet schema",
         "mags/bins --input samplesheet: id, fasta, accession, assembly_software, binning_software, binning_parameters, metagenome, co-assembly, broad_environment, local_environment, environmental_medium (+ optional fastq_1/2, completeness, contamination, genome_coverage, stats_generation_software, RNA_presence, NCBI_lineage)",
+      "metagenomic_assemblies --input samplesheet: id, fasta, run_accession, assembler, assembler_version (+ optional fastq_1/2 or coverage - coverage is computed from the reads when it is not given)",
         "fasta must be gzipped: .fa.gz / .fasta.gz / .fna.gz - an uncompressed FASTA is rejected",
         "accession - the ENA run or assembly accession the MAG was derived from; that source must already be in ENA",
         "ENA_WEBIN and ENA_WEBIN_PASSWORD supplied as Nextflow secrets",
@@ -382,7 +383,17 @@
       "executed": true,
       "routable": true, "unit": "proteins", "carries": [], "dotCount": 1,
       "note": "--orf_caller prodigal publishes prodigal/<assembly>.faa.gz, an extension proteinfamilies accepts. Only a one-row sample,fasta samplesheet is needed; the sequences themselves transfer unchanged. Executed: 198,252 predicted proteins handed over via scripts/converters/metatdenovo_to_proteinfamilies.py, sheet accepted by proteinfamilies 2.5.0.",
-      "caveat": "Not yet on the metro map; a candidate addition, since metatdenovo is the only pipeline here that emits protein FASTA directly. The mapped route via mag needs an ORF-calling step first. The ORF caller matters: transdecoder publishes *.transdecoder.pep.gz, and .pep is not among proteinfamilies' accepted extensions - adding it upstream would make that route work too."
+      "caveat": "On the metro map since 2026-08-11, proposed off the back of this run, since metatdenovo is the only pipeline here that emits protein FASTA directly. The mapped route via mag needs an ORF-calling step first. The ORF caller matters: transdecoder publishes *.transdecoder.pep.gz, and .pep is not among proteinfamilies' accepted extensions - adding it upstream would make that route work too."
+    },
+    {
+      "id": "metatdenovo__seqsubmit", "from": "metatdenovo", "to": "seqsubmit",
+      "source": "table", "kind": "artifact",
+      "repoStatus": "CONVERSION REQUIRED - metadata, and assembly_uploader hardcodes the ENA assembly type as primary metagenome",
+      "statusClass": "conversion-required",
+      "routable": false, "unit": "contigs",
+      "carries": [],
+      "note": "megahit contigs .fa.gz -> seqsubmit --mode metagenomic_assemblies (assets/schema_input_assembly.json). The FASTA pattern is .fa.gz/.fasta.gz/.fna.gz and metatdenovo publishes megahit_assembly.contigs.fa.gz, so the file transfers unchanged. The row is much lighter than the mags/bins row: id, fasta, run_accession, assembler, assembler_version, with coverage optional because seqsubmit computes it from reads. No binning software, no binning parameters, no ENVO/MIxS environment terms.",
+      "caveat": "Two gaps, neither a column rename. (1) seqsubmit brokers the manifest through assembly_uploader 1.3.5, which writes ASSEMBLY_TYPE as primary metagenome with no override - a metatranscriptome co-assembly would be deposited in ENA as a metagenome, a wrong record type rather than a cosmetic label. ENA does accept metatranscriptome assemblies, so this is an upstream feature request, not a dead end. (2) run_accession is one accession per row, but run 02 co-assembled six libraries; the mags/bins schema has a co-assembly field for exactly this and the assembly schema does not. Prerequisites are the same as the mag edge: ENA_WEBIN secrets and the source reads already in ENA, which for LMO they are. Also noted: the shipped example assets/samplesheet_assembly.csv heads its first column sample where the schema requires id, so the example as published would be rejected."
     },
     {
       "id": "proteinfamilies__proteinfold", "from": "proteinfamilies", "to": "proteinfold",

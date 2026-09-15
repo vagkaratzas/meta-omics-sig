@@ -86,6 +86,7 @@ fetchngs (SRA accessions)
         │     ├─► phageannotator (viral contigs + reads → phage annotation) [UNTESTED]
         │     └─► phyloplace (viral contigs → placement on a reference tree) [UNTESTED]
         └─► metatdenovo (shotgun MT reads → metatranscriptome assembly) [RUN 2026-08-11]
+              ├─► seqsubmit (megahit contigs .fa.gz → ENA assembly accessions) [UNTESTED]
               └─► proteinfamilies (prodigal .faa.gz → protein families) [RUN 2026-08-11]
                     ├─► proteinfold (representatives → structures) [SHEET EMITTED, NOT CONSUMED]
                     └─► proteinannotator (representatives → annotation) [SHEET EMITTED, NOT CONSUMED]
@@ -101,6 +102,10 @@ fetchngs (SRA accessions)
 > - `mag → seqsubmit` — seqsubmit 1.0.0 was released 2026-08-04, after the previous map was
 >   drawn; it now sits in a new **4. Data upload** stage. It is the chain's only exit back
 >   to the archive: everything else consumes ENA data, this one deposits into it.
+> - `metatdenovo → seqsubmit` — **added 2026-09-15.** seqsubmit's fourth mode,
+>   `metagenomic_assemblies`, takes gzipped assembly contigs, which is exactly what
+>   metatdenovo publishes. mag is therefore not the only station that can reach the upload
+>   stage, and the metatranscriptome branch gains an exit to the archive it did not have.
 > - `detaxizer → createtaxdb` is **no longer drawn.** The new map feeds createtaxdb from the
 >   reference-FASTA input instead, which matches createtaxdb 3.1.0's documented contract
 >   (`id`, `taxid`, `fasta_dna`/`fasta_aa` — not filtered reads). The inconsistency raised
@@ -181,6 +186,41 @@ upstream, or shipped as reusable converters.
 > `reads` and `metagenomic_assemblies` modes do that step). Submitting MAGs built from
 > public LMO reads is legitimate — they are new derived records with their own accessions —
 > and `--upload_tpa` exists to flag third-party assemblies.
+
+> **New edge — `metatdenovo → seqsubmit` (schemas checked 2026-09-15, added to the metro map
+> 2026-09-15):** seqsubmit's `--mode` enum is
+> `mags|bins|metagenomic_assemblies|reads`, and the third of those is the one mag does not
+> use. `assets/schema_input_assembly.json` wants `id`, `fasta`, `run_accession`, `assembler`
+> and `assembler_version`, with `fastq_1`/`fastq_2` or `coverage` optional — seqsubmit
+> computes coverage itself when reads are supplied. The FASTA pattern is
+> `.fa.gz` / `.fasta.gz` / `.fna.gz`, and metatdenovo publishes
+> `megahit_assembly.contigs.fa.gz`, so **the file transfers unchanged** and the row is far
+> lighter than the mags/bins row: no binning software, no binning parameters, no ENVO/MIxS
+> environment terms. `assembler` and `assembler_version` come from run provenance the chain
+> already holds.
+>
+> Two gaps stand between that and a submission, and neither is a column rename:
+>
+> - **The assembly type is hardcoded.** seqsubmit brokers the manifest through
+>   `assembly_uploader` 1.3.5, which writes `("ASSEMBLY_TYPE", "primary metagenome")` with no
+>   parameter to override it. A metatranscriptome co-assembly submitted through this mode
+>   would be deposited in ENA as a metagenome — a wrong record type, not a cosmetic label.
+>   ENA does accept metatranscriptome assemblies, so this is an upstream feature request
+>   (an `--assembly_type` passthrough) rather than a dead end, and it is the reason this
+>   edge is **not** simply the mag edge with fewer columns.
+> - **`run_accession` is singular; the assembly is not.** The schema takes one ENA run
+>   accession per row, while run 02 co-assembled six libraries. The mags/bins schema has a
+>   `co-assembly` field for exactly this and the assembly schema does not, so a six-run
+>   co-assembly has no honest value to put in that column. Same question as the assembly
+>   type, same place to ask it.
+>
+> Also noted while reading: the shipped example `assets/samplesheet_assembly.csv` heads its
+> first column `sample`, but the schema requires `id`. The example as published would be
+> rejected. Small, separate, worth filing.
+>
+> Prerequisites are as for `mag → seqsubmit`: `ENA_WEBIN`/`ENA_WEBIN_PASSWORD` as Nextflow
+> secrets, and the source reads already in ENA — which for LMO they are, since fetchngs
+> pulled them from there.
 
 > **New edges — `proteinfamilies → proteinfold` and `proteinfamilies → proteinannotator`
 > (emitted 2026-08-11 by run 03):** proteinfamilies 2.5.0 publishes ready-made `id,fasta`
@@ -316,6 +356,7 @@ upstream, or shipped as reusable converters.
 | mag | magmap | MAG FASTA → magmap reference input | OPEN |
 | **mag** | **metapep / proteinfamilies** | Prodigal and Prokka run by default, publishing `Annotation/Prodigal/<assembler>-<sample>.faa.gz` (assembly level) and `Annotation/Prokka/.../<bin>.faa` (per bin) — both extensions proteinfamilies accepts | **CONVERSION REQUIRED** — samplesheet only, no ORF-calling step |
 | **metatdenovo** | **proteinfamilies** | `--orf_caller prodigal` publishes `prodigal/<assembly>.faa.gz`, an extension proteinfamilies accepts | **CONVERSION REQUIRED** — one-row samplesheet, no reformatting; exercised 2026-08-11, 198,252 proteins accepted by proteinfamilies 2.5.0, 405 families out |
+| **metatdenovo** | **seqsubmit** | megahit contigs `.fa.gz` → `--mode metagenomic_assemblies` (`schema_input_assembly.json`); gzipped FASTA transfers unchanged, and the row needs only `id`, `run_accession`, `assembler`, `assembler_version` | **CONVERSION REQUIRED** — metadata, and `assembly_uploader` hardcodes the ENA assembly type as `primary metagenome` |
 | **viralmetagenome** | **phageannotator** | viral contig FASTA → input, but the sheet also wants `group` and `fastq_1` | **CONVERSION REQUIRED** — two-source join, and `.combined.fa` is not gzipped |
 | **viralmetagenome** | **phyloplace** | viral contig FASTA → `queryseqfile` | **CONVERSION REQUIRED** — `refseqfile`, `refphylogeny`, `model` are external per-row inputs |
 | **proteinfamilies** | **proteinfold** | `--skip_proteinfold_samplesheet false` (default `true`) publishes `proteinfold/samplesheet.csv` — `id,fasta`, pointing at the family representatives `<samplename>_reps.faa` | **NATIVE** — emitted 2026-08-11, not yet exercised; native against proteinfold 2.0.0 only, 1.1.1 wants a `sequence` column and rejects `.faa` |
