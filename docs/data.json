@@ -515,6 +515,7 @@
     { "label": "MetaGT SnailGut", "gate": "fail", "reason": "No amplicon layer", "accessions": "SRR8397925, SRR8416101" },
     { "label": "Heintz-Buschart T1DM", "gate": "fail", "reason": "No amplicon layer, despite being the most host-relevant candidate", "accessions": "PRJNA289586 + PRIDE TBC" },
     { "label": "Granata oral cancer", "gate": "fail", "reason": "No shotgun MG or MT", "accessions": "PRJNA700849 + PXD022859" },
-    { "label": "Rausch et al. 2019", "gate": "fail", "reason": "16S + MG only; no MT", "accessions": "PMID 31521200" }
+    { "label": "Rausch et al. 2019", "gate": "fail", "reason": "16S + MG only; no MT", "accessions": "PMID 31521200" },
+    { "label": "Geodia parva sponge", "gate": "fail", "reason": "Host genome project: holobiont WGS + 179 symbiont bins + polyA (host) RNA-Seq; no amplicon, 2 specimens", "accessions": "PRJEB65620" }
   ]
 }

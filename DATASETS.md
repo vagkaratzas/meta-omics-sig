@@ -130,6 +130,24 @@ his group.
 > accessions, totalling 51 selected dates; ENA gives 13 / 19 / 12 / 26 / 33-dates and a
 > 46-date union). Resolve with Daniel before Phase 1.
 
+### Candidate 9 — PRJEB65620 (*Geodia parva* sponge holobiont, Aquatic Symbiosis Genomics)
+
+Suggested by a SIG group member (2026-09-17) as NCBI BioProject UID 1011691. That UID is
+**not** `PRJNA1011691` — it resolves to the ENA umbrella `PRJEB65620`.
+
+| Property | Value |
+|----------|-------|
+| Accessions | Umbrella PRJEB65620 · reads PRJEB65619 · symbiont metagenome + bins PRJEB66616 · host assemblies PRJEB80884, PRJEB80885 (alt. haplotype) |
+| Environment | Deep-sea sponge tissue, Schulz Bank (Arctic Mid-Ocean Ridge), collected 2018-08-05 |
+| Organism | *Geodia parva* (host) + its bacterial symbiont community |
+| Omics layers | PacBio Revio HiFi WGS + Illumina WGS + Hi-C (holobiont DNA) + **polyA** RNA-Seq (1 run); **no amplicon**. MG is a genome-project by-product, not a metagenome study: 1 metagenome assembly + 179 binned genomes in PRJEB66616 |
+| Specimens | 2 (ToL IDs odGeoParv1, odGeoParv2); RNA-Seq from odGeoParv2 only |
+| SRA runs | 9 (4 Illumina WGS, 3 HiFi, 1 Hi-C, 1 RNA-Seq) |
+| Data volume | 189 GB (ENA FASTQ) |
+| Released | 2023-09 → 2024-11 (Darwin Tree of Life pipeline) |
+| Strengths | Animal host; high-complexity symbiont community (179 bins); long-read holobiont data; submitter-built bins give a reference to compare nf-core/mag against |
+| Weaknesses | Fails the gate — no amplicon, and polyA selection targets host mRNA, so the RNA-Seq is a host transcriptome rather than a microbial MT; no replicates or conditions (nothing for differentialabundance); reads dominated by host and Hi-C |
+
 ### Additional datasets to search (open)
 
 A systematic PubMed + bioRxiv search was run (June 2026) using `lit-synthesizer`. Recurring
@@ -156,18 +174,22 @@ Score 0–3 per criterion. **Open — not yet decided.**
 Gate applied first: a candidate must carry amplicon + MG + MT. Candidates failing the
 gate are scored for the record but are **not selectable**.
 
-| Criterion | Weight | PRJNA682552 | PRJNA693457 | MetaGT (HumanGut) | Rausch 2019 | PRJNA230567 | PRJNA289586 | PRJNA700849 | **LMO** |
-|-----------|--------|-------------|-------------|-------------------|-------------|-------------|-------------|-------------|---------|
-| **Gate: amplicon + MG + MT** | — | ✅ | ✅ | ❌ no amplicon | ❌ no MT | ✅ | ❌ no amplicon | ❌ MG, MT | ✅ |
-| 3-omics coverage (amplicon + MG + MT) | 3× | 3 | 3 | 2 | 2 | **3** | 2 | 1 | **3** |
-| Host-related / clinically relevant | 2× | 0 | 0 | 2 | 3 | 0 | **3** | **3** | 0 |
-| Biological replicates (≥3 per condition) | 2× | 3 | 3 | 1 | 2 | **3** | 1 | 2 | **3** |
-| Data recency (post-2021 preferred) | 1× | 1 | 1 | 2 | 1 | 1 | 0 | 2 | 1 |
-| Community complexity | 1× | 1 | 2 | 3 | 3 | 2 | **3** | 2 | 2 |
-| **Weighted total** | | **17** | **18** | 17 | 20 | **18** | 17 | 17 | **18** |
-| **Selectable** | | yes | yes | no | no | yes | no | no | **yes** |
+| Criterion | Weight | PRJNA682552 | PRJNA693457 | MetaGT (HumanGut) | Rausch 2019 | PRJNA230567 | PRJNA289586 | PRJNA700849 | **LMO** | **PRJEB65620** |
+|-----------|--------|-------------|-------------|-------------------|-------------|-------------|-------------|-------------|---------|---------|
+| **Gate: amplicon + MG + MT** | — | ✅ | ✅ | ❌ no amplicon | ❌ no MT | ✅ | ❌ no amplicon | ❌ MG, MT | ✅ | ❌ no amplicon; MT is polyA host |
+| 3-omics coverage (amplicon + MG + MT) | 3× | 3 | 3 | 2 | 2 | **3** | 2 | 1 | **3** | 1 |
+| Host-related / clinically relevant | 2× | 0 | 0 | 2 | 3 | 0 | **3** | **3** | 0 | 2 |
+| Biological replicates (≥3 per condition) | 2× | 3 | 3 | 1 | 2 | **3** | 1 | 2 | **3** | 1 |
+| Data recency (post-2021 preferred) | 1× | 1 | 1 | 2 | 1 | 1 | 0 | 2 | 1 | 1 |
+| Community complexity | 1× | 1 | 2 | 3 | 3 | 2 | **3** | 2 | 2 | 2 |
+| **Weighted total** | | **17** | **18** | 17 | 20 | **18** | 17 | 17 | **18** | 12 |
+| **Selectable** | | yes | yes | no | no | yes | no | no | **yes** | no |
 
 Scoring key — 3-omics: 3=all 3 layers, 2=2 layers, 1=1 layer. Host-related: 3=human clinical, 2=animal/indirect, 0=environmental. Replicates: 3=≥5/condition or ≥20 matched timepoints, 2=3-4, 1=1-2. Recency: 2=2021-2022, 1=2018-2020, 0=pre-2018. Complexity: 3=human gut, 2=moderate, 1=low.
+
+> **Note (PRJEB65620):** MG scored as the only real microbial layer — polyA RNA-Seq is not
+> counted as MT. Recency keys on the 2018 sampling date, as LMO keys on 2015–2017. Useful
+> at most as a side-demo of mag/proteinfamilies on a host-associated long-read holobiont.
 
 > **Note:** Rausch 2019 scores highest overall (20) purely on host-relevance but fails the
 > gate — no MT. The gate, not the score, is decisive.

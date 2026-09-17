@@ -184,6 +184,7 @@ count toward selection.
 | Heintz-Buschart T1DM | PRJNA289586 (SRA) + PRIDE TBC | MG (WGS) + MT (RNA-Seq) + MP; no amplicon | Human gut, T1DM families |
 | Granata oral cancer | PRJNA700849 (SRA) + PXD022859 (PRIDE) | 16S amplicon + MP; no shotgun MG or MT | Human saliva, OSCC |
 | LMO (Linnaeus Microbial Observatory) | 16S: PRJEB52780, PRJEB52782, PRJEB52828 · MG: PRJEB82694 · MT rRNA-depleted: PRJEB69280 · MT polyA: PRJEB90631, PRJEB90671 | 16S amplicon + MG + MT — **passes the gate**; no MP | Environmental (Baltic Sea brackish water, 2 m) |
+| Geodia parva sponge (ASG) | PRJEB65620 umbrella (NCBI UID 1011691, not PRJNA1011691) · reads PRJEB65619 · MAGs PRJEB66616 | Holobiont WGS (HiFi+Illumina+Hi-C) + polyA RNA-Seq; no amplicon — **fails the gate** | Animal host (deep-sea sponge) |
 
 If asked to find more datasets, search SRA/ENA directly or use the PubMed tool — do
 not fabricate accessions. The iHMP (PRJNA398945) is a high-priority unverified candidate
