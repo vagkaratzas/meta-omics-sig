@@ -1,7 +1,7 @@
 {
   "_schema": "Hand-maintained data for the meta-omics SIG conveyor-belt site. Strict JSON: no comments, no trailing commas. Three vocabularies are kept apart and must not be blended. (1) repoStatus = a string copied VERBATIM from the 'Samplesheet Chaining - Validation Table' in PLAN.md; edges not in that table have no repoStatus key at all. (2) Site annotations (caveat, siteState, routable, layer, routingBasis) are this site's own notes and are always rendered as such, never as a status. (3) statusClass is a render class only. Two version fields exist and must not be conflated: stations[].release is the version whose documentation the `requires` list was read from (see requiresReadFrom), while datasets[].siteState[id].version is the version actually used for that dataset. The site shows the executed version, and both when they differ. When you change PLAN.md's validation table, change this file.",
   "meta": {
-    "updated": "2026-08-11",
+    "updated": "2026-09-15",
     "repo": "https://github.com/vagkaratzas/meta-omics-sig",
     "sig": "https://nf-co.re/special-interest-groups/meta-omics",
     "plan": "https://github.com/vagkaratzas/meta-omics-sig/blob/main/PLAN.md",
@@ -14,9 +14,13 @@
       "id": "fetchngs", "label": "fetchngs", "kind": "pipeline", "x": 20, "y": 330,
       "blurb": "Fetches public sequencing data from SRA/ENA accessions and emits the FASTQ files plus a generic samplesheet describing them.",
       "io": { "in": "SRA / ENA accessions", "out": "FASTQ + samplesheet.csv" },
-      "requires": ["ids.csv - one accession per line (not a CSV samplesheet)"],
-      "requiresReadFrom": "1.12.0",
-      "release": "1.12.0", "docs": "https://nf-co.re/fetchngs/1.12.0/", "devNote": null
+      "requires": [
+        "ids.csv - one accession per line (not a CSV samplesheet)",
+        "--nf_core_pipeline <target> - since 1.13.0 the enum is ampliseq, atacseq, mag, metatdenovo, rnaseq, sarek, taxprofiler, viralrecon; 1.12.0 had only rnaseq, atacseq, viralrecon, taxprofiler",
+        "the emitted sample column is the ENA experiment accession whatever --nf_core_pipeline is set to, so a rename is still needed downstream"
+      ],
+      "requiresReadFrom": "1.13.0",
+      "release": "1.13.0", "docs": "https://nf-co.re/fetchngs/1.13.0/", "devNote": "1.13.0 (2026-09-15) implements all four issues this project drafted on 2026-08-10, including the --nf_core_pipeline enum request. Run 01 ran on 1.12.0 and is not re-run."
     },
     {
       "id": "detaxizer", "label": "detaxizer", "kind": "pipeline", "x": 200, "y": 430,
@@ -148,6 +152,7 @@
       "requires": [
         "--mode mags|bins|metagenomic_assemblies|reads - each mode has its own samplesheet schema",
         "mags/bins --input samplesheet: id, fasta, accession, assembly_software, binning_software, binning_parameters, metagenome, co-assembly, broad_environment, local_environment, environmental_medium (+ optional fastq_1/2, completeness, contamination, genome_coverage, stats_generation_software, RNA_presence, NCBI_lineage)",
+      "metagenomic_assemblies --input samplesheet: id, fasta, run_accession, assembler, assembler_version (+ optional fastq_1/2 or coverage - coverage is computed from the reads when it is not given)",
         "fasta must be gzipped: .fa.gz / .fasta.gz / .fna.gz - an uncompressed FASTA is rejected",
         "accession - the ENA run or assembly accession the MAG was derived from; that source must already be in ENA",
         "ENA_WEBIN and ENA_WEBIN_PASSWORD supplied as Nextflow secrets",
@@ -227,10 +232,10 @@
     },
     {
       "id": "fetchngs__ampliseq", "from": "fetchngs", "to": "ampliseq",
-      "source": "table", "kind": "reads", "repoStatus": "CONVERSION REQUIRED", "statusClass": "conversion-required",
+      "source": "table", "kind": "reads", "repoStatus": "NATIVE from 1.13.0 - not yet exercised", "statusClass": "validated",
       "routable": true, "unit": "runs", "carries": ["AMPLICON"],
-      "note": "generic samplesheet.csv; no --nf_core_pipeline option. The enum is [rnaseq, atacseq, viralrecon, taxprofiler] only, so a column rename/subset is required.",
-      "caveat": "Confirmed in the 2026-08-10 pilot run: the emitted sample column is the ENA experiment accession (sample == experiment_accession for all 12 rows), so a sample rename is required on top of the column conversion or every downstream result is labelled ERX..."
+      "note": "--nf_core_pipeline ampliseq, added in 1.13.0, emits sample,fastq_1,fastq_2 plus run and the metadata columns. ampliseq 2.18.0 accepts that spelling (its schema takes either sampleID/forwardReads or sample/fastq_1) and run is optional, so the sheet transfers with no conversion.",
+      "caveat": "Native since 2026-09-15 and not yet exercised: run 01 used 1.12.0, whose enum had no ampliseq option. Native is not the same as usable - fetchngs still writes the ENA experiment accession into the sample column, so results would be labelled ERX13368357 unless renamed from collection_date."
     },
     {
       "id": "fetchngs__taxprofiler", "from": "fetchngs", "to": "taxprofiler",
@@ -241,18 +246,20 @@
     },
     {
       "id": "fetchngs__mag", "from": "fetchngs", "to": "mag",
-      "source": "table", "kind": "reads", "repoStatus": "CONVERSION REQUIRED", "statusClass": "conversion-required",
+      "source": "table", "kind": "reads",
+      "repoStatus": "NATIVE, REJECTED BY TARGET - 1.13.0's emitter fails mag 5.5.0's schema; CONVERSION REQUIRED in practice",
+      "statusClass": "conversion-required",
       "routable": true, "unit": "runs", "carries": ["WGS"],
-      "note": "generic samplesheet.csv; no --nf_core_pipeline option",
-      "caveat": "mag 5.5.0 also needs group and short_reads_platform columns that the generic sheet does not carry. Not yet tested. The 2026-08-10 pilot also confirmed the sample column is the ENA experiment accession, so a rename is required as well."
+      "note": "--nf_core_pipeline mag, added in 1.13.0, emits sample,fastq_1,fastq_2 plus group, short_reads_platform and long_reads_platform. mag 5.5.0 cannot use it: group is required with pattern ^\\S+$ and is written as the empty string; the reads are named fastq_1/fastq_2 where mag reads short_reads_1/short_reads_2; and short_reads_platform is hardcoded ILLUMINA rather than copied from instrument_platform.",
+      "caveat": "Same defect as nf-core/detaxizer#100 - an empty group in a generated mag samplesheet - arriving independently in a second pipeline a month later, found within a day of the 1.13.0 release. Filed 2026-09-15 as nf-core/fetchngs#401. scripts/converters/fetchngs_to_reads_samplesheet.py --target mag remains the working route: it copies short_reads_platform from instrument_platform, refuses long-read platforms, and requires group to be supplied by hand."
     },
     {
       "id": "fetchngs__metatdenovo", "from": "fetchngs", "to": "metatdenovo",
-      "source": "table", "kind": "reads", "repoStatus": "CONVERSION REQUIRED - exercised 2026-08-11 via scripts/converters/fetchngs_to_reads_samplesheet.py", "statusClass": "conversion-required",
+      "source": "table", "kind": "reads", "repoStatus": "NATIVE from 1.13.0 - not yet exercised natively; exercised 2026-08-11 through the converter against 1.12.0", "statusClass": "validated",
       "executed": true,
       "routable": true, "unit": "runs", "carries": ["RNA-Seq"],
-      "note": "generic samplesheet.csv; no --nf_core_pipeline option. Converted sheet was accepted and metatdenovo 1.4.0 ran to completion on it.",
-      "caveat": "Confirmed in the 2026-08-10 pilot run: the sample column is the ENA experiment accession, so a rename is required alongside the column conversion. The six RNA-Seq runs are two library-level replicates per date, which metatdenovo will treat as six independent samples unless merged first."
+      "note": "--nf_core_pipeline metatdenovo, added in 1.13.0, emits sample,fastq_1,fastq_2 plus the metadata columns - exactly metatdenovo 1.4.0's required set, with no per-pipeline extras added at all. Run 02 predates the release and ran on a converted 1.12.0 sheet.",
+      "caveat": "Native since 2026-09-15, not yet exercised natively. The converter is still what run 02 used and still what builds sample names from collection_date - fetchngs' own sample column is the ENA experiment accession on every target."
     },
     {
       "id": "fetchngs__viralmetagenome", "from": "fetchngs", "to": "viralmetagenome",
@@ -356,17 +363,21 @@
     },
     {
       "id": "mag__metapep", "rowKey": "mag__proteins", "from": "mag", "to": "metapep",
-      "source": "table", "kind": "artifact", "repoStatus": "OPEN", "statusClass": "untested",
+      "source": "table", "kind": "artifact",
+      "repoStatus": "CONVERSION REQUIRED - samplesheet only, no ORF-calling step",
+      "statusClass": "conversion-required",
       "routable": false, "unit": "proteins", "carries": [],
-      "note": "predicted proteins FASTA -> input. One validation-table row covers metapep and proteinfamilies together; drawn here as two edges sharing that status.",
-      "intermediateStep": "ORF calling", "caveat": "mag does not itself emit protein FASTA, so an ORF-calling / protein-extraction step belongs between these two stations. Worth proposing as an addition to the map."
+      "note": "Prodigal and Prokka run by default (skip_prodigal and skip_prokka both off), publishing Annotation/Prodigal/<assembler>-<sample>.faa.gz at assembly level and Annotation/Prokka/<assembler>/<bin>/<...>.faa per bin - both extensions proteinfamilies accepts. One validation-table row covers metapep and proteinfamilies together; drawn here as two edges sharing that status.",
+      "caveat": "mag's assembly-level Prodigal file is the same tool, scope and extension as metatdenovo's, so this edge is directly comparable with the executed metatdenovo -> proteinfamilies route."
     },
     {
       "id": "mag__proteinfamilies", "rowKey": "mag__proteins", "from": "mag", "to": "proteinfamilies",
-      "source": "table", "kind": "artifact", "repoStatus": "OPEN", "statusClass": "untested",
+      "source": "table", "kind": "artifact",
+      "repoStatus": "CONVERSION REQUIRED - samplesheet only, no ORF-calling step",
+      "statusClass": "conversion-required",
       "routable": false, "unit": "proteins", "carries": [],
-      "note": "predicted proteins FASTA -> input. One validation-table row covers metapep and proteinfamilies together; drawn here as two edges sharing that status.",
-      "intermediateStep": "ORF calling", "caveat": "mag does not itself emit protein FASTA, so an ORF-calling / protein-extraction step belongs between these two stations. Worth proposing as an addition to the map."
+      "note": "Prodigal and Prokka run by default (skip_prodigal and skip_prokka both off), publishing Annotation/Prodigal/<assembler>-<sample>.faa.gz at assembly level and Annotation/Prokka/<assembler>/<bin>/<...>.faa per bin - both extensions proteinfamilies accepts. One validation-table row covers metapep and proteinfamilies together; drawn here as two edges sharing that status.",
+      "caveat": "mag's assembly-level Prodigal file is the same tool, scope and extension as metatdenovo's, so this edge is directly comparable with the executed metatdenovo -> proteinfamilies route."
     },
     {
       "id": "metatdenovo__proteinfamilies", "from": "metatdenovo", "to": "proteinfamilies",
@@ -376,7 +387,17 @@
       "executed": true,
       "routable": true, "unit": "proteins", "carries": [], "dotCount": 1,
       "note": "--orf_caller prodigal publishes prodigal/<assembly>.faa.gz, an extension proteinfamilies accepts. Only a one-row sample,fasta samplesheet is needed; the sequences themselves transfer unchanged. Executed: 198,252 predicted proteins handed over via scripts/converters/metatdenovo_to_proteinfamilies.py, sheet accepted by proteinfamilies 2.5.0.",
-      "caveat": "Not yet on the metro map; a candidate addition, since metatdenovo is the only pipeline here that emits protein FASTA directly. The mapped route via mag needs an ORF-calling step first. The ORF caller matters: transdecoder publishes *.transdecoder.pep.gz, and .pep is not among proteinfamilies' accepted extensions - adding it upstream would make that route work too."
+      "caveat": "On the metro map since 2026-08-11, proposed off the back of this run, since metatdenovo is the only pipeline here that emits protein FASTA directly. The mapped route via mag needs an ORF-calling step first. The ORF caller matters: transdecoder publishes *.transdecoder.pep.gz, and .pep is not among proteinfamilies' accepted extensions - adding it upstream would make that route work too."
+    },
+    {
+      "id": "metatdenovo__seqsubmit", "from": "metatdenovo", "to": "seqsubmit",
+      "source": "table", "kind": "artifact",
+      "repoStatus": "CONVERSION REQUIRED - metadata, and assembly_uploader hardcodes the ENA assembly type as primary metagenome",
+      "statusClass": "conversion-required",
+      "routable": false, "unit": "contigs",
+      "carries": [],
+      "note": "megahit contigs .fa.gz -> seqsubmit --mode metagenomic_assemblies (assets/schema_input_assembly.json). The FASTA pattern is .fa.gz/.fasta.gz/.fna.gz and metatdenovo publishes megahit_assembly.contigs.fa.gz, so the file transfers unchanged. The row is much lighter than the mags/bins row: id, fasta, run_accession, assembler, assembler_version, with coverage optional because seqsubmit computes it from reads. No binning software, no binning parameters, no ENVO/MIxS environment terms.",
+      "caveat": "Two gaps, neither a column rename. (1) seqsubmit brokers the manifest through assembly_uploader 1.3.5, which writes ASSEMBLY_TYPE as primary metagenome with no override - a metatranscriptome co-assembly would be deposited in ENA as a metagenome, a wrong record type rather than a cosmetic label. ENA does accept metatranscriptome assemblies, so this is an upstream feature request, not a dead end. (2) run_accession is one accession per row, but run 02 co-assembled six libraries; the mags/bins schema has a co-assembly field for exactly this and the assembly schema does not. Prerequisites are the same as the mag edge: ENA_WEBIN secrets and the source reads already in ENA, which for LMO they are. Also noted: the shipped example assets/samplesheet_assembly.csv heads its first column sample where the schema requires id, so the example as published would be rejected."
     },
     {
       "id": "proteinfamilies__proteinfold", "from": "proteinfamilies", "to": "proteinfold",
@@ -443,11 +464,15 @@
       "siteState": {
         "fetchngs": {
           "state": "run", "in": 12, "out": 12, "version": "1.12.0",
-          "note": "Run 2026-08-10 on SLURM with Singularity. All 12 runs downloaded and md5-verified: 555,738,002 reads, 79,977,308,002 bases, 34.5 GB. Emitted samplesheet.csv is 12 rows by 39 columns, with collection_date at column 35. Three environment workarounds were needed (Nextflow 26.04 strict config parser, whitespace in ena_metadata_fields, and a wget container with no /etc/resolv.conf) - all recorded in RUNS.md and AGENTS.md. Provenance link in RUNS.md."
+          "note": "Run 2026-08-10 on SLURM with Singularity. All 12 runs downloaded and md5-verified: 555,738,002 reads, 79,977,308,002 bases, 34.5 GB. Emitted samplesheet.csv is 12 rows by 39 columns, with collection_date at column 35. Three environment workarounds were needed (Nextflow 26.04 strict config parser, whitespace in ena_metadata_fields, and a wget container with no /etc/resolv.conf) - all recorded in RUNS.md and AGENTS.md, and all three fixed upstream in fetchngs 1.13.0 (2026-09-15). Run 01 is not re-run: the fixes change how a run is set up, not what this one produced. Provenance link in RUNS.md."
         },
         "detaxizer": {
           "state": "run", "in": 6, "out": 172, "version": "1.3.0",
           "note": "Run 2026-08-11 on the 6 metatranscriptome libraries. Out is 172 phiX read pairs removed from 161,043,840 - 0.000107%, one pair in 936,301. This reverses part of the 2026-08-10 decision to skip detaxizer: that decision was about filtering LMO against Homo sapiens, which is still declined - no host, and dropping metatranscriptome reads on human k-mer hits ahead of a co-assembly risks taking conserved and low-complexity microbial reads with them. What changed is the contaminant. This run filtered phiX (NC_001422.1, 5,386 bp) via --classification_bbduk, so no 60 GB kraken2 database was needed - KRAKEN2PREPARATION never runs with kraken2 classification off. The fraction alone does not justify re-running metatdenovo and proteinfamilies, but 172 pairs is an upper bound of 8x coverage of the phiX genome pooled across the co-assembly, so that was checked directly: seqkit locate of phiX174 against run 02's existing megahit contigs, at up to 5 mismatches, returns no hits. phiX never reached assembly depth, so runs 02 and 03 stand as executed and neither is re-run. The run's larger result is upstream: its natively generated taxprofiler sheet validates, its mag sheet does not."
+        },
+        "mag": {
+          "state": "configured", "in": 3, "out": null, "version": "5.5.0",
+          "note": "Prepared as run 05 on 2026-08-11, not yet executed. Three WGS libraries, one per collection date, all in binning group 0 so every assembly gets the differential coverage of the whole series. Assembled per sample with megahit rather than co-assembled, because binning depends on between-sample coverage contrast. MetaBAT2 only, not mag's six default binners, and GTDB-Tk skipped because its database is over 100 GB and this run exists to produce contigs, bins and the protein FASTA that feeds proteinfamilies. detaxizer is deliberately not upstream: mag removes phiX itself by default, so run 04 in front of it would duplicate the step."
         },
         "differentialabundance": {
           "state": "unavailable", "in": null, "out": null, "version": null,

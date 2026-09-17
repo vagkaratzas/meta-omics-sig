@@ -86,6 +86,7 @@ fetchngs (SRA accessions)
         │     ├─► phageannotator (viral contigs + reads → phage annotation) [UNTESTED]
         │     └─► phyloplace (viral contigs → placement on a reference tree) [UNTESTED]
         └─► metatdenovo (shotgun MT reads → metatranscriptome assembly) [RUN 2026-08-11]
+              ├─► seqsubmit (megahit contigs .fa.gz → ENA assembly accessions) [UNTESTED]
               └─► proteinfamilies (prodigal .faa.gz → protein families) [RUN 2026-08-11]
                     ├─► proteinfold (representatives → structures) [SHEET EMITTED, NOT CONSUMED]
                     └─► proteinannotator (representatives → annotation) [SHEET EMITTED, NOT CONSUMED]
@@ -101,6 +102,10 @@ fetchngs (SRA accessions)
 > - `mag → seqsubmit` — seqsubmit 1.0.0 was released 2026-08-04, after the previous map was
 >   drawn; it now sits in a new **4. Data upload** stage. It is the chain's only exit back
 >   to the archive: everything else consumes ENA data, this one deposits into it.
+> - `metatdenovo → seqsubmit` — **added 2026-09-15.** seqsubmit's fourth mode,
+>   `metagenomic_assemblies`, takes gzipped assembly contigs, which is exactly what
+>   metatdenovo publishes. mag is therefore not the only station that can reach the upload
+>   stage, and the metatranscriptome branch gains an exit to the archive it did not have.
 > - `detaxizer → createtaxdb` is **no longer drawn.** The new map feeds createtaxdb from the
 >   reference-FASTA input instead, which matches createtaxdb 3.1.0's documented contract
 >   (`id`, `taxid`, `fasta_dna`/`fasta_aa` — not filtered reads). The inconsistency raised
@@ -145,12 +150,40 @@ Each edge is a potential route. This table records what we have exercised, what 
 today, and where a bridge is needed — so that the bridges can be built, contributed
 upstream, or shipped as reusable converters.
 
-> **Evidence (fetchngs 1.12.0, `nextflow_schema.json`, checked 2026-08-10):**
-> `--nf_core_pipeline` accepts `rnaseq`, `atacseq`, `viralrecon`, `taxprofiler`. Three of
-> the four core-chain entry points — ampliseq, mag, metatdenovo — are not yet covered by
-> it, so reaching them from the generic `samplesheet.csv` needs a conversion step. The
-> conversion is small (column rename/subset), and extending the `--nf_core_pipeline` enum
-> would remove it for a lot of users: a good feature request, filed as such.
+> **Superseded by fetchngs 1.13.0 (released 2026-09-15, `nextflow_schema.json` checked the
+> same day).** The 1.12.0 enum was `rnaseq`, `atacseq`, `viralrecon`, `taxprofiler`, which
+> left three of the four core-chain entry points needing a conversion step. **The feature
+> request this project drafted is now implemented:** the enum reads `ampliseq`, `atacseq`,
+> `mag`, `metatdenovo`, `rnaseq`, `sarek`, `taxprofiler`, `viralrecon`. All four fetchngs
+> issues drafted on 2026-08-10 are fixed in this release, along with the `wget` container
+> (now 1.25.0), which retires three of run 01's four environment workarounds.
+>
+> **Two of the three new emitters are correct; the mag one is not, and it fails the same way
+> detaxizer's does.** From `subworkflows/local/channel_sra_create_csv/main.nf`, the
+> per-pipeline extra columns are `mag: [group: '', short_reads_platform: 'ILLUMINA',
+> long_reads_platform: '']`, added to a base row of `sample, fastq_1, fastq_2`. Checked
+> against mag 5.5.0's `assets/schema_input.json`:
+>
+> - **`group` is required with pattern `^\S+$` and is written as the empty string** — the
+>   identical defect filed as [nf-core/detaxizer#100](https://github.com/nf-core/detaxizer/issues/100)
+>   a month earlier, now reproduced independently in a second pipeline. `group` is a
+>   study-design decision; no upstream pipeline can invent it, which is precisely why it
+>   cannot be defaulted to `''`.
+> - **The read columns are named `fastq_1`/`fastq_2`, but mag reads `short_reads_1`/
+>   `short_reads_2`.** mag requires only `sample` and `group`, so the rows would not even
+>   fail loudly on this count — they would validate as samples with no reads attached.
+> - **`short_reads_platform` is hardcoded `ILLUMINA`** rather than copied from
+>   `instrument_platform`, so a non-Illumina accession is silently mislabelled. Our converter
+>   copies the ENA value and refuses long-read platforms outright.
+>
+> `ampliseq` (`run: ''` added to `sample, fastq_1, fastq_2`) and `metatdenovo` (no extras at
+> all) both satisfy their targets' schemas, so those two edges become native with 1.13.0.
+>
+> **What 1.13.0 does not change is the sample naming.** `buildPipelineMap` still sets
+> `sample` to `meta.id` minus its run suffix — the ENA *experiment* accession — so a native
+> samplesheet labels every downstream result `ERX13368357`. A native handoff is not the same
+> as a usable one, and the rename that builds names from `collection_date` is still required
+> on every edge, converter or not.
 
 > **New edge — `metatdenovo → proteinfamilies` (schemas checked 2026-08-10,
 > handoff executed 2026-08-11, added to the metro map 2026-08-11):** the case was
@@ -159,9 +192,7 @@ upstream, or shipped as reusable converters.
 > pipeline accepted and ran to completion on, producing 405 families. metatdenovo 1.4.0 with
 > `--orf_caller prodigal` publishes `prodigal/<assembly>.faa.gz`; proteinfamilies 2.5.0
 > accepts `.fa|.fasta|.faa|.fas` (± `.gz`), so the protein FASTA transfers with no
-> reformatting — only a one-row `sample,fasta` samplesheet. The mapped route,
-> `mag → proteinfamilies`, needs one more piece: mag does not itself emit protein FASTA,
-> so an ORF-calling step belongs between those two stations. The ORF caller is decisive:
+> reformatting — only a one-row `sample,fasta` samplesheet. The ORF caller is decisive:
 > `transdecoder` publishes `*.transdecoder.pep.gz`, and `.pep` is not in proteinfamilies'
 > accepted extensions — a one-line schema addition upstream would make that route work
 > too.
@@ -184,6 +215,41 @@ upstream, or shipped as reusable converters.
 > public LMO reads is legitimate — they are new derived records with their own accessions —
 > and `--upload_tpa` exists to flag third-party assemblies.
 
+> **New edge — `metatdenovo → seqsubmit` (schemas checked 2026-09-15, added to the metro map
+> 2026-09-15):** seqsubmit's `--mode` enum is
+> `mags|bins|metagenomic_assemblies|reads`, and the third of those is the one mag does not
+> use. `assets/schema_input_assembly.json` wants `id`, `fasta`, `run_accession`, `assembler`
+> and `assembler_version`, with `fastq_1`/`fastq_2` or `coverage` optional — seqsubmit
+> computes coverage itself when reads are supplied. The FASTA pattern is
+> `.fa.gz` / `.fasta.gz` / `.fna.gz`, and metatdenovo publishes
+> `megahit_assembly.contigs.fa.gz`, so **the file transfers unchanged** and the row is far
+> lighter than the mags/bins row: no binning software, no binning parameters, no ENVO/MIxS
+> environment terms. `assembler` and `assembler_version` come from run provenance the chain
+> already holds.
+>
+> Two gaps stand between that and a submission, and neither is a column rename:
+>
+> - **The assembly type is hardcoded.** seqsubmit brokers the manifest through
+>   `assembly_uploader` 1.3.5, which writes `("ASSEMBLY_TYPE", "primary metagenome")` with no
+>   parameter to override it. A metatranscriptome co-assembly submitted through this mode
+>   would be deposited in ENA as a metagenome — a wrong record type, not a cosmetic label.
+>   ENA does accept metatranscriptome assemblies, so this is an upstream feature request
+>   (an `--assembly_type` passthrough) rather than a dead end, and it is the reason this
+>   edge is **not** simply the mag edge with fewer columns.
+> - **`run_accession` is singular; the assembly is not.** The schema takes one ENA run
+>   accession per row, while run 02 co-assembled six libraries. The mags/bins schema has a
+>   `co-assembly` field for exactly this and the assembly schema does not, so a six-run
+>   co-assembly has no honest value to put in that column. Same question as the assembly
+>   type, same place to ask it.
+>
+> Also noted while reading: the shipped example `assets/samplesheet_assembly.csv` heads its
+> first column `sample`, but the schema requires `id`. The example as published would be
+> rejected. Small, separate, worth filing.
+>
+> Prerequisites are as for `mag → seqsubmit`: `ENA_WEBIN`/`ENA_WEBIN_PASSWORD` as Nextflow
+> secrets, and the source reads already in ENA — which for LMO they are, since fetchngs
+> pulled them from there.
+
 > **New edges — `proteinfamilies → proteinfold` and `proteinfamilies → proteinannotator`
 > (emitted 2026-08-11 by run 03):** proteinfamilies 2.5.0 publishes ready-made `id,fasta`
 > samplesheets for both successors, gated behind `--skip_proteinfold_samplesheet` and
@@ -203,7 +269,7 @@ upstream, or shipped as reusable converters.
 > own documented invocation for this sheet adds `--split_fasta`. proteinannotator 1.1.0
 > accepts `id` + `.fa|.fasta|.faa|.fas` (± `.gz`) and needs neither.
 
-> **Two pipelines in the chain now ship downstream samplesheet generators — a pattern worth
+> **Three pipelines in the chain now ship downstream samplesheet generators — a pattern worth
 > propagating** (detaxizer 1.3.0 `nextflow_schema.json`, checked 2026-08-10;
 > proteinfamilies 2.5.0, exercised 2026-08-11). detaxizer exposes
 > `--generate_downstream_samplesheets`, with `--generate_pipeline_samplesheets` defaulting
@@ -211,7 +277,11 @@ upstream, or shipped as reusable converters.
 > `^(taxprofiler|mag)(?:,(taxprofiler|mag)){0,1}`; proteinfamilies uses one
 > `--skip_<target>_samplesheet` flag per target and the workflow `publish:` block. Two
 > pipelines, two unrelated interfaces for the same idea — which is the argument for
-> standardising it rather than letting each pipeline invent its own. Generalising the
+> standardising it rather than letting each pipeline invent its own. **fetchngs 1.13.0
+> (2026-09-15) makes it three**, with a third interface again — `--nf_core_pipeline <target>`
+> — and its brand-new mag emitter ships the same empty-`group` defect detaxizer's has,
+> found within a day of release. Two independent pipelines emitting the same broken sheet
+> for the same target is not two bugs; it is a missing contract. Generalising the
 > pattern — more source pipelines, more targets, one convention — is probably the single
 > highest-leverage improvement available to inter-pipeline chaining in this SIG, and it is
 > worth raising as a cross-pipeline proposal rather than as individual issues.
@@ -280,8 +350,9 @@ upstream, or shipped as reusable converters.
 > ever passes per-mate id files, since R2 would then be filtered with R1's ids and the pairs
 > would desynchronise undetectably. One-character fix. **Filed 2026-08-11 as
 > [nf-core/detaxizer#99](https://github.com/nf-core/detaxizer/issues/99)** — the first
-> upstream issue this project has actually filed rather than drafted. The `metatdenovo` enum
-> request is still unfiled.
+> upstream issue this project has actually filed rather than drafted. The `--nf_core_pipeline` enum
+> request was filed against fetchngs and **shipped in 1.13.0 on 2026-09-15**, adding
+> `ampliseq`, `mag` and `metatdenovo` to the enum.
 
 > **Conversion scripts:** the conversions this table calls for live in
 > `scripts/converters/`, each with an assert-based `--selftest`. They are the deliverable
@@ -301,10 +372,10 @@ upstream, or shipped as reusable converters.
 | From | To | Samplesheet handoff mechanism | Status |
 |------|----|-------------------------------|--------|
 | **fetchngs** | **detaxizer** | generic `samplesheet.csv`; no `--nf_core_pipeline` support, and detaxizer's columns are `short_reads_fastq_1/2`, not `fastq_1/2` | **CONVERSION REQUIRED** — covered by `scripts/converters/fetchngs_to_reads_samplesheet.py --target detaxizer`; column rename only, sample names shared with the `--target reads` output; exercised 2026-08-11, detaxizer 1.3.0 ran to completion on the converted sheet |
-| fetchngs | ampliseq | generic `samplesheet.csv`; **no `--nf_core_pipeline` option** | **CONVERSION REQUIRED** |
+| **fetchngs** | **ampliseq** | `--nf_core_pipeline ampliseq` (added in 1.13.0) emits `sample,fastq_1,fastq_2,run`; ampliseq 2.18.0 accepts that spelling | **NATIVE from 1.13.0** — not yet exercised; run 01 used 1.12.0, which had no ampliseq option. Sample names are still ENA experiment accessions, so the `collection_date` rename is still needed |
 | fetchngs | taxprofiler | `--nf_core_pipeline taxprofiler` emits a purpose-built samplesheet | OPEN — flag exists, output not yet verified |
-| fetchngs | mag | generic `samplesheet.csv`; **no `--nf_core_pipeline` option** | **CONVERSION REQUIRED** |
-| fetchngs | metatdenovo | generic `samplesheet.csv`; **no `--nf_core_pipeline` option** | **CONVERSION REQUIRED** — exercised 2026-08-11 via `scripts/converters/fetchngs_to_reads_samplesheet.py`; metatdenovo 1.4.0 ran to completion on the converted sheet |
+| **fetchngs** | **mag** | `--nf_core_pipeline mag` (added in 1.13.0) emits a sheet mag cannot use: `group` written empty, read columns named `fastq_1`/`fastq_2` instead of `short_reads_1`/`short_reads_2`, platform hardcoded `ILLUMINA` | **NATIVE, REJECTED BY TARGET** — 1.13.0's emitter fails mag 5.5.0's schema on `group` alone; **CONVERSION REQUIRED** in practice, covered by `scripts/converters/fetchngs_to_reads_samplesheet.py --target mag`. Same defect as [detaxizer#100](https://github.com/nf-core/detaxizer/issues/100), second occurrence; filed 2026-09-15 as [fetchngs#401](https://github.com/nf-core/fetchngs/issues/401) |
+| **fetchngs** | **metatdenovo** | `--nf_core_pipeline metatdenovo` (added in 1.13.0) emits `sample,fastq_1,fastq_2` plus the metadata columns, which is exactly metatdenovo 1.4.0's required set | **NATIVE from 1.13.0** — not yet exercised natively; exercised 2026-08-11 through `scripts/converters/fetchngs_to_reads_samplesheet.py` against 1.12.0, which had no metatdenovo option. Sample names are still ENA experiment accessions, so the `collection_date` rename is still needed |
 | **fetchngs** | **viralmetagenome** | generic `samplesheet.csv`; **no `--nf_core_pipeline` option**; wants `sample,fastq_1[,fastq_2]` — the same shape metatdenovo takes | **CONVERSION REQUIRED** — existing converter covers it unchanged |
 | detaxizer | ampliseq | filtered FASTQ → ampliseq samplesheet; **excluded** from `--generate_pipeline_samplesheets` | **CONVERSION REQUIRED** |
 | **detaxizer** | **taxprofiler** | `--generate_downstream_samplesheets` emits `taxprofiler.csv` natively — `sample,run_accession,instrument_platform,fastq_1,fastq_2,fasta` | **NATIVE** — emitted 2026-08-11, validates against taxprofiler 2.0.1, not yet exercised; taxprofiler additionally needs a `--databases` sheet detaxizer cannot produce |
@@ -316,8 +387,9 @@ upstream, or shipped as reusable converters.
 | mag | phageannotator | contig FASTA → phageannotator input | OPEN |
 | mag | phyloplace | contig FASTA → phyloplace input | OPEN |
 | mag | magmap | MAG FASTA → magmap reference input | OPEN |
-| mag | metapep / proteinfamilies | predicted proteins FASTA → input | OPEN |
+| **mag** | **metapep / proteinfamilies** | Prodigal and Prokka run by default, publishing `Annotation/Prodigal/<assembler>-<sample>.faa.gz` (assembly level) and `Annotation/Prokka/.../<bin>.faa` (per bin) — both extensions proteinfamilies accepts | **CONVERSION REQUIRED** — samplesheet only, no ORF-calling step |
 | **metatdenovo** | **proteinfamilies** | `--orf_caller prodigal` publishes `prodigal/<assembly>.faa.gz`, an extension proteinfamilies accepts | **CONVERSION REQUIRED** — one-row samplesheet, no reformatting; exercised 2026-08-11, 198,252 proteins accepted by proteinfamilies 2.5.0, 405 families out |
+| **metatdenovo** | **seqsubmit** | megahit contigs `.fa.gz` → `--mode metagenomic_assemblies` (`schema_input_assembly.json`); gzipped FASTA transfers unchanged, and the row needs only `id`, `run_accession`, `assembler`, `assembler_version` | **CONVERSION REQUIRED** — metadata, and `assembly_uploader` hardcodes the ENA assembly type as `primary metagenome` |
 | **viralmetagenome** | **phageannotator** | viral contig FASTA → input, but the sheet also wants `group` and `fastq_1` | **CONVERSION REQUIRED** — two-source join, and `.combined.fa` is not gzipped |
 | **viralmetagenome** | **phyloplace** | viral contig FASTA → `queryseqfile` | **CONVERSION REQUIRED** — `refseqfile`, `refphylogeny`, `model` are external per-row inputs |
 | **proteinfamilies** | **proteinfold** | `--skip_proteinfold_samplesheet false` (default `true`) publishes `proteinfold/samplesheet.csv` — `id,fasta`, pointing at the family representatives `<samplename>_reps.faa` | **NATIVE** — emitted 2026-08-11, not yet exercised; native against proteinfold 2.0.0 only, 1.1.1 wants a `sequence` column and rejects `.faa` |
