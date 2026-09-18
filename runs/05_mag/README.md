@@ -141,7 +141,7 @@ cat <outdir>/GenomeBinning/bin_summary.tsv
 |------|--------|
 | `fetchngs → mag` samplesheet conversion | **READY** — `--target mag`, selftested, output validated against mag 5.5.0's schema |
 | mag run | **SUCCESS** 2026-09-18 — 3 assemblies, 160 MetaBAT2 bins, 2,513,059 proteins, 1 phiX pair in 111.7 M |
-| Bin quality | **UNRELIABLE** — BUSCO 6.1.0 batch mode mixes odb10/odb12.2, mislabels domains and misaligns `bin_summary.tsv`; filed as [nf-core/mag#1115](https://github.com/nf-core/mag/issues/1115). CheckM2 via `-resume` is the fix |
+| Bin quality | **UNRELIABLE** — BUSCO 6.1.0 batch mode mixes odb10/odb12.2, mislabels domains and misaligns `bin_summary.tsv`; filed as [nf-core/mag#1115](https://github.com/nf-core/mag/issues/1115). CheckM2 via `-resume` is the fix: `run_checkm2: true` now set in `params.yml`, **re-run pending** |
 | `mag → proteinfamilies` comparison against run 03 | **NOT RUN** — decided 2026-09-18: the three Prodigal FASTAs concatenated into **one row**, pooling the dates the way run 02's co-assembly did |
 
 Full run record, per-sample numbers and provenance: [RUNS.md](../../RUNS.md).
