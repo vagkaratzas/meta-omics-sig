@@ -142,7 +142,7 @@ cat <outdir>/GenomeBinning/bin_summary.tsv
 | `fetchngs → mag` samplesheet conversion | **READY** — `--target mag`, selftested, output validated against mag 5.5.0's schema |
 | mag run | **SUCCESS** 2026-09-18 — 3 assemblies, 160 MetaBAT2 bins, 2,513,059 proteins, 1 phiX pair in 111.7 M |
 | Bin quality (BUSCO) | **UNRELIABLE** — BUSCO 6.1.0 batch mode mixes odb10/odb12.2, mislabels domains and misaligns `bin_summary.tsv`; filed as [nf-core/mag#1115](https://github.com/nf-core/mag/issues/1115). Not used |
-| Bin quality (CheckM2) | **DONE** 2026-09-18 via `-resume` — all 160 bins scored: 24 near-complete (≥90% / <5%), 49 medium-quality (≥50% / <10%), 75 low, 12 ≥10% contaminated. Per-sample table in [RUNS.md](../../RUNS.md#bin-quality-checkm2) |
+| Bin quality (CheckM2) | **DONE** 2026-09-18 via `-resume` ([Seqera run](https://cloud.seqera.io/user/vangelis/watch/2Nloa7fgPEWnlX)) — all 160 bins scored: 24 near-complete (≥90% / <5%), 49 medium-quality (≥50% / <10%), 75 low, 12 ≥10% contaminated. Per-sample table in [RUNS.md](../../RUNS.md#bin-quality-checkm2) |
 | `mag → proteinfamilies` comparison against run 03 | **NOT RUN** — decided 2026-09-18: the three Prodigal FASTAs concatenated into **one row**, pooling the dates the way run 02's co-assembly did |
 
 Full run record, per-sample numbers and provenance: [RUNS.md](../../RUNS.md).
