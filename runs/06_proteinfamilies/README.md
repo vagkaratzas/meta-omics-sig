@@ -41,7 +41,8 @@ MEGAHIT names contigs `k141_<n>` in every assembly, and Prodigal names proteins
   rather than `|`, because mmseqs reads `|`-delimited headers as database accessions,
 - **copies sequence lines unchanged**, as in run 03,
 - **reports** proteins per sample, plus how many IDs repeated across samples before
-  prefixing. That count is the evidence for the rename, so record it,
+  prefixing. On run 05's output that was **1,073,177 of 2,513,059 (43%)**: a plain `cat`
+  would have given proteinfamilies a FASTA in which 43% of headers were ambiguous,
 - **refuses** to run if the number of samples is not the one given with `--expect`, which
   catches a mag run where one assembly failed. It also refuses an empty Prodigal file, and
   any file extension or sample name that proteinfamilies 2.5.0's schema would reject.
@@ -59,8 +60,8 @@ python3 scripts/converters/mag_to_proteinfamilies.py \
     --expect 3
 ```
 
-Put the pooled FASTA on cluster storage, never in the repo: it is roughly 2.5 M proteins.
-The script produces one row:
+The pooled FASTA holds roughly 2.5 M proteins. Writing it next to the samplesheet in the
+cluster clone is fine, because `runs/*/*.faa.gz` is gitignored. The script produces one row:
 
 ```csv
 sample,fasta
@@ -117,8 +118,8 @@ grep -c '^>' <outdir>/proteinfold/*/*_reps.faa
 
 | Step | Status |
 |------|--------|
-| Converter `mag_to_proteinfamilies.py` | **READY** — `--selftest` passes; not yet run on run 05's output |
-| Samplesheet conversion | **NOT RUN** |
+| Converter `mag_to_proteinfamilies.py` | **READY** — `--selftest` passes |
+| Samplesheet conversion | **DONE** 2026-09-18 — one row, 2,513,059 proteins (507,173 + 1,074,480 + 931,406, matching run 05); **1,073,177 IDs recurred across samples before prefixing** |
 | proteinfamilies run | **NOT RUN** |
 
 Full run record, once executed: [RUNS.md](../../RUNS.md).
