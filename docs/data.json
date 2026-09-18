@@ -365,7 +365,7 @@
     {
       "id": "mag__metapep", "rowKey": "mag__proteins", "from": "mag", "to": "metapep",
       "source": "table", "kind": "artifact",
-      "repoStatus": "CONVERSION REQUIRED - samplesheet only, no ORF-calling step",
+      "repoStatus": "CONVERSION REQUIRED - no ORF-calling step; for proteinfamilies covered by scripts/converters/mag_to_proteinfamilies.py, which pools the per-sample Prodigal FASTAs into one row with sample-prefixed headers (MEGAHIT contig IDs repeat across assemblies); prepared as run 06, not yet executed. metapep not yet checked",
       "statusClass": "conversion-required",
       "routable": false, "unit": "proteins", "carries": [],
       "note": "Prodigal and Prokka run by default (skip_prodigal and skip_prokka both off), publishing Annotation/Prodigal/<assembler>/<sample>/<assembler>-<sample>_prodigal.faa.gz at assembly level and Annotation/Prokka/<assembler>/<bin>/<...>.faa per bin - both extensions proteinfamilies accepts. One validation-table row covers metapep and proteinfamilies together; drawn here as two edges sharing that status.",
@@ -374,7 +374,7 @@
     {
       "id": "mag__proteinfamilies", "rowKey": "mag__proteins", "from": "mag", "to": "proteinfamilies",
       "source": "table", "kind": "artifact",
-      "repoStatus": "CONVERSION REQUIRED - samplesheet only, no ORF-calling step",
+      "repoStatus": "CONVERSION REQUIRED - no ORF-calling step; for proteinfamilies covered by scripts/converters/mag_to_proteinfamilies.py, which pools the per-sample Prodigal FASTAs into one row with sample-prefixed headers (MEGAHIT contig IDs repeat across assemblies); prepared as run 06, not yet executed. metapep not yet checked",
       "statusClass": "conversion-required",
       "routable": false, "unit": "proteins", "carries": [],
       "note": "Prodigal and Prokka run by default (skip_prodigal and skip_prokka both off), publishing Annotation/Prodigal/<assembler>/<sample>/<assembler>-<sample>_prodigal.faa.gz at assembly level and Annotation/Prokka/<assembler>/<bin>/<...>.faa per bin - both extensions proteinfamilies accepts. One validation-table row covers metapep and proteinfamilies together; drawn here as two edges sharing that status.",

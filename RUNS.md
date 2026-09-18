@@ -516,12 +516,14 @@ assert-based `--selftest` that runs with no arguments and no fixtures:
 | Script | Edge | Guards against |
 |--------|------|----------------|
 | `fetchngs_to_reads_samplesheet.py` | fetchngs → metatdenovo / ampliseq / viralmetagenome (`--target reads`), → detaxizer (`--target detaxizer`), → mag (`--target mag`) | stale `sample_alias` dates leaking into sample names; duplicate sample names silently merging samples. Sample names are identical across targets, which is what makes runs 02, 04 and 05 comparable. `--target mag` additionally refuses a long-read `instrument_platform` in `short_reads_platform`, and refuses an empty `group` — the column mag requires and [detaxizer#100](https://github.com/nf-core/detaxizer/issues/100) writes blank |
+| `mag_to_proteinfamilies.py` | mag → proteinfamilies | pooling per-sample Prodigal FASTAs with plain `cat`, which repeats IDs because MEGAHIT names contigs `k141_<n>` in every assembly — headers are prefixed `<sample>-<id>` instead; a missing assembly (`--expect`); an empty Prodigal file; an output name or sample name proteinfamilies would reject |
 | `metatdenovo_to_proteinfamilies.py` | metatdenovo → proteinfamilies | emitting a samplesheet proteinfamilies would reject (the transdecoder `.pep` case); more than one protein FASTA, which would mean the co-assembly assumption broke |
 | `detaxizer_to_reads_samplesheet.py` | detaxizer → metatdenovo / ampliseq / viralmetagenome | picking up `filter/removed/` instead of `filter/filtered/`; an orphaned mate reaching a co-assembler; silently writing an empty sheet when `--skip_filter` meant no filtered reads were ever published. Handles both `--filtering_tool` naming schemes |
 
 ```bash
 python3 scripts/converters/fetchngs_to_reads_samplesheet.py --selftest
 python3 scripts/converters/metatdenovo_to_proteinfamilies.py --selftest
+python3 scripts/converters/mag_to_proteinfamilies.py --selftest
 python3 scripts/converters/detaxizer_to_reads_samplesheet.py --selftest
 ```
 

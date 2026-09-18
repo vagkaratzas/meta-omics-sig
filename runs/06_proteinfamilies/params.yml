@@ -1,0 +1,34 @@
+# nf-core/proteinfamilies 2.5.0 — LMO pilot, families from metagenome ORFs (mag run 05)
+#
+# Build the pooled FASTA and the one-row samplesheet first (absolute paths, so not committed):
+#
+#   python3 scripts/converters/mag_to_proteinfamilies.py \
+#       <mag-outdir> runs/06_proteinfamilies/samplesheet.csv \
+#       <somewhere-on-cluster>/LMO_MG_pooled.faa.gz --expect 3
+#
+# Modern nf-core template. Requires Nextflow >= 26.04.0; no NXF_SYNTAX_PARSER needed.
+
+input: "/path/to/runs/06_proteinfamilies/samplesheet.csv"
+outdir: "/path/to/results/06_proteinfamilies"
+
+# Identical to run 03, on purpose. Run 06 exists to compare metagenome-derived proteins with
+# run 03's metatranscriptome-derived ones (same ORF caller, same pipeline, same revision), so
+# every parameter matches run 03 — changing one would make the comparison meaningless.
+skip_proteinfold_samplesheet: false
+skip_proteinannotator_samplesheet: false
+
+# Everything else at default, as in run 03:
+#
+#   clustering_tool             cluster        (mmseqs; 'linclust' only if cluster fails on size)
+#   cluster_seq_identity        0.3
+#   cluster_coverage            0.5
+#   cluster_size_threshold      25             minimum cluster size to seed an MSA
+#   min_seq_length / max_seq_length  30 / 5000
+#
+# Input is ~2.5 M proteins, 12.7x run 03. The same genome assembled on more than one date
+# contributes near-identical copies; clustering collapses them, but they also inflate cluster
+# sizes, so more clusters clear cluster_size_threshold than a single co-assembly would give.
+# Keep that in mind before comparing family counts with run 03's 405.
+#
+# If mmseqs runs out of memory, raise it in the site config (process label / withName),
+# not here — resources are not part of the comparison, parameters are.

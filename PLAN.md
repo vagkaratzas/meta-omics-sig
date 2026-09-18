@@ -81,7 +81,7 @@ fetchngs (SRA accessions)
         │     ├─► funcscan (contigs → functional annotation) [UNTESTED]
         │     ├─► phageannotator (contigs → phage annotation) [UNTESTED]
         │     ├─► phyloplace (contigs → phylogenetic placement) [UNTESTED]
-        │     └─► metapep / proteinfamilies (predicted proteins) [UNTESTED]
+        │     └─► metapep / proteinfamilies (predicted proteins) [PREPARED, RUN 06]
         ├─► viralmetagenome (shotgun MG reads → viral contigs) [UNTESTED]
         │     ├─► phageannotator (viral contigs + reads → phage annotation) [UNTESTED]
         │     └─► phyloplace (viral contigs → placement on a reference tree) [UNTESTED]
@@ -387,7 +387,7 @@ upstream, or shipped as reusable converters.
 | mag | phageannotator | contig FASTA → phageannotator input | OPEN |
 | mag | phyloplace | contig FASTA → phyloplace input | OPEN |
 | mag | magmap | MAG FASTA → magmap reference input | OPEN |
-| **mag** | **metapep / proteinfamilies** | Prodigal and Prokka run by default, publishing `Annotation/Prodigal/<assembler>/<sample>/<assembler>-<sample>_prodigal.faa.gz` (assembly level) and `Annotation/Prokka/.../<bin>.faa` (per bin) — both extensions proteinfamilies accepts | **CONVERSION REQUIRED** — samplesheet only, no ORF-calling step |
+| **mag** | **metapep / proteinfamilies** | Prodigal and Prokka run by default, publishing `Annotation/Prodigal/<assembler>/<sample>/<assembler>-<sample>_prodigal.faa.gz` (assembly level) and `Annotation/Prokka/.../<bin>.faa` (per bin) — both extensions proteinfamilies accepts | **CONVERSION REQUIRED** — no ORF-calling step; for proteinfamilies covered by `scripts/converters/mag_to_proteinfamilies.py`, which pools the per-sample Prodigal FASTAs into one row with sample-prefixed headers (MEGAHIT contig IDs repeat across assemblies); prepared as run 06, not yet executed. metapep not yet checked |
 | **metatdenovo** | **proteinfamilies** | `--orf_caller prodigal` publishes `prodigal/<assembly>.faa.gz`, an extension proteinfamilies accepts | **CONVERSION REQUIRED** — one-row samplesheet, no reformatting; exercised 2026-08-11, 198,252 proteins accepted by proteinfamilies 2.5.0, 405 families out |
 | **metatdenovo** | **seqsubmit** | megahit contigs `.fa.gz` → `--mode metagenomic_assemblies` (`schema_input_assembly.json`); gzipped FASTA transfers unchanged, and the row needs only `id`, `run_accession`, `assembler`, `assembler_version` | **CONVERSION REQUIRED** — metadata, and `assembly_uploader` hardcodes the ENA assembly type as `primary metagenome` |
 | **viralmetagenome** | **phageannotator** | viral contig FASTA → input, but the sheet also wants `group` and `fastq_1` | **CONVERSION REQUIRED** — two-source join, and `.combined.fa` is not gzipped |
