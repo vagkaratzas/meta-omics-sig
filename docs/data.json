@@ -247,8 +247,9 @@
     {
       "id": "fetchngs__mag", "from": "fetchngs", "to": "mag",
       "source": "table", "kind": "reads",
-      "repoStatus": "NATIVE, REJECTED BY TARGET - 1.13.0's emitter fails mag 5.5.0's schema; CONVERSION REQUIRED in practice",
+      "repoStatus": "NATIVE, REJECTED BY TARGET - 1.13.0's emitter fails mag 5.5.0's schema; CONVERSION REQUIRED in practice; exercised 2026-09-18 through the converter",
       "statusClass": "conversion-required",
+      "executed": true,
       "routable": true, "unit": "runs", "carries": ["WGS"],
       "note": "--nf_core_pipeline mag, added in 1.13.0, emits sample,fastq_1,fastq_2 plus group, short_reads_platform and long_reads_platform. mag 5.5.0 cannot use it: group is required with pattern ^\\S+$ and is written as the empty string; the reads are named fastq_1/fastq_2 where mag reads short_reads_1/short_reads_2; and short_reads_platform is hardcoded ILLUMINA rather than copied from instrument_platform.",
       "caveat": "Same defect as nf-core/detaxizer#100 - an empty group in a generated mag samplesheet - arriving independently in a second pipeline a month later, found within a day of the 1.13.0 release. Filed 2026-09-15 as nf-core/fetchngs#401. scripts/converters/fetchngs_to_reads_samplesheet.py --target mag remains the working route: it copies short_reads_platform from instrument_platform, refuses long-read platforms, and requires group to be supplied by hand."
@@ -367,7 +368,7 @@
       "repoStatus": "CONVERSION REQUIRED - samplesheet only, no ORF-calling step",
       "statusClass": "conversion-required",
       "routable": false, "unit": "proteins", "carries": [],
-      "note": "Prodigal and Prokka run by default (skip_prodigal and skip_prokka both off), publishing Annotation/Prodigal/<assembler>-<sample>.faa.gz at assembly level and Annotation/Prokka/<assembler>/<bin>/<...>.faa per bin - both extensions proteinfamilies accepts. One validation-table row covers metapep and proteinfamilies together; drawn here as two edges sharing that status.",
+      "note": "Prodigal and Prokka run by default (skip_prodigal and skip_prokka both off), publishing Annotation/Prodigal/<assembler>/<sample>/<assembler>-<sample>_prodigal.faa.gz at assembly level and Annotation/Prokka/<assembler>/<bin>/<...>.faa per bin - both extensions proteinfamilies accepts. One validation-table row covers metapep and proteinfamilies together; drawn here as two edges sharing that status.",
       "caveat": "mag's assembly-level Prodigal file is the same tool, scope and extension as metatdenovo's, so this edge is directly comparable with the executed metatdenovo -> proteinfamilies route."
     },
     {
@@ -376,7 +377,7 @@
       "repoStatus": "CONVERSION REQUIRED - samplesheet only, no ORF-calling step",
       "statusClass": "conversion-required",
       "routable": false, "unit": "proteins", "carries": [],
-      "note": "Prodigal and Prokka run by default (skip_prodigal and skip_prokka both off), publishing Annotation/Prodigal/<assembler>-<sample>.faa.gz at assembly level and Annotation/Prokka/<assembler>/<bin>/<...>.faa per bin - both extensions proteinfamilies accepts. One validation-table row covers metapep and proteinfamilies together; drawn here as two edges sharing that status.",
+      "note": "Prodigal and Prokka run by default (skip_prodigal and skip_prokka both off), publishing Annotation/Prodigal/<assembler>/<sample>/<assembler>-<sample>_prodigal.faa.gz at assembly level and Annotation/Prokka/<assembler>/<bin>/<...>.faa per bin - both extensions proteinfamilies accepts. One validation-table row covers metapep and proteinfamilies together; drawn here as two edges sharing that status.",
       "caveat": "mag's assembly-level Prodigal file is the same tool, scope and extension as metatdenovo's, so this edge is directly comparable with the executed metatdenovo -> proteinfamilies route."
     },
     {
@@ -471,8 +472,8 @@
           "note": "Run 2026-08-11 on the 6 metatranscriptome libraries. Out is 172 phiX read pairs removed from 161,043,840 - 0.000107%, one pair in 936,301. This reverses part of the 2026-08-10 decision to skip detaxizer: that decision was about filtering LMO against Homo sapiens, which is still declined - no host, and dropping metatranscriptome reads on human k-mer hits ahead of a co-assembly risks taking conserved and low-complexity microbial reads with them. What changed is the contaminant. This run filtered phiX (NC_001422.1, 5,386 bp) via --classification_bbduk, so no 60 GB kraken2 database was needed - KRAKEN2PREPARATION never runs with kraken2 classification off. The fraction alone does not justify re-running metatdenovo and proteinfamilies, but 172 pairs is an upper bound of 8x coverage of the phiX genome pooled across the co-assembly, so that was checked directly: seqkit locate of phiX174 against run 02's existing megahit contigs, at up to 5 mismatches, returns no hits. phiX never reached assembly depth, so runs 02 and 03 stand as executed and neither is re-run. The run's larger result is upstream: its natively generated taxprofiler sheet validates, its mag sheet does not."
         },
         "mag": {
-          "state": "configured", "in": 3, "out": null, "version": "5.5.0",
-          "note": "Prepared as run 05 on 2026-08-11, not yet executed. Three WGS libraries, one per collection date, all in binning group 0 so every assembly gets the differential coverage of the whole series. Assembled per sample with megahit rather than co-assembled, because binning depends on between-sample coverage contrast. MetaBAT2 only, not mag's six default binners, and GTDB-Tk skipped because its database is over 100 GB and this run exists to produce contigs, bins and the protein FASTA that feeds proteinfamilies. detaxizer is deliberately not upstream: mag removes phiX itself by default, so run 04 in front of it would duplicate the step."
+          "state": "run", "in": 3, "out": 160, "version": "5.5.0",
+          "note": "Run 2026-09-18 on the three WGS libraries, one per collection date, from a sheet built by scripts/converters/fetchngs_to_reads_samplesheet.py --target mag - the first time that conversion has been consumed. Three per-sample megahit assemblies (153 to 368 Mb, N50 about 1 kb), all in binning group 0 so each gets the whole series' differential coverage. Out is 160 MetaBAT2 bins (27, 63 and 70 per date), not a MAG count: bin quality is not yet usable, because BUSCO 6.1.0 in batch mode mixed odb10 and odb12.2 lineages within one run and misaligned the BUSCO columns of bin_summary.tsv - filed 2026-09-18 as nf-core/mag#1115. Prodigal predicted 2,513,059 proteins, 12.7 times run 02's 198,252, though three separate assemblies count a shared genome up to three times. mag's own phiX removal found 1 read pair in 111.7 million, which confirms detaxizer is not needed upstream. GTDB-Tk skipped, MetaBAT2 the only binner."
         },
         "differentialabundance": {
           "state": "unavailable", "in": null, "out": null, "version": null,
@@ -484,7 +485,7 @@
         },
         "seqsubmit": {
           "state": "pending", "in": null, "out": null, "version": null,
-          "note": "Not run yet, and downstream of mag, which the pilot has not run either. Submission is meaningful even though the LMO reads came from ENA: the MAGs are new derived data and get their own accessions, referencing the source run accessions run 01 already collected. Needs ENA_WEBIN credentials as Nextflow secrets before it can be exercised."
+          "note": "Not run yet. mag, upstream of it, ran 2026-09-18, but its 160 bins have no usable quality estimates yet and likely include the same genome more than once across dates. Submission is meaningful even though the LMO reads came from ENA: the MAGs are new derived data and get their own accessions, referencing the source run accessions run 01 already collected. Needs ENA_WEBIN credentials as Nextflow secrets before it can be exercised."
         },
         "metatdenovo": {
           "state": "run", "in": 6, "out": 198252, "version": "1.4.0",

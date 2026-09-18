@@ -34,6 +34,7 @@ Start at [README.md](README.md) for the overview.
 | Which handoffs are validated, which need conversion, which are untested? | [PLAN.md](PLAN.md) § Samplesheet Chaining — Validation Table |
 | Which dataset should we use, and how do candidates score? | [DATASETS.md](DATASETS.md) |
 | What has actually been executed, with what provenance? | [RUNS.md](RUNS.md) |
+| Which issues has this project filed upstream? | [RUNS.md](RUNS.md) § Upstream issues filed from this project |
 | How should an AI agent work in this repo? Conventions, guardrails, environment gotchas | [AGENTS.md](AGENTS.md) |
 | What does this acronym mean? | [ACRONYMS.md](ACRONYMS.md) |
 
@@ -51,7 +52,7 @@ with the Seqera Platform provenance link lives in [RUNS.md](RUNS.md).
 | 02 | metatdenovo | [runs/02_metatdenovo/README.md](runs/02_metatdenovo/README.md) |
 | 03 | proteinfamilies | [runs/03_proteinfamilies/README.md](runs/03_proteinfamilies/README.md) |
 | 04 | detaxizer | [runs/04_detaxizer/README.md](runs/04_detaxizer/README.md) |
-| 05 | mag | [runs/05_mag/README.md](runs/05_mag/README.md) — prepared, not run |
+| 05 | mag | [runs/05_mag/README.md](runs/05_mag/README.md) |
 
 ## Scripts
 

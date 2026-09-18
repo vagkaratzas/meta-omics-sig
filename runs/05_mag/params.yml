@@ -73,7 +73,8 @@ skip_gtdbtk: true
 
 # --- Gene prediction: ON, and the reason this run matters for the chain -------------------
 #
-# Prodigal publishes Annotation/Prodigal/<assembler>-<sample>.faa.gz — assembly-level
+# Prodigal publishes Annotation/Prodigal/<assembler>/<sample>/<assembler>-<sample>_prodigal.faa.gz —
+# assembly-level
 # protein FASTA, gzipped, exactly the extension proteinfamilies accepts. Prokka publishes
 # per-bin Annotation/Prokka/<assembler>/<bin>/<...>.faa.
 #

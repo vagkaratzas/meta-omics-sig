@@ -25,11 +25,12 @@ phyloplace needs per-clade reference inputs no pipeline emits.
 
 ## mag emits protein FASTA
 
-mag 5.5.0 `docs/output.md`:
+Paths as actually published by run 05 (the Prodigal one is nested deeper than mag 5.5.0's
+`docs/output.md` implies):
 
 | Published path | Level | Runs by default |
 |---|---|---|
-| `Annotation/Prodigal/[assembler]-[sample].faa.gz` | whole assembly, gzipped | yes (`skip_prodigal` off) |
+| `Annotation/Prodigal/[assembler]/[sample]/[assembler]-[sample]_prodigal.faa.gz` | whole assembly, gzipped | yes (`skip_prodigal` off) |
 | `Annotation/Prokka/[assembler]/[bin]/[assembler]-[binner]-[bin].faa` | per bin | yes (`skip_prokka` off) |
 
 Both extensions are in proteinfamilies' accepted set, so `mag → proteinfamilies` needs a
@@ -115,11 +116,11 @@ ls <outdir>/Assembly/MEGAHIT/
 ls <outdir>/GenomeBinning/MetaBAT2/bins/
 
 # the protein FASTA that feeds proteinfamilies — assembly level, one per sample
-ls <outdir>/Annotation/Prodigal/*.faa.gz
-zcat <outdir>/Annotation/Prodigal/*.faa.gz | grep -c '^>'   # compare against run 02's 198,252
+ls <outdir>/Annotation/Prodigal/MEGAHIT/*/*_prodigal.faa.gz
+zcat <outdir>/Annotation/Prodigal/MEGAHIT/*/*_prodigal.faa.gz | grep -c '^>'   # run 05: 2,513,059; run 02: 198,252
 
-# bin quality
-cat <outdir>/GenomeBinning/QC/busco_summary.tsv
+# bin summary — depths and QUAST are sound; BUSCO columns are NOT, see RUNS.md
+cat <outdir>/GenomeBinning/bin_summary.tsv
 ```
 
 ## Next edges this opens
@@ -139,7 +140,8 @@ cat <outdir>/GenomeBinning/QC/busco_summary.tsv
 | Step | Status |
 |------|--------|
 | `fetchngs → mag` samplesheet conversion | **READY** — `--target mag`, selftested, output validated against mag 5.5.0's schema |
-| mag run | **NOT RUN** |
-| `mag → proteinfamilies` comparison against run 03 | **NOT RUN** — blocked on the above |
+| mag run | **SUCCESS** 2026-09-18 — 3 assemblies, 160 MetaBAT2 bins, 2,513,059 proteins, 1 phiX pair in 111.7 M |
+| Bin quality | **UNRELIABLE** — BUSCO 6.1.0 batch mode mixes odb10/odb12.2, mislabels domains and misaligns `bin_summary.tsv`; filed as [nf-core/mag#1115](https://github.com/nf-core/mag/issues/1115). CheckM2 via `-resume` is the fix |
+| `mag → proteinfamilies` comparison against run 03 | **NOT RUN** — decided 2026-09-18: the three Prodigal FASTAs concatenated into **one row**, pooling the dates the way run 02's co-assembly did |
 
-Full run record and provenance, once executed: [RUNS.md](../../RUNS.md).
+Full run record, per-sample numbers and provenance: [RUNS.md](../../RUNS.md).

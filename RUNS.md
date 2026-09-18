@@ -24,6 +24,24 @@ site-specific and go stale; the Seqera link preserves the full execution record.
 | 02 | nf-core/metatdenovo | 1.4.0 | 2026-08-11 | 6 MT libraries → one co-assembly + protein FASTA | **SUCCESS** — 198,252 proteins | [Seqera run](https://cloud.seqera.io/user/vangelis/watch/dR2OkpNzn3QwP) |
 | 03 | nf-core/proteinfamilies | 2.5.0 | 2026-08-11 | protein families from the run-02 ORFs | **SUCCESS** — 405 families | [Seqera run](https://cloud.seqera.io/user/vangelis/watch/H1MTwbD6IUKz3) |
 | 04 | nf-core/detaxizer | 1.3.0 | 2026-08-11 | phiX removal from the 6 MT libraries | **SUCCESS** — 172 phiX pairs in 161 M | [Seqera run](https://cloud.seqera.io/user/vangelis/watch/5qFu9n8YSLmCxP) |
+| 05 | nf-core/mag | 5.5.0 | 2026-09-18 | 3 MG libraries → 3 assemblies, MetaBAT2 bins, protein FASTA | **SUCCESS** — 160 bins, 2,513,059 proteins; BUSCO columns unreliable ([mag#1115](https://github.com/nf-core/mag/issues/1115)) | [Seqera run](https://cloud.seqera.io/user/vangelis/watch/2wiu8ZycJHfAVC) |
+
+
+## Upstream issues filed from this project
+
+Every bug report or feature request this project has sent upstream, with the run that
+surfaced it. Details are in the run sections below.
+
+| Issue | Filed | Found in | Status |
+|-------|-------|----------|--------|
+| [nf-core/fetchngs#373](https://github.com/nf-core/fetchngs/issues/373) — `wget` container has no `/etc/resolv.conf` | 2026-08-10 | run 01 | closed, shipped in 1.13.0 |
+| [nf-core/fetchngs#374](https://github.com/nf-core/fetchngs/issues/374) — `--ena_metadata_fields` interpolated unquoted | 2026-08-10 | run 01 | closed, shipped in 1.13.0 |
+| [nf-core/fetchngs#375](https://github.com/nf-core/fetchngs/issues/375) — `multiqc_mappings_config.py` stray quote, mangles commas | 2026-08-10 | run 01 | closed, shipped in 1.13.0 |
+| [nf-core/fetchngs#376](https://github.com/nf-core/fetchngs/issues/376) — `--nf_core_pipeline` lacks ampliseq, mag, metatdenovo | 2026-08-10 | run 01 | closed, shipped in 1.13.0 |
+| [nf-core/detaxizer#99](https://github.com/nf-core/detaxizer/issues/99) — `filter.nf` `$(COUNTER-1)` should be `$((COUNTER-1))` | 2026-08-11 | run 04 | open |
+| [nf-core/detaxizer#100](https://github.com/nf-core/detaxizer/issues/100) — generated mag samplesheet rejected by mag | 2026-08-11 | run 04 | open |
+| [nf-core/fetchngs#401](https://github.com/nf-core/fetchngs/issues/401) — 1.13.0 `--nf_core_pipeline mag` sheet rejected by mag | 2026-09-15 | 1.13.0 schema check | open |
+| [nf-core/mag#1115](https://github.com/nf-core/mag/issues/1115) — BUSCO batch mode leaks lineage state between bins, corrupting `bin_summary.tsv` | 2026-09-18 | run 05 | open |
 
 ---
 
@@ -374,6 +392,119 @@ Both point at **metatranscriptome** reads, because this run used `--strategy RNA
 Binning transcripts into MAGs is not meaningful, and the chain intends taxprofiler for the
 metagenome layer. Reaching those two stations properly means a second detaxizer run with
 `--strategy WGS` over the 3 metagenome libraries — same `params.yml` otherwise.
+
+---
+
+## 05 — mag, LMO metagenome assembly and binning
+
+**Status: SUCCESS, 2026-09-18.** Zero failed or retried tasks.
+
+**Provenance:** <https://cloud.seqera.io/user/vangelis/watch/2wiu8ZycJHfAVC>
+
+| | |
+|---|---|
+| Pipeline | `nf-core/mag` `-r 5.5.0` (`v5.5.0-g56abab5`) |
+| Nextflow | 26.04.6 build 12646 |
+| Input | the 3 WGS libraries from run 01 — ERR13967264, ERR13967258, ERR13967244, one per date |
+| Samplesheet | generated on-cluster by `scripts/converters/fetchngs_to_reads_samplesheet.py --target mag --group 0` |
+| Params | [`runs/05_mag/params.yml`](runs/05_mag/params.yml) — MEGAHIT per sample, MetaBAT2 only, BUSCO on, GTDB-Tk off |
+| Date | 2026-09-18 |
+| Outcome | Success — 3 assemblies, **160 MetaBAT2 bins**, **2,513,059 predicted proteins**, 1 phiX pair in 111.7 M |
+
+This run is also the first time the `fetchngs → mag` conversion has been consumed: mag
+5.5.0 accepted the `--target mag` sheet and ran to completion.
+
+### Per-sample results
+
+Read pairs are counted after fastp, as they enter phiX removal. Contig counts and lengths
+are QUAST's headline rows. Proteins are `>` headers in the Prodigal `.faa.gz`.
+
+| Sample | QC'd pairs | phiX pairs | Contigs (all) | Contigs (QUAST) | Assembly length | N50 | Largest contig | Proteins | Bins | Binned length |
+|---|---|---|---|---|---|---|---|---|---|---|
+| LMO_20160315_MG_a | 40,891,009 | 1 | 416,113 | 152,971 | 153.4 Mb | 969 | 235,899 | 507,173 | 27 | 46.2 Mb |
+| LMO_20160803_MG_a | 40,446,582 | 0 | 795,419 | 323,869 | 368.1 Mb | 1,222 | 240,064 | 1,074,480 | 63 | 103.9 Mb |
+| LMO_20171031_MG_a | 30,382,657 | 0 | 663,225 | 261,270 | 298.3 Mb | 1,202 | 240,519 | 931,406 | 70 | 84.1 Mb |
+| **Total** | **111,720,248** | **1** | | | | | | **2,513,059** | **160** | **234.2 Mb** |
+
+N50 near 1 kb is what you'd expect from short-read assembly of a diverse brackish community.
+The 2016-03-15 sample has the most reads but the smallest assembly and the fewest bins,
+so binning yield does not simply track read depth.
+
+### phiX: one read pair, which confirms detaxizer is not needed upstream
+
+mag's built-in bowtie2 phiX removal matched **1 concordant pair out of 111,720,248**, all
+in the 2016-03-15 library. The metatranscriptome libraries (run 04) had 1 phiX pair in
+936,301, so the metagenome rate is about two orders of magnitude lower. The decision to
+keep detaxizer out of this run is therefore backed by a measured number, not an
+assumption.
+
+### Proteins: 12.7× run 02, and not directly comparable
+
+2,513,059 metagenome proteins against run 02's 198,252 metatranscriptome proteins. The
+ratio is not a biological result on its own:
+
+- These are **three separate assemblies**. A genome present on all three dates contributes
+  its ORFs up to three times. Run 02 was one co-assembly, so each gene was counted once.
+- Metagenome assembly recovers whole genomes. Metatranscriptome assembly only recovers
+  what was being transcribed.
+
+**Decision (2026-09-18): the three FASTAs go to proteinfamilies as one concatenated row.**
+That pools the dates the same way run 02's co-assembly did. The redundant copies are
+removed by clustering. Expect proteinfamilies to run on roughly 12× run 03's input.
+
+### BUSCO columns in `bin_summary.tsv` are unreliable
+
+Bin counts, bin lengths and depths are sound. The BUSCO fields are not, for three
+separate reasons:
+
+1. **Mixed database generations in one run.** BUSCO 6.1.0 auto-lineage chose odb12.2
+   datasets for 23 of 27 bins on 2016-03-15, but odb10 for 61 of 63 on 2016-08-03 and all
+   70 on 2017-10-31. The two generations use different marker sets, so completeness
+   can't be compared across dates.
+2. **Wrong domain labels.** 82 bins have `Dataset = eukaryota_*`. In the odb10 rows, which
+   are column-aligned, their `n_markers` is 124 (bacteria_odb10) or 194 (archaea_odb10),
+   never 255 (eukaryota_odb10), and `Complete` equals a prokaryotic domain score. The
+   numbers are prokaryotic; only the label is wrong.
+3. **Shifted columns in the odb12.2 rows.** Values fall under the wrong headers: the
+   translation table value `11` sits under `Internal stop codon percent`, and the domain
+   score strings sit under `Translation table`. mag concatenates the per-sample
+   `batch_summary.txt` files by header name (`qsv cat rowskey`). That suggests the
+   batch files themselves mix odb10- and odb12-shaped rows under a single header.
+
+Two bins (2016-03-15 `.4` and `.6`) have no BUSCO result at all, and 13 bins of
+0.2–0.4 Mb were placed on `varicellovirus_odb10`.
+
+**Cause, confirmed 2026-09-18: state leaking between genomes in BUSCO 6.1.0's batch mode.**
+mag runs one `busco --auto-lineage` call per sample over the whole bin set (batch mode).
+Both the 6.1.0 source and the per-sample `busco.log` processing order confirm it:
+
+- `BaseConfig.load_dataset_config` (`BuscoConfig.py`) writes the chosen dataset's ODB
+  generation back into the **shared** batch config. Virus lineages exist only as odb10.
+  `BatchRunner.run` resets `datasets_version` only when it is empty, and
+  `AutoSelectLineage.__init__` reads it for every later bin. The log shows this directly.
+  On 2016-08-03 the first two bins ran odb12.2. The third fell back to
+  `alphabaculovirus_odb10` and finished on `chordopoxvirinae_odb10`, and all 60 bins after
+  it ran odb10. On 2017-10-31 the very first bin did the same, so all 70 ran odb10. On
+  2016-03-15 two bins hit the virus fallback but both finished on `bacteria_odb12.2`, so
+  the batch never switched.
+- **Domain labels:** for 82 bins, `busco.log` reports `bacteria_*` (78) or `archaea_*` (4)
+  as selected, but the summary row says `eukaryota_*`. No row anywhere carries a
+  `bacteria_*` or `archaea_*` label.
+- `BatchRunner.write_batch_summary` builds **one** header. The `Scores_*` names come from
+  the **last** genome's root datasets, and `Translation table` / `Internal stop codon percent`
+  are added if **any** genome needed them. `format_run_summary` writes each row in that
+  row's own shape. The three per-sample headers really do differ in both respects, and
+  rows of mixed shape under one header produce the column shift.
+
+The root cause is in BUSCO, but mag's defaults expose it and mag publishes the result as
+its bin QC. Filed 2026-09-18 as [nf-core/mag#1115](https://github.com/nf-core/mag/issues/1115),
+proposing either one BUSCO task per bin or a consistency check before publishing. The same
+class of bug is already open upstream as [ezlab/busco#841](https://gitlab.com/ezlab/busco/-/issues/841).
+This project has not filed it with BUSCO.
+
+**No MAG-quality numbers from this run go into the paper until this is resolved.** The
+clean fix for quality is CheckM2, which is the MIMAG-standard tool and the one seqsubmit
+uses anyway. mag reruns it on `-resume` with `run_checkm2: true`.
 
 ---
 
