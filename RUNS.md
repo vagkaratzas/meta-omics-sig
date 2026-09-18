@@ -24,7 +24,7 @@ site-specific and go stale; the Seqera link preserves the full execution record.
 | 02 | nf-core/metatdenovo | 1.4.0 | 2026-08-11 | 6 MT libraries → one co-assembly + protein FASTA | **SUCCESS** — 198,252 proteins | [Seqera run](https://cloud.seqera.io/user/vangelis/watch/dR2OkpNzn3QwP) |
 | 03 | nf-core/proteinfamilies | 2.5.0 | 2026-08-11 | protein families from the run-02 ORFs | **SUCCESS** — 405 families | [Seqera run](https://cloud.seqera.io/user/vangelis/watch/H1MTwbD6IUKz3) |
 | 04 | nf-core/detaxizer | 1.3.0 | 2026-08-11 | phiX removal from the 6 MT libraries | **SUCCESS** — 172 phiX pairs in 161 M | [Seqera run](https://cloud.seqera.io/user/vangelis/watch/5qFu9n8YSLmCxP) |
-| 05 | nf-core/mag | 5.5.0 | 2026-09-18 | 3 MG libraries → 3 assemblies, MetaBAT2 bins, protein FASTA | **SUCCESS** — 160 bins, 2,513,059 proteins; BUSCO columns unreliable ([mag#1115](https://github.com/nf-core/mag/issues/1115)) | [Seqera run](https://cloud.seqera.io/user/vangelis/watch/2wiu8ZycJHfAVC) |
+| 05 | nf-core/mag | 5.5.0 | 2026-09-18 | 3 MG libraries → 3 assemblies, MetaBAT2 bins, protein FASTA | **SUCCESS** — 160 bins (CheckM2: 24 near-complete, 49 medium-quality), 2,513,059 proteins; BUSCO columns unreliable ([mag#1115](https://github.com/nf-core/mag/issues/1115)) | [Seqera run](https://cloud.seqera.io/user/vangelis/watch/2wiu8ZycJHfAVC) |
 
 
 ## Upstream issues filed from this project
@@ -407,7 +407,7 @@ metagenome layer. Reaching those two stations properly means a second detaxizer 
 | Nextflow | 26.04.6 build 12646 |
 | Input | the 3 WGS libraries from run 01 — ERR13967264, ERR13967258, ERR13967244, one per date |
 | Samplesheet | generated on-cluster by `scripts/converters/fetchngs_to_reads_samplesheet.py --target mag --group 0` |
-| Params | [`runs/05_mag/params.yml`](runs/05_mag/params.yml) — MEGAHIT per sample, MetaBAT2 only, BUSCO on, GTDB-Tk off |
+| Params | [`runs/05_mag/params.yml`](runs/05_mag/params.yml) — MEGAHIT per sample, MetaBAT2 only, BUSCO on, GTDB-Tk off; CheckM2 added afterwards with `-resume` |
 | Date | 2026-09-18 |
 | Outcome | Success — 3 assemblies, **160 MetaBAT2 bins**, **2,513,059 predicted proteins**, 1 phiX pair in 111.7 M |
 
@@ -502,9 +502,42 @@ proposing either one BUSCO task per bin or a consistency check before publishing
 class of bug is already open upstream as [ezlab/busco#841](https://gitlab.com/ezlab/busco/-/issues/841).
 This project has not filed it with BUSCO.
 
-**No MAG-quality numbers from this run go into the paper until this is resolved.** The
-clean fix for quality is CheckM2, which is the MIMAG-standard tool and the one seqsubmit
-uses anyway. mag reruns it on `-resume` with `run_checkm2: true`.
+**BUSCO numbers from this run do not go into the paper.** Bin quality comes from CheckM2
+instead (next section): it is the usual tool for MIMAG reporting, and the one seqsubmit
+uses anyway.
+
+### Bin quality: CheckM2
+
+Re-run 2026-09-18 with `-resume` and `run_checkm2: true` (CheckM2 database: Zenodo record
+14897628, the mag 5.5.0 default, saved with `save_checkm2_data`). The re-run reproduced
+the same 160 bins, split 27 / 63 / 70 by date, so the bins are unchanged. mag merges CheckM2
+into `bin_summary.tsv` by bin name and exits on any mismatch, so these columns cannot shift
+the way the BUSCO ones did. All 160 bins have a CheckM2 result.
+
+Tiers use the MIMAG completeness/contamination thresholds (Bowers et al. 2017,
+[doi:10.1038/nbt.3893](https://doi.org/10.1038/nbt.3893), PMID 28787424):
+
+| Sample | Bins | ≥90% compl., <5% contam. | ≥50%, <10% | <50%, <10% | ≥10% contam. | Median compl. | Median contam. |
+|---|---|---|---|---|---|---|---|
+| LMO_20160315_MG_a | 27 | 4 | 7 | 11 | 5 | 60.2 | 0.45 |
+| LMO_20160803_MG_a | 63 | 10 | 20 | 29 | 4 | 55.3 | 1.73 |
+| LMO_20171031_MG_a | 70 | 10 | 22 | 35 | 3 | 46.6 | 1.24 |
+| **Total** | **160** | **24** | **49** | **75** | **12** | 54.4 | 1.29 |
+
+How to report these:
+
+- **Call the 24 "near-complete", not "MIMAG high-quality".** MIMAG high quality also requires
+  the 23S, 16S and 5S rRNA genes and at least 18 tRNAs, and this run did not check them.
+  The 49 in the ≥50% / <10% tier do meet MIMAG medium quality as defined.
+- **73 of 160 bins (46%) reach at least medium quality.** The other 87 are either less than
+  50% complete or at least 10% contaminated.
+- **CheckM2 used its general model for 62 bins (39%)** and its specific model for 98.
+  CheckM2 switches to the general model when a genome is far from its training genomes, so
+  a large share of these bins come from lineages poorly represented in reference databases.
+  That is plausible for a Baltic brackish-water community, but GTDB-Tk was skipped, so
+  there is no taxonomy to confirm it.
+- The 2016-03-15 sample gives the fewest bins but the highest median completeness. As
+  with the bin counts, quality does not simply follow read depth.
 
 ---
 

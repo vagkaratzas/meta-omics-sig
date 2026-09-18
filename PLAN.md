@@ -407,7 +407,7 @@ upstream, or shipped as reusable converters.
 | 0 — Dataset decision | Extend search; score against the matrix in [DATASETS.md](DATASETS.md); SIG vote | `lit-synthesizer`, `ncbi-datasets` | OPEN |
 | 1 — Scaffold | fetchngs run; verify raw data availability; build reference DBs | `ncbi-datasets` (reference genomes) | OPEN |
 | 2 — Core chain | ampliseq / taxprofiler / mag / metatdenovo; detaxizer re-added as run 04 for phiX removal | `claw-metagenomics` (validation runs) | IN PROGRESS — metatdenovo and detaxizer run 2026-08-11; mag run 2026-09-18 |
-| 2a — Assembly QC | Assess MAG and transcript completeness | `busco-assessor` | OPEN |
+| 2a — Assembly QC | Assess MAG and transcript completeness | `busco-assessor` | IN PROGRESS — MAG completeness done with CheckM2 inside mag (run 05, 2026-09-18: 24 near-complete, 49 medium-quality of 160 bins); BUSCO in mag unusable ([mag#1115](https://github.com/nf-core/mag/issues/1115)); transcript completeness open |
 | 3 — Samplesheet handoffs | Test and document each edge in the validation table | — | OPEN |
 | 4 — Secondary analysis | differentialabundance; funcscan; phageannotator; phyloplace | — | OPEN |
 | 5 — Stretch nodes | metapep; proteinfamilies; viralmetagenome; proteinfold / proteinannotator off the emitted sheets | — | IN PROGRESS — proteinfamilies run 2026-08-11, 405 families |
