@@ -14,7 +14,7 @@
 #
 #   # metatranscriptome HMMs vs metagenome representatives
 #   hmmsearch_families.sh \
-#       <run03-outdir>/hmm/library/LMO_MT_coassembly.lib.gz \
+#       <run03-outdir>/hmm/library/LMO.lib.gz \
 #       <run06-outdir>/family_reps/LMO_MG_pooled/LMO_MG_pooled_reps.faa \
 #       output/mt_hmms_vs_mg_reps 8
 #
