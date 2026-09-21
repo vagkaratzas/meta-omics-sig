@@ -365,7 +365,7 @@
     {
       "id": "mag__metapep", "rowKey": "mag__proteins", "from": "mag", "to": "metapep",
       "source": "table", "kind": "artifact",
-      "repoStatus": "CONVERSION REQUIRED - no ORF-calling step; for proteinfamilies covered by scripts/converters/mag_to_proteinfamilies.py, which pools the per-sample Prodigal FASTAs into one row with sample-prefixed headers (MEGAHIT contig IDs repeat across assemblies); prepared as run 06, not yet executed. metapep not yet checked",
+      "repoStatus": "CONVERSION REQUIRED - no ORF-calling step; for proteinfamilies covered by scripts/converters/mag_to_proteinfamilies.py, which pools the per-sample Prodigal FASTAs into one row with sample-prefixed headers (MEGAHIT contig IDs repeat across assemblies); exercised 2026-09-21 (run 06), 2,513,059 proteins accepted by proteinfamilies 2.5.0, 5,864 families out. metapep not yet checked",
       "statusClass": "conversion-required",
       "routable": false, "unit": "proteins", "carries": [],
       "note": "Prodigal and Prokka run by default (skip_prodigal and skip_prokka both off), publishing Annotation/Prodigal/<assembler>/<sample>/<assembler>-<sample>_prodigal.faa.gz at assembly level and Annotation/Prokka/<assembler>/<bin>/<...>.faa per bin - both extensions proteinfamilies accepts. One validation-table row covers metapep and proteinfamilies together; drawn here as two edges sharing that status.",
@@ -374,9 +374,10 @@
     {
       "id": "mag__proteinfamilies", "rowKey": "mag__proteins", "from": "mag", "to": "proteinfamilies",
       "source": "table", "kind": "artifact",
-      "repoStatus": "CONVERSION REQUIRED - no ORF-calling step; for proteinfamilies covered by scripts/converters/mag_to_proteinfamilies.py, which pools the per-sample Prodigal FASTAs into one row with sample-prefixed headers (MEGAHIT contig IDs repeat across assemblies); prepared as run 06, not yet executed. metapep not yet checked",
+      "repoStatus": "CONVERSION REQUIRED - no ORF-calling step; for proteinfamilies covered by scripts/converters/mag_to_proteinfamilies.py, which pools the per-sample Prodigal FASTAs into one row with sample-prefixed headers (MEGAHIT contig IDs repeat across assemblies); exercised 2026-09-21 (run 06), 2,513,059 proteins accepted by proteinfamilies 2.5.0, 5,864 families out. metapep not yet checked",
       "statusClass": "conversion-required",
-      "routable": false, "unit": "proteins", "carries": [],
+      "executed": true,
+      "routable": true, "unit": "proteins", "carries": [], "dotCount": 1,
       "note": "Prodigal and Prokka run by default (skip_prodigal and skip_prokka both off), publishing Annotation/Prodigal/<assembler>/<sample>/<assembler>-<sample>_prodigal.faa.gz at assembly level and Annotation/Prokka/<assembler>/<bin>/<...>.faa per bin - both extensions proteinfamilies accepts. One validation-table row covers metapep and proteinfamilies together; drawn here as two edges sharing that status.",
       "caveat": "mag's assembly-level Prodigal file is the same tool, scope and extension as metatdenovo's, so this edge is directly comparable with the executed metatdenovo -> proteinfamilies route."
     },
@@ -447,7 +448,7 @@
       "summary": "Linnaeus Microbial Observatory, Baltic Sea brackish water at 2 m. Three collection dates carrying all three omics layers, 12 runs, 34.5 GB.",
       "notice": "Working recommendation only - the SIG dataset decision is still open, and the LMO sample-count discrepancy in DATASETS.md is unresolved.",
       "routingBasis": "Illustrative: items are routed by library_strategy alone. That is a drawing rule, not evidence that a run is suitable for a given pipeline.",
-      "activeRoute": ["fetchngs__ampliseq", "fetchngs__taxprofiler", "fetchngs__mag", "fetchngs__metatdenovo", "fetchngs__detaxizer", "metatdenovo__proteinfamilies"],
+      "activeRoute": ["fetchngs__ampliseq", "fetchngs__taxprofiler", "fetchngs__mag", "fetchngs__metatdenovo", "fetchngs__detaxizer", "metatdenovo__proteinfamilies", "mag__proteinfamilies"],
       "runs": [
         { "acc": "ERR9715801",  "strategy": "AMPLICON", "layer": "amplicon",          "collectionDate": "2016-03-15", "study": "PRJEB52780", "instrument": "MiSeq",       "fraction": "0.2", "fractionSource": "selection-criteria", "gb": 0.42 },
         { "acc": "ERR12258632", "strategy": "RNA-Seq",  "layer": "metatranscriptome", "collectionDate": "2016-03-15", "study": "PRJEB69280", "instrument": "HiSeq 2500",  "fraction": "0.2", "fractionSource": "selection-criteria", "gb": 2.22 },
@@ -492,8 +493,8 @@
           "note": "Run 2026-08-11. The six RNA-Seq libraries were converted to a sample,fastq_1,fastq_2 sheet by scripts/converters/fetchngs_to_reads_samplesheet.py, which renames samples off collection_date rather than the ERX accession fetchngs supplies. Single megahit co-assembly with prodigal ORF calling, specifically so a proteinfamilies-compatible .faa.gz is produced; eggnog, kofamscan and eukulele skipped. Out is 198,252 predicted proteins in one FASTA, not a sample count."
         },
         "proteinfamilies": {
-          "state": "run", "in": 1, "out": 405, "version": "2.5.0",
-          "note": "Run 2026-08-11 on the 198,252 proteins from metatdenovo, producing 405 protein families. One input row, because metatdenovo co-assembles into a single protein FASTA. Out is a family count, not a sample count, and it is not comparable to the 198,252 input proteins until min_seq_length 30 and cluster_size_threshold 25 are accounted for. The run also set the only two non-default parameters in the pilot - skip_proteinfold_samplesheet and skip_proteinannotator_samplesheet, both false - so it published ready-made samplesheets for both successors."
+          "state": "run", "in": 2, "out": "405 / 5,864", "version": "2.5.0",
+          "note": "Run twice, with identical parameters. Run 03 (2026-08-11) clustered the 198,252 metatranscriptome proteins from metatdenovo into 405 protein families. Run 06 (2026-09-21) clustered the 2,513,059 metagenome proteins from mag, pooled from three per-sample Prodigal files by scripts/converters/mag_to_proteinfamilies.py, into 5,864 families. In is two runs of one row each; out is the two family counts, which are separate family sets and do not add up. Both inputs are single rows: metatdenovo co-assembles into one protein FASTA, and the mag proteins were pooled to match. Neither count is comparable to its input proteins until min_seq_length 30 and cluster_size_threshold 25 are accounted for, and the metagenome count is inflated by genomes assembled on more than one date. Both runs set the only two non-default parameters in the pilot - skip_proteinfold_samplesheet and skip_proteinannotator_samplesheet, both false - so both published ready-made samplesheets for the two successors."
         },
         "proteinfold": {
           "state": "pending", "in": 1, "out": null, "version": null,

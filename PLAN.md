@@ -81,7 +81,7 @@ fetchngs (SRA accessions)
         │     ├─► funcscan (contigs → functional annotation) [UNTESTED]
         │     ├─► phageannotator (contigs → phage annotation) [UNTESTED]
         │     ├─► phyloplace (contigs → phylogenetic placement) [UNTESTED]
-        │     └─► metapep / proteinfamilies (predicted proteins) [PREPARED, RUN 06]
+        │     └─► metapep / proteinfamilies (predicted proteins) [proteinfamilies RUN 2026-09-21]
         ├─► viralmetagenome (shotgun MG reads → viral contigs) [UNTESTED]
         │     ├─► phageannotator (viral contigs + reads → phage annotation) [UNTESTED]
         │     └─► phyloplace (viral contigs → placement on a reference tree) [UNTESTED]
@@ -387,7 +387,7 @@ upstream, or shipped as reusable converters.
 | mag | phageannotator | contig FASTA → phageannotator input | OPEN |
 | mag | phyloplace | contig FASTA → phyloplace input | OPEN |
 | mag | magmap | MAG FASTA → magmap reference input | OPEN |
-| **mag** | **metapep / proteinfamilies** | Prodigal and Prokka run by default, publishing `Annotation/Prodigal/<assembler>/<sample>/<assembler>-<sample>_prodigal.faa.gz` (assembly level) and `Annotation/Prokka/.../<bin>.faa` (per bin) — both extensions proteinfamilies accepts | **CONVERSION REQUIRED** — no ORF-calling step; for proteinfamilies covered by `scripts/converters/mag_to_proteinfamilies.py`, which pools the per-sample Prodigal FASTAs into one row with sample-prefixed headers (MEGAHIT contig IDs repeat across assemblies); prepared as run 06, not yet executed. metapep not yet checked |
+| **mag** | **metapep / proteinfamilies** | Prodigal and Prokka run by default, publishing `Annotation/Prodigal/<assembler>/<sample>/<assembler>-<sample>_prodigal.faa.gz` (assembly level) and `Annotation/Prokka/.../<bin>.faa` (per bin) — both extensions proteinfamilies accepts | **CONVERSION REQUIRED** — no ORF-calling step; for proteinfamilies covered by `scripts/converters/mag_to_proteinfamilies.py`, which pools the per-sample Prodigal FASTAs into one row with sample-prefixed headers (MEGAHIT contig IDs repeat across assemblies); exercised 2026-09-21 (run 06), 2,513,059 proteins accepted by proteinfamilies 2.5.0, 5,864 families out. metapep not yet checked |
 | **metatdenovo** | **proteinfamilies** | `--orf_caller prodigal` publishes `prodigal/<assembly>.faa.gz`, an extension proteinfamilies accepts | **CONVERSION REQUIRED** — one-row samplesheet, no reformatting; exercised 2026-08-11, 198,252 proteins accepted by proteinfamilies 2.5.0, 405 families out |
 | **metatdenovo** | **seqsubmit** | megahit contigs `.fa.gz` → `--mode metagenomic_assemblies` (`schema_input_assembly.json`); gzipped FASTA transfers unchanged, and the row needs only `id`, `run_accession`, `assembler`, `assembler_version` | **CONVERSION REQUIRED** — metadata, and `assembly_uploader` hardcodes the ENA assembly type as `primary metagenome` |
 | **viralmetagenome** | **phageannotator** | viral contig FASTA → input, but the sheet also wants `group` and `fastq_1` | **CONVERSION REQUIRED** — two-source join, and `.combined.fa` is not gzipped |
@@ -410,7 +410,7 @@ upstream, or shipped as reusable converters.
 | 2a — Assembly QC | Assess MAG and transcript completeness | `busco-assessor` | IN PROGRESS — MAG completeness done with CheckM2 inside mag (run 05, 2026-09-18: 24 near-complete, 49 medium-quality of 160 bins); BUSCO in mag unusable ([mag#1115](https://github.com/nf-core/mag/issues/1115)); transcript completeness open |
 | 3 — Samplesheet handoffs | Test and document each edge in the validation table | — | OPEN |
 | 4 — Secondary analysis | differentialabundance; funcscan; phageannotator; phyloplace | — | OPEN |
-| 5 — Stretch nodes | metapep; proteinfamilies; viralmetagenome; proteinfold / proteinannotator off the emitted sheets | — | IN PROGRESS — proteinfamilies run 2026-08-11, 405 families |
+| 5 — Stretch nodes | metapep; proteinfamilies; viralmetagenome; proteinfold / proteinannotator off the emitted sheets | — | IN PROGRESS — proteinfamilies run 2026-08-11 on metatranscriptome proteins (405 families) and 2026-09-21 on metagenome proteins (5,864 families) |
 | 5a — QC aggregation | Aggregate QC across all pipeline runs | `multiqc-reporter` | OPEN |
 | 6 — Publication | Write-up; confirm authorship; submit to nf-core community journal | `lit-synthesizer` (related work section) | OPEN |
 

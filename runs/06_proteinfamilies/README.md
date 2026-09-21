@@ -97,7 +97,11 @@ Before putting family counts side by side, keep in mind what differs:
 - **Layer.** Metagenome assembly recovers genomes, whereas a metatranscriptome only holds
   what was being expressed. More families is the expected direction; the size of the
   difference is what needs explaining.
-- **Length filter.** Report how many proteins `min_seq_length 30` removed, as for run 03.
+- **Length filter.** SeqKit preprocessing (length filter 30–5,000 aa, gap trimming, duplicate
+  removal) took the input from 2,513,059 to **2,415,819** proteins, removing 97,240 (3.9%).
+  The longest input protein was 7,403 aa, so `max_seq_length 5000` also bound here.
+
+The numbers from the run itself are in [RUNS.md](../../RUNS.md#06--proteinfamilies-families-from-the-metagenome-orfs).
 
 ## Verify
 
@@ -120,6 +124,9 @@ grep -c '^>' <outdir>/proteinfold/*/*_reps.faa
 |------|--------|
 | Converter `mag_to_proteinfamilies.py` | **READY** — `--selftest` passes |
 | Samplesheet conversion | **DONE** 2026-09-18 — one row, 2,513,059 proteins (507,173 + 1,074,480 + 931,406, matching run 05); **1,073,177 IDs recurred across samples before prefixing** |
-| proteinfamilies run | **NOT RUN** |
+| proteinfamilies run | **SUCCESS** 2026-09-21 — **5,864 protein families** from 2,415,819 proteins after length filtering |
+| Downstream samplesheets | **EMITTED** — `proteinfold/` and `proteinannotator/`, neither consumed by a run yet |
 
-Full run record, once executed: [RUNS.md](../../RUNS.md).
+Provenance: Seqera run link pending (run name `compassionate_almeida`).
+
+Full run record: [RUNS.md](../../RUNS.md#06--proteinfamilies-families-from-the-metagenome-orfs).

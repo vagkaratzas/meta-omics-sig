@@ -25,6 +25,7 @@ site-specific and go stale; the Seqera link preserves the full execution record.
 | 03 | nf-core/proteinfamilies | 2.5.0 | 2026-08-11 | protein families from the run-02 ORFs | **SUCCESS** — 405 families | [Seqera run](https://cloud.seqera.io/user/vangelis/watch/H1MTwbD6IUKz3) |
 | 04 | nf-core/detaxizer | 1.3.0 | 2026-08-11 | phiX removal from the 6 MT libraries | **SUCCESS** — 172 phiX pairs in 161 M | [Seqera run](https://cloud.seqera.io/user/vangelis/watch/5qFu9n8YSLmCxP) |
 | 05 | nf-core/mag | 5.5.0 | 2026-09-18 | 3 MG libraries → 3 assemblies, MetaBAT2 bins, protein FASTA | **SUCCESS** — 160 bins (CheckM2: 24 near-complete, 49 medium-quality), 2,513,059 proteins; BUSCO columns unreliable ([mag#1115](https://github.com/nf-core/mag/issues/1115)) | [Seqera run](https://cloud.seqera.io/user/vangelis/watch/2wiu8ZycJHfAVC) · [CheckM2 re-run](https://cloud.seqera.io/user/vangelis/watch/2Nloa7fgPEWnlX) |
+| 06 | nf-core/proteinfamilies | 2.5.0 | 2026-09-21 | protein families from the run-05 ORFs, pooled into one row | **SUCCESS** — 5,864 families | Seqera link pending |
 
 
 ## Upstream issues filed from this project
@@ -540,6 +541,58 @@ How to report these:
   there is no taxonomy to confirm it.
 - The 2016-03-15 sample gives the fewest bins but the highest median completeness. As
   with the bin counts, quality does not simply follow read depth.
+
+---
+
+## 06 — proteinfamilies, families from the metagenome ORFs
+
+**Status: SUCCESS, 2026-09-21.**
+
+**Provenance:** Seqera run link pending (run name `compassionate_almeida`).
+
+| | |
+|---|---|
+| Pipeline | `nf-core/proteinfamilies` `-r 2.5.0` (`v2.5.0-gf8c0b18`) |
+| Nextflow | 26.04.4 |
+| Input | one row, 2,513,059 proteins — run 05's three per-sample Prodigal FASTAs, pooled with sample-prefixed headers |
+| Samplesheet | generated on-cluster by `scripts/converters/mag_to_proteinfamilies.py --expect 3` |
+| Params | [`runs/06_proteinfamilies/params.yml`](runs/06_proteinfamilies/params.yml) — identical to run 03 |
+| Date | 2026-09-21 |
+| Outcome | Success — **5,864 protein families**, plus downstream samplesheets for proteinfold and proteinannotator |
+
+This is the first time `mag → proteinfamilies` has been consumed: proteinfamilies 2.5.0
+accepted the pooled one-row sheet unmodified and ran to completion.
+
+### From proteins to families
+
+Numbers from the run's MultiQC report (SeqFu before/after preprocessing, the MMseqs
+cluster-size distribution, and the family metadata table):
+
+| Stage | Count |
+|---|---|
+| Proteins in | 2,513,059 (mean 139.3 aa, longest 7,403) |
+| After SeqKit preprocessing (length 30–5,000 aa, gap trimming, duplicate removal) | 2,415,819 — 97,240 removed (3.9%) |
+| MMseqs initial clusters | 1,030,275, of which 782,124 (76%) are singletons |
+| Clusters of ≥25 sequences, which seed a family (`cluster_size_threshold 25`) | 10,749, holding 614,725 sequences (25% of the filtered input) |
+| Families after family building and redundancy removal | **5,864** |
+
+### Against run 03: not yet a biological result
+
+Run 03 gave 405 families from 198,252 metatranscriptome proteins. Run 06 has 12.7× the
+input proteins and gives 14.5× the families. Method is held constant (Prodigal at assembly
+level, proteinfamilies 2.5.0, identical parameters), but two things still differ besides
+the omics layer:
+
+- **Redundancy.** mag assembled each date separately, so a genome present on several dates
+  contributes near-identical copies of its proteins. That inflates cluster sizes, and more
+  clusters clear the size threshold than a co-assembly would allow. The family count is
+  biased upward by an unknown amount.
+- **Separate family sets.** The 405 and the 5,864 were built independently. Counting them
+  says nothing about how many families the two layers share. That needs the families
+  compared directly, which has not been done yet.
+
+Both runs emitted `proteinfold/` and `proteinannotator/` samplesheets. None has been
+consumed yet.
 
 ---
 
