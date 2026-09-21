@@ -25,7 +25,7 @@ site-specific and go stale; the Seqera link preserves the full execution record.
 | 03 | nf-core/proteinfamilies | 2.5.0 | 2026-08-11 | protein families from the run-02 ORFs | **SUCCESS** — 405 families | [Seqera run](https://cloud.seqera.io/user/vangelis/watch/H1MTwbD6IUKz3) |
 | 04 | nf-core/detaxizer | 1.3.0 | 2026-08-11 | phiX removal from the 6 MT libraries | **SUCCESS** — 172 phiX pairs in 161 M | [Seqera run](https://cloud.seqera.io/user/vangelis/watch/5qFu9n8YSLmCxP) |
 | 05 | nf-core/mag | 5.5.0 | 2026-09-18 | 3 MG libraries → 3 assemblies, MetaBAT2 bins, protein FASTA | **SUCCESS** — 160 bins (CheckM2: 24 near-complete, 49 medium-quality), 2,513,059 proteins; BUSCO columns unreliable ([mag#1115](https://github.com/nf-core/mag/issues/1115)) | [Seqera run](https://cloud.seqera.io/user/vangelis/watch/2wiu8ZycJHfAVC) · [CheckM2 re-run](https://cloud.seqera.io/user/vangelis/watch/2Nloa7fgPEWnlX) |
-| 06 | nf-core/proteinfamilies | 2.5.0 | 2026-09-21 | protein families from the run-05 ORFs, pooled into one row | **SUCCESS** — 5,864 families | Seqera link pending |
+| 06 | nf-core/proteinfamilies | 2.5.0 | 2026-09-21 | protein families from the run-05 ORFs, pooled into one row | **SUCCESS** — 5,864 families | [Seqera run](https://cloud.seqera.io/user/vangelis/watch/4VgXDoIUSqHCpZ) |
 
 
 ## Upstream issues filed from this project
@@ -549,7 +549,7 @@ How to report these:
 
 **Status: SUCCESS, 2026-09-21.**
 
-**Provenance:** Seqera run link pending (run name `compassionate_almeida`).
+**Provenance:** <https://cloud.seqera.io/user/vangelis/watch/4VgXDoIUSqHCpZ>
 
 | | |
 |---|---|

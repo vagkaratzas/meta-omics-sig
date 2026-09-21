@@ -135,6 +135,6 @@ grep -c '^>' <outdir>/proteinfold/*/*_reps.faa
 | proteinfamilies run | **SUCCESS** 2026-09-21 — **5,864 protein families** from 2,415,819 proteins after length filtering |
 | Downstream samplesheets | **EMITTED** — `proteinfold/` and `proteinannotator/`, neither consumed by a run yet |
 
-Provenance: Seqera run link pending (run name `compassionate_almeida`).
+Provenance: <https://cloud.seqera.io/user/vangelis/watch/4VgXDoIUSqHCpZ>
 
 Full run record: [RUNS.md](../../RUNS.md#06--proteinfamilies-families-from-the-metagenome-orfs).
