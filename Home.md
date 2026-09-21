@@ -61,6 +61,12 @@ with the Seqera Platform provenance link lives in [RUNS.md](RUNS.md).
 CONVERSION REQUIRED. Each has an assert-based `--selftest` that runs with no arguments and
 no fixtures. They are the deliverable that turns a finding into a working handoff.
 
+`scripts/analysis/` holds analyses run on pipeline outputs once the runs are done, starting
+with the metatranscriptome-vs-metagenome family comparison (runs 03 and 06):
+`hmmsearch_families.sh` searches one run's family HMMs against the other's family
+representatives, and `summarise_family_hits.py` (assert-based `--selftest`) counts the
+matches at E-value and two-sided coverage thresholds.
+
 `scripts/check_links.py` checks link hygiene for this vault — broken links, orphaned notes,
 and `[[wikilink]]` syntax that would not render on GitHub. Run it after editing links:
 

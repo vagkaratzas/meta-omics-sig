@@ -590,7 +590,9 @@ the omics layer:
   biased upward by an unknown amount.
 - **Separate family sets.** The 405 and the 5,864 were built independently. Counting them
   says nothing about how many families the two layers share. That needs the families
-  compared directly, which has not been done yet.
+  compared directly: `scripts/analysis/hmmsearch_families.sh` searches run 03's family HMMs
+  against run 06's representatives, and `summarise_family_hits.py` counts the matches.
+  Not run yet.
 
 Both runs emitted `proteinfold/` and `proteinannotator/` samplesheets. None has been
 consumed yet.
