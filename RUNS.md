@@ -590,12 +590,51 @@ the omics layer:
   biased upward by an unknown amount.
 - **Separate family sets.** The 405 and the 5,864 were built independently. Counting them
   says nothing about how many families the two layers share. That needs the families
-  compared directly: `scripts/analysis/hmmsearch_families.sh` searches run 03's family HMMs
-  against run 06's representatives, and `summarise_family_hits.py` counts the matches.
-  Not run yet.
+  compared directly. That was done on 2026-09-21; the results are in the next section.
 
 Both runs emitted `proteinfold/` and `proteinannotator/` samplesheets. None has been
 consumed yet.
+
+### Metatranscriptome families against metagenome families
+
+Run 2026-09-21 with `scripts/analysis/hmmsearch_families.sh`, which searched run 03's 405
+family HMMs against run 06's 5,864 family representatives. `summarise_family_hits.py` then
+filtered the hits at its defaults: a pair counts only if the full-sequence E-value is
+≤ 1e-5 and at least 50% of both the HMM and the target is covered.
+
+| | Count |
+|---|---|
+| Metatranscriptome families with at least one metagenome match | **248 of 405 (61.2%)** |
+| Metagenome families matched by a metatranscriptome family | 296 of 5,864 (5.0%) |
+| Matching pairs | 315 |
+
+- **Mostly one-to-one.** 190 of the 248 matched metatranscriptome families hit a single
+  metagenome family, 50 hit two, and 8 hit three or four. Going the other way, 18 metagenome
+  representatives are hit by more than one metatranscriptome family. So the two runs split
+  some families at different granularity, but not many.
+- **Matches are strong.** The median score is 141 bits. 199 of the 248 best hits have an
+  E-value ≤ 1e-30, and 109 cover at least 80% of both the HMM and the target.
+- **Every date contributes.** The matched representatives come from 2016-03-15 (57),
+  2016-08-03 (131) and 2017-10-31 (108), which is roughly in proportion to each date's
+  protein count. Where a representative comes from depends on how the family was built, so
+  this does not measure which dates expressed what.
+- **Target coverage is measured on a trimmed sequence.** 291 of the 296 representatives
+  carry a `/start-end` suffix. They are the aligned region of the protein, not the whole
+  ORF, so `target_cov` overstates how much of the full protein is covered. `hmm_cov` is not
+  affected.
+
+How to read the two percentages:
+
+- **5.0% of metagenome families matching is expected.** A metatranscriptome holds only
+  what was being expressed, and the metagenome family count is inflated by genomes that
+  were assembled on more than one date.
+- **The 157 unmatched metatranscriptome families (39%) are the open question.** An
+  unmatched family can mean either of two things. The genes may really be missing from the
+  metagenome assemblies, as with eukaryotic or viral transcripts that short-read metagenome
+  assembly misses. Or the genes are present in the 2.5 M metagenome proteins but never
+  formed a family, for example a cluster below `cluster_size_threshold 25`, or one split
+  differently. This search cannot tell the two apart, because it only saw the metagenome
+  representatives.
 
 ### Head JVM out of heap in `MERGE_SEEDS` — needed a larger heap and `-resume`
 
