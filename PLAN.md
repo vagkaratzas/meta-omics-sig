@@ -89,7 +89,7 @@ fetchngs (SRA accessions)
               ├─► seqsubmit (megahit contigs .fa.gz → ENA assembly accessions) [UNTESTED]
               └─► proteinfamilies (prodigal .faa.gz → protein families) [RUN 2026-08-11]
                     ├─► proteinfold (representatives → structures) [SHEET EMITTED, NOT CONSUMED]
-                    └─► proteinannotator (representatives → annotation) [SHEET EMITTED, NOT CONSUMED]
+                    └─► proteinannotator (representatives → annotation) [SHEET EMITTED, PREPARED AS RUN 07]
 ```
 
 > **Metro map, updated 2026-08-11.** Two branches that this document previously flagged as
@@ -393,7 +393,7 @@ upstream, or shipped as reusable converters.
 | **viralmetagenome** | **phageannotator** | viral contig FASTA → input, but the sheet also wants `group` and `fastq_1` | **CONVERSION REQUIRED** — two-source join, and `.combined.fa` is not gzipped |
 | **viralmetagenome** | **phyloplace** | viral contig FASTA → `queryseqfile` | **CONVERSION REQUIRED** — `refseqfile`, `refphylogeny`, `model` are external per-row inputs |
 | **proteinfamilies** | **proteinfold** | `--skip_proteinfold_samplesheet false` (default `true`) publishes `proteinfold/samplesheet.csv` — `id,fasta`, pointing at the family representatives `<samplename>_reps.faa` | **NATIVE** — emitted 2026-08-11, not yet exercised; native against proteinfold 2.0.0 only, 1.1.1 wants a `sequence` column and rejects `.faa` |
-| **proteinfamilies** | **proteinannotator** | `--skip_proteinannotator_samplesheet false` (default `true`) publishes `proteinannotator/samplesheet.csv` — the same `id,fasta` sheet from the same channel | **NATIVE** — emitted 2026-08-11, not yet exercised; proteinannotator 1.1.0 accepts `id` + `.faa` unmodified |
+| **proteinfamilies** | **proteinannotator** | `--skip_proteinannotator_samplesheet false` (default `true`) publishes `proteinannotator/samplesheet.csv` — the same `id,fasta` sheet from the same channel | **NATIVE** — emitted 2026-08-11, not yet exercised; proteinannotator 1.1.0 accepts `id` + `.faa` unmodified; prepared as run 07 on run 03's sheet |
 | taxprofiler | differentialabundance | abundance profile → differentialabundance input | OPEN |
 | ampliseq | differentialabundance | QIIME2/BIOM profile → differentialabundance input | OPEN |
 | magmap | differentialabundance | coverage profiles → differentialabundance input | OPEN |

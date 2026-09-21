@@ -412,7 +412,7 @@
     {
       "id": "proteinfamilies__proteinannotator", "from": "proteinfamilies", "to": "proteinannotator",
       "source": "table", "kind": "artifact",
-      "repoStatus": "NATIVE - emitted 2026-08-11, not yet exercised", "statusClass": "validated",
+      "repoStatus": "NATIVE - emitted 2026-08-11, not yet exercised; prepared as run 07 on run 03's sheet", "statusClass": "validated",
       "routable": false, "unit": "representative proteins", "carries": [],
       "note": "--skip_proteinannotator_samplesheet false (default true) publishes proteinannotator/samplesheet.csv - the same id,fasta sheet, built from the same channel as the proteinfold one. Emitted by run 03 on 2026-08-11; no proteinannotator run has read it yet.",
       "caveat": "proteinannotator 1.1.0 takes id + .fa/.fasta/.faa/.fas (optionally .gz), so this sheet needs nothing done to it. It is the cheaper of the two emitted handoffs to exercise - proteinfold needs --split_fasta and GPU-scale resources, this does not."
@@ -502,7 +502,7 @@
         },
         "proteinannotator": {
           "state": "pending", "in": 1, "out": null, "version": null,
-          "note": "Not run. Its input samplesheet already exists: run 03 emitted proteinannotator/samplesheet.csv on 2026-08-11, the same single row of family representatives. proteinannotator 1.1.0 accepts it unmodified, which makes it the cheapest remaining test of nf-core samplesheet standardisation available to this project."
+          "note": "Not run yet; prepared as run 07, which feeds it run 03's sheet as emitted. Its input samplesheet already exists: run 03 emitted proteinannotator/samplesheet.csv on 2026-08-11, the same single row of family representatives. proteinannotator 1.1.0 accepts it unmodified, which makes it the cheapest remaining test of nf-core samplesheet standardisation available to this project."
         }
       }
     }
