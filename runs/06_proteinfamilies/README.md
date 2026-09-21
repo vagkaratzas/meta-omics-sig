@@ -86,6 +86,14 @@ At 12.7× run 03's input, mmseqs clustering is the step most likely to need more
 Raise it in the site config, not in `params.yml`. Parameters are what the comparison holds
 constant, and resources are not part of it.
 
+mmseqs was fine. What failed was the Nextflow head JVM, out of heap while submitting
+`MERGE_SEEDS` tasks ([nf-core/proteinfamilies#191](https://github.com/nf-core/proteinfamilies/issues/191)).
+Until that is fixed, give the head job a larger heap before launching at this scale:
+
+```bash
+export NXF_OPTS="-Xms2g -Xmx16g"
+```
+
 ## Reading the result against run 03
 
 Before putting family counts side by side, keep in mind what differs:

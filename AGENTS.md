@@ -123,6 +123,21 @@ Fix is `export NXF_SYNTAX_PARSER=v1`, not a pipeline downgrade or a `-r dev` swi
 this for any pipeline in the chain whose latest release predates ~2024; check with
 `curl -s https://raw.githubusercontent.com/nf-core/<pipeline>/<tag>/nextflow.config | grep -c check_max`.
 
+### Nextflow head JVM `OutOfMemoryError` on large runs
+When a task stages thousands of input files, the Nextflow head process (not the task)
+can run out of heap while writing the task wrappers. It writes one staging line per
+file per task. Symptom, in `.nextflow.log`, while tasks are being submitted:
+
+```
+error [java.lang.OutOfMemoryError]: Java heap space
+  at nextflow.executor.SimpleFileCopyStrategy.getStageInputFilesScript(...)
+```
+
+Workaround: `export NXF_OPTS="-Xms2g -Xmx16g"` and relaunch with `-resume`. Confirmed on
+codon (2026-09-21) for proteinfamilies 2.5.0 `MERGE_SEEDS` at ~2.4 M proteins (run 06). The
+real fix is upstream, staging fewer files per task:
+[nf-core/proteinfamilies#191](https://github.com/nf-core/proteinfamilies/issues/191).
+
 ---
 
 ## Pipeline Quick Reference

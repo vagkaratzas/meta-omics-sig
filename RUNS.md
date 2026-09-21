@@ -43,6 +43,7 @@ surfaced it. Details are in the run sections below.
 | [nf-core/detaxizer#100](https://github.com/nf-core/detaxizer/issues/100) — generated mag samplesheet rejected by mag | 2026-08-11 | run 04 | open |
 | [nf-core/fetchngs#401](https://github.com/nf-core/fetchngs/issues/401) — 1.13.0 `--nf_core_pipeline mag` sheet rejected by mag | 2026-09-15 | 1.13.0 schema check | open |
 | [nf-core/mag#1115](https://github.com/nf-core/mag/issues/1115) — BUSCO batch mode leaks lineage state between bins, corrupting `bin_summary.tsv` | 2026-09-18 | run 05 | open |
+| [nf-core/proteinfamilies#191](https://github.com/nf-core/proteinfamilies/issues/191) — `MERGE_SEEDS` stages every seed MSA of the sample per task; head JVM `OutOfMemoryError` at scale | 2026-09-21 | run 06 | open |
 
 ---
 
@@ -593,6 +594,35 @@ the omics layer:
 
 Both runs emitted `proteinfold/` and `proteinannotator/` samplesheets. None has been
 consumed yet.
+
+### Head JVM out of heap in `MERGE_SEEDS` — needed a larger heap and `-resume`
+
+The first launch failed with 631 of 675 `MERGE_SEEDS` tasks done. The Nextflow head JVM,
+not a task, ran out of memory while submitting the rest:
+
+```
+error [java.lang.OutOfMemoryError]: Java heap space
+  ...
+  at nextflow.executor.SimpleFileCopyStrategy.getStageInputFilesScript(SimpleFileCopyStrategy.groovy:140)
+```
+
+`subworkflows/local/merge_families/main.nf` combines each pooled group with the sample's
+**whole** seed MSA collection, so every `MERGE_SEEDS` task stages all of the sample's seeds
+(thousands here), although it reads only its pool's handful. The head job writes one
+`ln -s` per staged file into each task's wrapper, so memory grows as tasks × seeds. Run 03,
+with 405 families, did not hit it.
+
+Worked around by relaunching with a larger head heap and `-resume`:
+
+```bash
+export NXF_OPTS="-Xms2g -Xmx16g"
+```
+
+The workaround changes resources only, not parameters, so the result stays comparable with
+run 03. Filed 2026-09-21 as
+[nf-core/proteinfamilies#191](https://github.com/nf-core/proteinfamilies/issues/191),
+proposing to filter the seed collection down to each pool's members before `MERGE_SEEDS`,
+with an nf-test that checks what each task stages.
 
 ---
 
