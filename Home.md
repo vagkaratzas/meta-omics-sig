@@ -34,11 +34,9 @@ Start at [README.md](README.md) for the overview.
 | Which handoffs are validated, which need conversion, which are untested? | [PLAN.md](PLAN.md) § Samplesheet Chaining — Validation Table |
 | Which dataset should we use, and how do candidates score? | [DATASETS.md](DATASETS.md) |
 | What has actually been executed, with what provenance? | [RUNS.md](RUNS.md) |
+| Which issues has this project filed upstream? | [RUNS.md](RUNS.md) § Upstream issues filed from this project |
 | How should an AI agent work in this repo? Conventions, guardrails, environment gotchas | [AGENTS.md](AGENTS.md) |
 | What does this acronym mean? | [ACRONYMS.md](ACRONYMS.md) |
-
-[CLAUDE.md](CLAUDE.md) exists only to point at [AGENTS.md](AGENTS.md), so that every
-coding agent reads the same file.
 
 ## Runs
 
@@ -51,13 +49,21 @@ with the Seqera Platform provenance link lives in [RUNS.md](RUNS.md).
 | 02 | metatdenovo | [runs/02_metatdenovo/README.md](runs/02_metatdenovo/README.md) |
 | 03 | proteinfamilies | [runs/03_proteinfamilies/README.md](runs/03_proteinfamilies/README.md) |
 | 04 | detaxizer | [runs/04_detaxizer/README.md](runs/04_detaxizer/README.md) |
-| 05 | mag | [runs/05_mag/README.md](runs/05_mag/README.md) — prepared, not run |
+| 05 | mag | [runs/05_mag/README.md](runs/05_mag/README.md) |
+| 06 | proteinfamilies | [runs/06_proteinfamilies/README.md](runs/06_proteinfamilies/README.md) |
+| 07 | proteinannotator | [runs/07_proteinannotator/README.md](runs/07_proteinannotator/README.md) — prepared, not run |
 
 ## Scripts
 
 `scripts/converters/` holds the samplesheet conversions that the validation table marks
 CONVERSION REQUIRED. Each has an assert-based `--selftest` that runs with no arguments and
 no fixtures. They are the deliverable that turns a finding into a working handoff.
+
+`scripts/analysis/` holds analyses run on pipeline outputs once the runs are done, starting
+with the metatranscriptome-vs-metagenome family comparison (runs 03 and 06):
+`hmmsearch_families.sh` searches one run's family HMMs against the other's family
+representatives, and `summarise_family_hits.py` (assert-based `--selftest`) counts the
+matches at E-value and two-sided coverage thresholds.
 
 `scripts/check_links.py` checks link hygiene for this vault — broken links, orphaned notes,
 and `[[wikilink]]` syntax that would not render on GitHub. Run it after editing links:

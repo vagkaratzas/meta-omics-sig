@@ -52,13 +52,21 @@ binning_map_mode: "group"
 
 # --- Bin QC -----------------------------------------------------------------------------
 #
-# BUSCO is on by default and downloads its lineage datasets on demand (small). CheckM and
-# CheckM2 are off by default and each wants its own database; left off. Note seqsubmit can
-# recompute completeness/contamination with CheckM2 later if the mag -> seqsubmit edge is
-# ever exercised, so nothing is lost by skipping them here.
+# BUSCO is on by default and downloads its lineage datasets on demand (small). Its numbers
+# from the first run are UNRELIABLE: BUSCO 6.1.0 batch mode leaks lineage state between bins
+# and misaligns bin_summary.tsv (nf-core/mag#1115, see RUNS.md). Kept on so -resume reuses
+# the cached tasks unchanged, but its columns are not used.
+#
+# CheckM2 is the bin-quality source for the paper: MIMAG-standard, and what seqsubmit uses
+# anyway. Added after the first run; re-launch with -resume and only CheckM2 (plus its DB
+# download) and the bin summary run again. checkm2_db unset -> mag downloads the Zenodo
+# record below (~3 GB); saved to the outdir so later runs can pass it back as checkm2_db.
+# CheckM (v1) stays off: superseded by CheckM2 and wants its own database.
 run_busco: true
 run_checkm: false
-run_checkm2: false
+run_checkm2: true
+checkm2_db_version: 14897628   # mag 5.5.0 default, pinned so the paper's numbers are reproducible
+save_checkm2_data: true
 
 # --- Taxonomic classification: OFF, and this is the expensive decision --------------------
 #
@@ -73,7 +81,8 @@ skip_gtdbtk: true
 
 # --- Gene prediction: ON, and the reason this run matters for the chain -------------------
 #
-# Prodigal publishes Annotation/Prodigal/<assembler>-<sample>.faa.gz — assembly-level
+# Prodigal publishes Annotation/Prodigal/<assembler>/<sample>/<assembler>-<sample>_prodigal.faa.gz —
+# assembly-level
 # protein FASTA, gzipped, exactly the extension proteinfamilies accepts. Prokka publishes
 # per-bin Annotation/Prokka/<assembler>/<bin>/<...>.faa.
 #

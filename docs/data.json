@@ -247,8 +247,9 @@
     {
       "id": "fetchngs__mag", "from": "fetchngs", "to": "mag",
       "source": "table", "kind": "reads",
-      "repoStatus": "NATIVE, REJECTED BY TARGET - 1.13.0's emitter fails mag 5.5.0's schema; CONVERSION REQUIRED in practice",
+      "repoStatus": "NATIVE, REJECTED BY TARGET - 1.13.0's emitter fails mag 5.5.0's schema; CONVERSION REQUIRED in practice; exercised 2026-09-18 through the converter",
       "statusClass": "conversion-required",
+      "executed": true,
       "routable": true, "unit": "runs", "carries": ["WGS"],
       "note": "--nf_core_pipeline mag, added in 1.13.0, emits sample,fastq_1,fastq_2 plus group, short_reads_platform and long_reads_platform. mag 5.5.0 cannot use it: group is required with pattern ^\\S+$ and is written as the empty string; the reads are named fastq_1/fastq_2 where mag reads short_reads_1/short_reads_2; and short_reads_platform is hardcoded ILLUMINA rather than copied from instrument_platform.",
       "caveat": "Same defect as nf-core/detaxizer#100 - an empty group in a generated mag samplesheet - arriving independently in a second pipeline a month later, found within a day of the 1.13.0 release. Filed 2026-09-15 as nf-core/fetchngs#401. scripts/converters/fetchngs_to_reads_samplesheet.py --target mag remains the working route: it copies short_reads_platform from instrument_platform, refuses long-read platforms, and requires group to be supplied by hand."
@@ -364,19 +365,20 @@
     {
       "id": "mag__metapep", "rowKey": "mag__proteins", "from": "mag", "to": "metapep",
       "source": "table", "kind": "artifact",
-      "repoStatus": "CONVERSION REQUIRED - samplesheet only, no ORF-calling step",
+      "repoStatus": "CONVERSION REQUIRED - no ORF-calling step; for proteinfamilies covered by scripts/converters/mag_to_proteinfamilies.py, which pools the per-sample Prodigal FASTAs into one row with sample-prefixed headers (MEGAHIT contig IDs repeat across assemblies); exercised 2026-09-21 (run 06), 2,513,059 proteins accepted by proteinfamilies 2.5.0, 5,864 families out. metapep not yet checked",
       "statusClass": "conversion-required",
       "routable": false, "unit": "proteins", "carries": [],
-      "note": "Prodigal and Prokka run by default (skip_prodigal and skip_prokka both off), publishing Annotation/Prodigal/<assembler>-<sample>.faa.gz at assembly level and Annotation/Prokka/<assembler>/<bin>/<...>.faa per bin - both extensions proteinfamilies accepts. One validation-table row covers metapep and proteinfamilies together; drawn here as two edges sharing that status.",
+      "note": "Prodigal and Prokka run by default (skip_prodigal and skip_prokka both off), publishing Annotation/Prodigal/<assembler>/<sample>/<assembler>-<sample>_prodigal.faa.gz at assembly level and Annotation/Prokka/<assembler>/<bin>/<...>.faa per bin - both extensions proteinfamilies accepts. One validation-table row covers metapep and proteinfamilies together; drawn here as two edges sharing that status.",
       "caveat": "mag's assembly-level Prodigal file is the same tool, scope and extension as metatdenovo's, so this edge is directly comparable with the executed metatdenovo -> proteinfamilies route."
     },
     {
       "id": "mag__proteinfamilies", "rowKey": "mag__proteins", "from": "mag", "to": "proteinfamilies",
       "source": "table", "kind": "artifact",
-      "repoStatus": "CONVERSION REQUIRED - samplesheet only, no ORF-calling step",
+      "repoStatus": "CONVERSION REQUIRED - no ORF-calling step; for proteinfamilies covered by scripts/converters/mag_to_proteinfamilies.py, which pools the per-sample Prodigal FASTAs into one row with sample-prefixed headers (MEGAHIT contig IDs repeat across assemblies); exercised 2026-09-21 (run 06), 2,513,059 proteins accepted by proteinfamilies 2.5.0, 5,864 families out. metapep not yet checked",
       "statusClass": "conversion-required",
-      "routable": false, "unit": "proteins", "carries": [],
-      "note": "Prodigal and Prokka run by default (skip_prodigal and skip_prokka both off), publishing Annotation/Prodigal/<assembler>-<sample>.faa.gz at assembly level and Annotation/Prokka/<assembler>/<bin>/<...>.faa per bin - both extensions proteinfamilies accepts. One validation-table row covers metapep and proteinfamilies together; drawn here as two edges sharing that status.",
+      "executed": true,
+      "routable": true, "unit": "proteins", "carries": [], "dotCount": 1,
+      "note": "Prodigal and Prokka run by default (skip_prodigal and skip_prokka both off), publishing Annotation/Prodigal/<assembler>/<sample>/<assembler>-<sample>_prodigal.faa.gz at assembly level and Annotation/Prokka/<assembler>/<bin>/<...>.faa per bin - both extensions proteinfamilies accepts. One validation-table row covers metapep and proteinfamilies together; drawn here as two edges sharing that status.",
       "caveat": "mag's assembly-level Prodigal file is the same tool, scope and extension as metatdenovo's, so this edge is directly comparable with the executed metatdenovo -> proteinfamilies route."
     },
     {
@@ -410,7 +412,7 @@
     {
       "id": "proteinfamilies__proteinannotator", "from": "proteinfamilies", "to": "proteinannotator",
       "source": "table", "kind": "artifact",
-      "repoStatus": "NATIVE - emitted 2026-08-11, not yet exercised", "statusClass": "validated",
+      "repoStatus": "NATIVE - emitted 2026-08-11, not yet exercised; prepared as run 07 on run 03's sheet", "statusClass": "validated",
       "routable": false, "unit": "representative proteins", "carries": [],
       "note": "--skip_proteinannotator_samplesheet false (default true) publishes proteinannotator/samplesheet.csv - the same id,fasta sheet, built from the same channel as the proteinfold one. Emitted by run 03 on 2026-08-11; no proteinannotator run has read it yet.",
       "caveat": "proteinannotator 1.1.0 takes id + .fa/.fasta/.faa/.fas (optionally .gz), so this sheet needs nothing done to it. It is the cheaper of the two emitted handoffs to exercise - proteinfold needs --split_fasta and GPU-scale resources, this does not."
@@ -446,7 +448,7 @@
       "summary": "Linnaeus Microbial Observatory, Baltic Sea brackish water at 2 m. Three collection dates carrying all three omics layers, 12 runs, 34.5 GB.",
       "notice": "Working recommendation only - the SIG dataset decision is still open, and the LMO sample-count discrepancy in DATASETS.md is unresolved.",
       "routingBasis": "Illustrative: items are routed by library_strategy alone. That is a drawing rule, not evidence that a run is suitable for a given pipeline.",
-      "activeRoute": ["fetchngs__ampliseq", "fetchngs__taxprofiler", "fetchngs__mag", "fetchngs__metatdenovo", "fetchngs__detaxizer", "metatdenovo__proteinfamilies"],
+      "activeRoute": ["fetchngs__ampliseq", "fetchngs__taxprofiler", "fetchngs__mag", "fetchngs__metatdenovo", "fetchngs__detaxizer", "metatdenovo__proteinfamilies", "mag__proteinfamilies"],
       "runs": [
         { "acc": "ERR9715801",  "strategy": "AMPLICON", "layer": "amplicon",          "collectionDate": "2016-03-15", "study": "PRJEB52780", "instrument": "MiSeq",       "fraction": "0.2", "fractionSource": "selection-criteria", "gb": 0.42 },
         { "acc": "ERR12258632", "strategy": "RNA-Seq",  "layer": "metatranscriptome", "collectionDate": "2016-03-15", "study": "PRJEB69280", "instrument": "HiSeq 2500",  "fraction": "0.2", "fractionSource": "selection-criteria", "gb": 2.22 },
@@ -471,8 +473,8 @@
           "note": "Run 2026-08-11 on the 6 metatranscriptome libraries. Out is 172 phiX read pairs removed from 161,043,840 - 0.000107%, one pair in 936,301. This reverses part of the 2026-08-10 decision to skip detaxizer: that decision was about filtering LMO against Homo sapiens, which is still declined - no host, and dropping metatranscriptome reads on human k-mer hits ahead of a co-assembly risks taking conserved and low-complexity microbial reads with them. What changed is the contaminant. This run filtered phiX (NC_001422.1, 5,386 bp) via --classification_bbduk, so no 60 GB kraken2 database was needed - KRAKEN2PREPARATION never runs with kraken2 classification off. The fraction alone does not justify re-running metatdenovo and proteinfamilies, but 172 pairs is an upper bound of 8x coverage of the phiX genome pooled across the co-assembly, so that was checked directly: seqkit locate of phiX174 against run 02's existing megahit contigs, at up to 5 mismatches, returns no hits. phiX never reached assembly depth, so runs 02 and 03 stand as executed and neither is re-run. The run's larger result is upstream: its natively generated taxprofiler sheet validates, its mag sheet does not."
         },
         "mag": {
-          "state": "configured", "in": 3, "out": null, "version": "5.5.0",
-          "note": "Prepared as run 05 on 2026-08-11, not yet executed. Three WGS libraries, one per collection date, all in binning group 0 so every assembly gets the differential coverage of the whole series. Assembled per sample with megahit rather than co-assembled, because binning depends on between-sample coverage contrast. MetaBAT2 only, not mag's six default binners, and GTDB-Tk skipped because its database is over 100 GB and this run exists to produce contigs, bins and the protein FASTA that feeds proteinfamilies. detaxizer is deliberately not upstream: mag removes phiX itself by default, so run 04 in front of it would duplicate the step."
+          "state": "run", "in": 3, "out": 160, "version": "5.5.0",
+          "note": "Run 2026-09-18 on the three WGS libraries, one per collection date, from a sheet built by scripts/converters/fetchngs_to_reads_samplesheet.py --target mag - the first time that conversion has been consumed. Three per-sample megahit assemblies (153 to 368 Mb, N50 about 1 kb), all in binning group 0 so each gets the whole series' differential coverage. Out is 160 MetaBAT2 bins (27, 63 and 70 per date), scored by CheckM2 (re-run with -resume): 24 near-complete (at least 90% complete, under 5% contaminated), 49 medium-quality (at least 50%, under 10%), 75 low-quality and 12 at least 10% contaminated. Near-complete rather than MIMAG high-quality, because rRNA and tRNA genes were not checked. mag's BUSCO columns are not used: BUSCO 6.1.0 in batch mode mixed odb10 and odb12.2 lineages within one run and misaligned bin_summary.tsv - filed 2026-09-18 as nf-core/mag#1115. Prodigal predicted 2,513,059 proteins, 12.7 times run 02's 198,252, though three separate assemblies count a shared genome up to three times. mag's own phiX removal found 1 read pair in 111.7 million, which confirms detaxizer is not needed upstream. GTDB-Tk skipped, MetaBAT2 the only binner."
         },
         "differentialabundance": {
           "state": "unavailable", "in": null, "out": null, "version": null,
@@ -484,15 +486,15 @@
         },
         "seqsubmit": {
           "state": "pending", "in": null, "out": null, "version": null,
-          "note": "Not run yet, and downstream of mag, which the pilot has not run either. Submission is meaningful even though the LMO reads came from ENA: the MAGs are new derived data and get their own accessions, referencing the source run accessions run 01 already collected. Needs ENA_WEBIN credentials as Nextflow secrets before it can be exercised."
+          "note": "Not run yet. mag, upstream of it, ran 2026-09-18, but its 160 bins have no usable quality estimates yet and likely include the same genome more than once across dates. Submission is meaningful even though the LMO reads came from ENA: the MAGs are new derived data and get their own accessions, referencing the source run accessions run 01 already collected. Needs ENA_WEBIN credentials as Nextflow secrets before it can be exercised."
         },
         "metatdenovo": {
           "state": "run", "in": 6, "out": 198252, "version": "1.4.0",
           "note": "Run 2026-08-11. The six RNA-Seq libraries were converted to a sample,fastq_1,fastq_2 sheet by scripts/converters/fetchngs_to_reads_samplesheet.py, which renames samples off collection_date rather than the ERX accession fetchngs supplies. Single megahit co-assembly with prodigal ORF calling, specifically so a proteinfamilies-compatible .faa.gz is produced; eggnog, kofamscan and eukulele skipped. Out is 198,252 predicted proteins in one FASTA, not a sample count."
         },
         "proteinfamilies": {
-          "state": "run", "in": 1, "out": 405, "version": "2.5.0",
-          "note": "Run 2026-08-11 on the 198,252 proteins from metatdenovo, producing 405 protein families. One input row, because metatdenovo co-assembles into a single protein FASTA. Out is a family count, not a sample count, and it is not comparable to the 198,252 input proteins until min_seq_length 30 and cluster_size_threshold 25 are accounted for. The run also set the only two non-default parameters in the pilot - skip_proteinfold_samplesheet and skip_proteinannotator_samplesheet, both false - so it published ready-made samplesheets for both successors."
+          "state": "run", "in": 2, "out": "405 / 5,864", "version": "2.5.0",
+          "note": "Run twice, with identical parameters. Run 03 (2026-08-11) clustered the 198,252 metatranscriptome proteins from metatdenovo into 405 protein families. Run 06 (2026-09-21) clustered the 2,513,059 metagenome proteins from mag, pooled from three per-sample Prodigal files by scripts/converters/mag_to_proteinfamilies.py, into 5,864 families. In is two runs of one row each; out is the two family counts, which are separate family sets and do not add up. Both inputs are single rows: metatdenovo co-assembles into one protein FASTA, and the mag proteins were pooled to match. Neither count is comparable to its input proteins until min_seq_length 30 and cluster_size_threshold 25 are accounted for, and the metagenome count is inflated by genomes assembled on more than one date. Both runs set the only two non-default parameters in the pilot - skip_proteinfold_samplesheet and skip_proteinannotator_samplesheet, both false - so both published ready-made samplesheets for the two successors."
         },
         "proteinfold": {
           "state": "pending", "in": 1, "out": null, "version": null,
@@ -500,7 +502,7 @@
         },
         "proteinannotator": {
           "state": "pending", "in": 1, "out": null, "version": null,
-          "note": "Not run. Its input samplesheet already exists: run 03 emitted proteinannotator/samplesheet.csv on 2026-08-11, the same single row of family representatives. proteinannotator 1.1.0 accepts it unmodified, which makes it the cheapest remaining test of nf-core samplesheet standardisation available to this project."
+          "note": "Not run yet; prepared as run 07, which feeds it run 03's sheet as emitted. Its input samplesheet already exists: run 03 emitted proteinannotator/samplesheet.csv on 2026-08-11, the same single row of family representatives. proteinannotator 1.1.0 accepts it unmodified, which makes it the cheapest remaining test of nf-core samplesheet standardisation available to this project."
         }
       }
     }
@@ -515,6 +517,7 @@
     { "label": "MetaGT SnailGut", "gate": "fail", "reason": "No amplicon layer", "accessions": "SRR8397925, SRR8416101" },
     { "label": "Heintz-Buschart T1DM", "gate": "fail", "reason": "No amplicon layer, despite being the most host-relevant candidate", "accessions": "PRJNA289586 + PRIDE TBC" },
     { "label": "Granata oral cancer", "gate": "fail", "reason": "No shotgun MG or MT", "accessions": "PRJNA700849 + PXD022859" },
-    { "label": "Rausch et al. 2019", "gate": "fail", "reason": "16S + MG only; no MT", "accessions": "PMID 31521200" }
+    { "label": "Rausch et al. 2019", "gate": "fail", "reason": "16S + MG only; no MT", "accessions": "PMID 31521200" },
+    { "label": "Geodia parva sponge", "gate": "fail", "reason": "Host genome project: holobiont WGS + 179 symbiont bins + polyA (host) RNA-Seq; no amplicon, 2 specimens", "accessions": "PRJEB65620" }
   ]
 }

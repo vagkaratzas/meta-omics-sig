@@ -1,0 +1,25 @@
+# nf-core/proteinannotator 1.1.0 — LMO pilot, annotating run 03's metatranscriptome family representatives
+#
+# No samplesheet to build. `input` is the sheet proteinfamilies itself published in run 03:
+#
+#   <run03-outdir>/proteinannotator/samplesheet.csv    id,fasta -> LMO_reps.faa (405 sequences)
+#
+# That is the point of this run: the first time a samplesheet emitted by one nf-core pipeline
+# is consumed by its successor with no conversion step at all.
+#
+# Modern nf-core template. Requires Nextflow >= 25.10.4; no NXF_SYNTAX_PARSER needed.
+
+input: "/path/to/results/03_proteinfamilies/proteinannotator/samplesheet.csv"
+outdir: "/path/to/results/07_proteinannotator"
+
+# Everything else at default, deliberately — this run tests the handoff, not annotation tuning:
+#   Pfam, FunFam, NMPFams, metagRoot   all on; each database downloaded on first use
+#   hmmsearch_evalue_cutoff            0.001
+#   InterProScan                       on; interproscan_applications Hamap,PANTHER,PIRSF,TIGRFAM,sfld
+#                                      database 5.72-103.0 downloaded (~5.5 GB, can take hours)
+#   s4pred                             on; ss2 output
+#   min_seq_length / max_seq_length    30 / 5000
+#
+# Downloaded databases are published under <outdir>/downloaded_dbs/. Keep that directory: a
+# later run over run 06's 5,864 representatives can reuse it via pfam_db, funfam_db,
+# nmpfams_db, metagroot_db and interproscan_db instead of downloading again.

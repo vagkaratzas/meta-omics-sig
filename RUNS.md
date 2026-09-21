@@ -24,6 +24,26 @@ site-specific and go stale; the Seqera link preserves the full execution record.
 | 02 | nf-core/metatdenovo | 1.4.0 | 2026-08-11 | 6 MT libraries → one co-assembly + protein FASTA | **SUCCESS** — 198,252 proteins | [Seqera run](https://cloud.seqera.io/user/vangelis/watch/dR2OkpNzn3QwP) |
 | 03 | nf-core/proteinfamilies | 2.5.0 | 2026-08-11 | protein families from the run-02 ORFs | **SUCCESS** — 405 families | [Seqera run](https://cloud.seqera.io/user/vangelis/watch/H1MTwbD6IUKz3) |
 | 04 | nf-core/detaxizer | 1.3.0 | 2026-08-11 | phiX removal from the 6 MT libraries | **SUCCESS** — 172 phiX pairs in 161 M | [Seqera run](https://cloud.seqera.io/user/vangelis/watch/5qFu9n8YSLmCxP) |
+| 05 | nf-core/mag | 5.5.0 | 2026-09-18 | 3 MG libraries → 3 assemblies, MetaBAT2 bins, protein FASTA | **SUCCESS** — 160 bins (CheckM2: 24 near-complete, 49 medium-quality), 2,513,059 proteins; BUSCO columns unreliable ([mag#1115](https://github.com/nf-core/mag/issues/1115)) | [Seqera run](https://cloud.seqera.io/user/vangelis/watch/2wiu8ZycJHfAVC) · [CheckM2 re-run](https://cloud.seqera.io/user/vangelis/watch/2Nloa7fgPEWnlX) |
+| 06 | nf-core/proteinfamilies | 2.5.0 | 2026-09-21 | protein families from the run-05 ORFs, pooled into one row | **SUCCESS** — 5,864 families | [Seqera run](https://cloud.seqera.io/user/vangelis/watch/4VgXDoIUSqHCpZ) |
+
+
+## Upstream issues filed from this project
+
+Every bug report or feature request this project has sent upstream, with the run that
+surfaced it. Details are in the run sections below.
+
+| Issue | Filed | Found in | Status |
+|-------|-------|----------|--------|
+| [nf-core/fetchngs#373](https://github.com/nf-core/fetchngs/issues/373) — `wget` container has no `/etc/resolv.conf` | 2026-08-10 | run 01 | closed, shipped in 1.13.0 |
+| [nf-core/fetchngs#374](https://github.com/nf-core/fetchngs/issues/374) — `--ena_metadata_fields` interpolated unquoted | 2026-08-10 | run 01 | closed, shipped in 1.13.0 |
+| [nf-core/fetchngs#375](https://github.com/nf-core/fetchngs/issues/375) — `multiqc_mappings_config.py` stray quote, mangles commas | 2026-08-10 | run 01 | closed, shipped in 1.13.0 |
+| [nf-core/fetchngs#376](https://github.com/nf-core/fetchngs/issues/376) — `--nf_core_pipeline` lacks ampliseq, mag, metatdenovo | 2026-08-10 | run 01 | closed, shipped in 1.13.0 |
+| [nf-core/detaxizer#99](https://github.com/nf-core/detaxizer/issues/99) — `filter.nf` `$(COUNTER-1)` should be `$((COUNTER-1))` | 2026-08-11 | run 04 | open |
+| [nf-core/detaxizer#100](https://github.com/nf-core/detaxizer/issues/100) — generated mag samplesheet rejected by mag | 2026-08-11 | run 04 | open |
+| [nf-core/fetchngs#401](https://github.com/nf-core/fetchngs/issues/401) — 1.13.0 `--nf_core_pipeline mag` sheet rejected by mag | 2026-09-15 | 1.13.0 schema check | open |
+| [nf-core/mag#1115](https://github.com/nf-core/mag/issues/1115) — BUSCO batch mode leaks lineage state between bins, corrupting `bin_summary.tsv` | 2026-09-18 | run 05 | open |
+| [nf-core/proteinfamilies#191](https://github.com/nf-core/proteinfamilies/issues/191) — `MERGE_SEEDS` stages every seed MSA of the sample per task; head JVM `OutOfMemoryError` at scale | 2026-09-21 | run 06 | open |
 
 ---
 
@@ -377,6 +397,276 @@ metagenome layer. Reaching those two stations properly means a second detaxizer 
 
 ---
 
+## 05 — mag, LMO metagenome assembly and binning
+
+**Status: SUCCESS, 2026-09-18.** Zero failed or retried tasks.
+
+**Provenance:** <https://cloud.seqera.io/user/vangelis/watch/2wiu8ZycJHfAVC>
+
+| | |
+|---|---|
+| Pipeline | `nf-core/mag` `-r 5.5.0` (`v5.5.0-g56abab5`) |
+| Nextflow | 26.04.6 build 12646 |
+| Input | the 3 WGS libraries from run 01 — ERR13967264, ERR13967258, ERR13967244, one per date |
+| Samplesheet | generated on-cluster by `scripts/converters/fetchngs_to_reads_samplesheet.py --target mag --group 0` |
+| Params | [`runs/05_mag/params.yml`](runs/05_mag/params.yml) — MEGAHIT per sample, MetaBAT2 only, BUSCO on, GTDB-Tk off; CheckM2 added afterwards with `-resume` |
+| Date | 2026-09-18 |
+| Outcome | Success — 3 assemblies, **160 MetaBAT2 bins**, **2,513,059 predicted proteins**, 1 phiX pair in 111.7 M |
+
+This run is also the first time the `fetchngs → mag` conversion has been consumed: mag
+5.5.0 accepted the `--target mag` sheet and ran to completion.
+
+### Per-sample results
+
+Read pairs are counted after fastp, as they enter phiX removal. Contig counts and lengths
+are QUAST's headline rows. Proteins are `>` headers in the Prodigal `.faa.gz`.
+
+| Sample | QC'd pairs | phiX pairs | Contigs (all) | Contigs (QUAST) | Assembly length | N50 | Largest contig | Proteins | Bins | Binned length |
+|---|---|---|---|---|---|---|---|---|---|---|
+| LMO_20160315_MG_a | 40,891,009 | 1 | 416,113 | 152,971 | 153.4 Mb | 969 | 235,899 | 507,173 | 27 | 46.2 Mb |
+| LMO_20160803_MG_a | 40,446,582 | 0 | 795,419 | 323,869 | 368.1 Mb | 1,222 | 240,064 | 1,074,480 | 63 | 103.9 Mb |
+| LMO_20171031_MG_a | 30,382,657 | 0 | 663,225 | 261,270 | 298.3 Mb | 1,202 | 240,519 | 931,406 | 70 | 84.1 Mb |
+| **Total** | **111,720,248** | **1** | | | | | | **2,513,059** | **160** | **234.2 Mb** |
+
+N50 near 1 kb is what you'd expect from short-read assembly of a diverse brackish community.
+The 2016-03-15 sample has the most reads but the smallest assembly and the fewest bins,
+so binning yield does not simply track read depth.
+
+### phiX: one read pair, which confirms detaxizer is not needed upstream
+
+mag's built-in bowtie2 phiX removal matched **1 concordant pair out of 111,720,248**, all
+in the 2016-03-15 library. The metatranscriptome libraries (run 04) had 1 phiX pair in
+936,301, so the metagenome rate is about two orders of magnitude lower. The decision to
+keep detaxizer out of this run is therefore backed by a measured number, not an
+assumption.
+
+### Proteins: 12.7× run 02, and not directly comparable
+
+2,513,059 metagenome proteins against run 02's 198,252 metatranscriptome proteins. The
+ratio is not a biological result on its own:
+
+- These are **three separate assemblies**. A genome present on all three dates contributes
+  its ORFs up to three times. Run 02 was one co-assembly, so each gene was counted once.
+- Metagenome assembly recovers whole genomes. Metatranscriptome assembly only recovers
+  what was being transcribed.
+
+**Decision (2026-09-18): the three FASTAs go to proteinfamilies as one concatenated row.**
+That pools the dates the same way run 02's co-assembly did. The redundant copies are
+removed by clustering. Expect proteinfamilies to run on roughly 12× run 03's input.
+
+### BUSCO columns in `bin_summary.tsv` are unreliable
+
+Bin counts, bin lengths and depths are sound. The BUSCO fields are not, for three
+separate reasons:
+
+1. **Mixed database generations in one run.** BUSCO 6.1.0 auto-lineage chose odb12.2
+   datasets for 23 of 27 bins on 2016-03-15, but odb10 for 61 of 63 on 2016-08-03 and all
+   70 on 2017-10-31. The two generations use different marker sets, so completeness
+   can't be compared across dates.
+2. **Wrong domain labels.** 82 bins have `Dataset = eukaryota_*`. In the odb10 rows, which
+   are column-aligned, their `n_markers` is 124 (bacteria_odb10) or 194 (archaea_odb10),
+   never 255 (eukaryota_odb10), and `Complete` equals a prokaryotic domain score. The
+   numbers are prokaryotic; only the label is wrong.
+3. **Shifted columns in the odb12.2 rows.** Values fall under the wrong headers: the
+   translation table value `11` sits under `Internal stop codon percent`, and the domain
+   score strings sit under `Translation table`. mag concatenates the per-sample
+   `batch_summary.txt` files by header name (`qsv cat rowskey`). That suggests the
+   batch files themselves mix odb10- and odb12-shaped rows under a single header.
+
+Two bins (2016-03-15 `.4` and `.6`) have no BUSCO result at all, and 13 bins of
+0.2–0.4 Mb were placed on `varicellovirus_odb10`.
+
+**Cause, confirmed 2026-09-18: state leaking between genomes in BUSCO 6.1.0's batch mode.**
+mag runs one `busco --auto-lineage` call per sample over the whole bin set (batch mode).
+Both the 6.1.0 source and the per-sample `busco.log` processing order confirm it:
+
+- `BaseConfig.load_dataset_config` (`BuscoConfig.py`) writes the chosen dataset's ODB
+  generation back into the **shared** batch config. Virus lineages exist only as odb10.
+  `BatchRunner.run` resets `datasets_version` only when it is empty, and
+  `AutoSelectLineage.__init__` reads it for every later bin. The log shows this directly.
+  On 2016-08-03 the first two bins ran odb12.2. The third fell back to
+  `alphabaculovirus_odb10` and finished on `chordopoxvirinae_odb10`, and all 60 bins after
+  it ran odb10. On 2017-10-31 the very first bin did the same, so all 70 ran odb10. On
+  2016-03-15 two bins hit the virus fallback but both finished on `bacteria_odb12.2`, so
+  the batch never switched.
+- **Domain labels:** for 82 bins, `busco.log` reports `bacteria_*` (78) or `archaea_*` (4)
+  as selected, but the summary row says `eukaryota_*`. No row anywhere carries a
+  `bacteria_*` or `archaea_*` label.
+- `BatchRunner.write_batch_summary` builds **one** header. The `Scores_*` names come from
+  the **last** genome's root datasets, and `Translation table` / `Internal stop codon percent`
+  are added if **any** genome needed them. `format_run_summary` writes each row in that
+  row's own shape. The three per-sample headers really do differ in both respects, and
+  rows of mixed shape under one header produce the column shift.
+
+The root cause is in BUSCO, but mag's defaults expose it and mag publishes the result as
+its bin QC. Filed 2026-09-18 as [nf-core/mag#1115](https://github.com/nf-core/mag/issues/1115),
+proposing either one BUSCO task per bin or a consistency check before publishing. The same
+class of bug is already open upstream as [ezlab/busco#841](https://gitlab.com/ezlab/busco/-/issues/841).
+This project has not filed it with BUSCO.
+
+**BUSCO numbers from this run do not go into the paper.** Bin quality comes from CheckM2
+instead (next section): it is the usual tool for MIMAG reporting, and the one seqsubmit
+uses anyway.
+
+### Bin quality: CheckM2
+
+**Provenance (CheckM2 re-run):** <https://cloud.seqera.io/user/vangelis/watch/2Nloa7fgPEWnlX>
+
+Re-run 2026-09-18 with `-resume` and `run_checkm2: true` (CheckM2 database: Zenodo record
+14897628, the mag 5.5.0 default, saved with `save_checkm2_data`). The re-run reproduced
+the same 160 bins, split 27 / 63 / 70 by date, so the bins are unchanged. mag merges CheckM2
+into `bin_summary.tsv` by bin name and exits on any mismatch, so these columns cannot shift
+the way the BUSCO ones did. All 160 bins have a CheckM2 result.
+
+Tiers use the MIMAG completeness/contamination thresholds (Bowers et al. 2017,
+[doi:10.1038/nbt.3893](https://doi.org/10.1038/nbt.3893), PMID 28787424):
+
+| Sample | Bins | ≥90% compl., <5% contam. | ≥50%, <10% | <50%, <10% | ≥10% contam. | Median compl. | Median contam. |
+|---|---|---|---|---|---|---|---|
+| LMO_20160315_MG_a | 27 | 4 | 7 | 11 | 5 | 60.2 | 0.45 |
+| LMO_20160803_MG_a | 63 | 10 | 20 | 29 | 4 | 55.3 | 1.73 |
+| LMO_20171031_MG_a | 70 | 10 | 22 | 35 | 3 | 46.6 | 1.24 |
+| **Total** | **160** | **24** | **49** | **75** | **12** | 54.4 | 1.29 |
+
+How to report these:
+
+- **Call the 24 "near-complete", not "MIMAG high-quality".** MIMAG high quality also requires
+  the 23S, 16S and 5S rRNA genes and at least 18 tRNAs, and this run did not check them.
+  The 49 in the ≥50% / <10% tier do meet MIMAG medium quality as defined.
+- **73 of 160 bins (46%) reach at least medium quality.** The other 87 are either less than
+  50% complete or at least 10% contaminated.
+- **CheckM2 used its general model for 62 bins (39%)** and its specific model for 98.
+  CheckM2 switches to the general model when a genome is far from its training genomes, so
+  a large share of these bins come from lineages poorly represented in reference databases.
+  That is plausible for a Baltic brackish-water community, but GTDB-Tk was skipped, so
+  there is no taxonomy to confirm it.
+- The 2016-03-15 sample gives the fewest bins but the highest median completeness. As
+  with the bin counts, quality does not simply follow read depth.
+
+---
+
+## 06 — proteinfamilies, families from the metagenome ORFs
+
+**Status: SUCCESS, 2026-09-21.**
+
+**Provenance:** <https://cloud.seqera.io/user/vangelis/watch/4VgXDoIUSqHCpZ>
+
+| | |
+|---|---|
+| Pipeline | `nf-core/proteinfamilies` `-r 2.5.0` (`v2.5.0-gf8c0b18`) |
+| Nextflow | 26.04.4 |
+| Input | one row, 2,513,059 proteins — run 05's three per-sample Prodigal FASTAs, pooled with sample-prefixed headers |
+| Samplesheet | generated on-cluster by `scripts/converters/mag_to_proteinfamilies.py --expect 3` |
+| Params | [`runs/06_proteinfamilies/params.yml`](runs/06_proteinfamilies/params.yml) — identical to run 03 |
+| Date | 2026-09-21 |
+| Outcome | Success — **5,864 protein families**, plus downstream samplesheets for proteinfold and proteinannotator |
+
+This is the first time `mag → proteinfamilies` has been consumed: proteinfamilies 2.5.0
+accepted the pooled one-row sheet unmodified and ran to completion.
+
+### From proteins to families
+
+Numbers from the run's MultiQC report (SeqFu before/after preprocessing, the MMseqs
+cluster-size distribution, and the family metadata table):
+
+| Stage | Count |
+|---|---|
+| Proteins in | 2,513,059 (mean 139.3 aa, longest 7,403) |
+| After SeqKit preprocessing (length 30–5,000 aa, gap trimming, duplicate removal) | 2,415,819 — 97,240 removed (3.9%) |
+| MMseqs initial clusters | 1,030,275, of which 782,124 (76%) are singletons |
+| Clusters of ≥25 sequences, which seed a family (`cluster_size_threshold 25`) | 10,749, holding 614,725 sequences (25% of the filtered input) |
+| Families after family building and redundancy removal | **5,864** |
+
+### Against run 03: not yet a biological result
+
+Run 03 gave 405 families from 198,252 metatranscriptome proteins. Run 06 has 12.7× the
+input proteins and gives 14.5× the families. Method is held constant (Prodigal at assembly
+level, proteinfamilies 2.5.0, identical parameters), but two things still differ besides
+the omics layer:
+
+- **Redundancy.** mag assembled each date separately, so a genome present on several dates
+  contributes near-identical copies of its proteins. That inflates cluster sizes, and more
+  clusters clear the size threshold than a co-assembly would allow. The family count is
+  biased upward by an unknown amount.
+- **Separate family sets.** The 405 and the 5,864 were built independently. Counting them
+  says nothing about how many families the two layers share. That needs the families
+  compared directly. That was done on 2026-09-21; the results are in the next section.
+
+Both runs emitted `proteinfold/` and `proteinannotator/` samplesheets. None has been
+consumed yet.
+
+### Metatranscriptome families against metagenome families
+
+Run 2026-09-21 with `scripts/analysis/hmmsearch_families.sh`, which searched run 03's 405
+family HMMs against run 06's 5,864 family representatives. `summarise_family_hits.py` then
+filtered the hits at its defaults: a pair counts only if the full-sequence E-value is
+≤ 1e-5 and at least 50% of both the HMM and the target is covered.
+
+| | Count |
+|---|---|
+| Metatranscriptome families with at least one metagenome match | **248 of 405 (61.2%)** |
+| Metagenome families matched by a metatranscriptome family | 296 of 5,864 (5.0%) |
+| Matching pairs | 315 |
+
+- **Mostly one-to-one.** 190 of the 248 matched metatranscriptome families hit a single
+  metagenome family, 50 hit two, and 8 hit three or four. Going the other way, 18 metagenome
+  representatives are hit by more than one metatranscriptome family. So the two runs split
+  some families at different granularity, but not many.
+- **Matches are strong.** The median score is 141 bits. 199 of the 248 best hits have an
+  E-value ≤ 1e-30, and 109 cover at least 80% of both the HMM and the target.
+- **Every date contributes.** The matched representatives come from 2016-03-15 (57),
+  2016-08-03 (131) and 2017-10-31 (108), which is roughly in proportion to each date's
+  protein count. Where a representative comes from depends on how the family was built, so
+  this does not measure which dates expressed what.
+- **Target coverage is measured on a trimmed sequence.** 291 of the 296 representatives
+  carry a `/start-end` suffix. They are the aligned region of the protein, not the whole
+  ORF, so `target_cov` overstates how much of the full protein is covered. `hmm_cov` is not
+  affected.
+
+How to read the two percentages:
+
+- **5.0% of metagenome families matching is expected.** A metatranscriptome holds only
+  what was being expressed, and the metagenome family count is inflated by genomes that
+  were assembled on more than one date.
+- **The 157 unmatched metatranscriptome families (39%) are the open question.** An
+  unmatched family can mean either of two things. The genes may really be missing from the
+  metagenome assemblies, as with eukaryotic or viral transcripts that short-read metagenome
+  assembly misses. Or the genes are present in the 2.5 M metagenome proteins but never
+  formed a family, for example a cluster below `cluster_size_threshold 25`, or one split
+  differently. This search cannot tell the two apart, because it only saw the metagenome
+  representatives.
+
+### Head JVM out of heap in `MERGE_SEEDS` — needed a larger heap and `-resume`
+
+The first launch failed with 631 of 675 `MERGE_SEEDS` tasks done. The Nextflow head JVM,
+not a task, ran out of memory while submitting the rest:
+
+```
+error [java.lang.OutOfMemoryError]: Java heap space
+  ...
+  at nextflow.executor.SimpleFileCopyStrategy.getStageInputFilesScript(SimpleFileCopyStrategy.groovy:140)
+```
+
+`subworkflows/local/merge_families/main.nf` combines each pooled group with the sample's
+**whole** seed MSA collection, so every `MERGE_SEEDS` task stages all of the sample's seeds
+(thousands here), although it reads only its pool's handful. The head job writes one
+`ln -s` per staged file into each task's wrapper, so memory grows as tasks × seeds. Run 03,
+with 405 families, did not hit it.
+
+Worked around by relaunching with a larger head heap and `-resume`:
+
+```bash
+export NXF_OPTS="-Xms2g -Xmx16g"
+```
+
+The workaround changes resources only, not parameters, so the result stays comparable with
+run 03. Filed 2026-09-21 as
+[nf-core/proteinfamilies#191](https://github.com/nf-core/proteinfamilies/issues/191),
+proposing to filter the seed collection down to each pool's members before `MERGE_SEEDS`,
+with an nf-test that checks what each task stages.
+
+---
+
 ## Conversion scripts
 
 `scripts/converters/` holds the conversions the validation table calls for. Each has an
@@ -385,12 +675,14 @@ assert-based `--selftest` that runs with no arguments and no fixtures:
 | Script | Edge | Guards against |
 |--------|------|----------------|
 | `fetchngs_to_reads_samplesheet.py` | fetchngs → metatdenovo / ampliseq / viralmetagenome (`--target reads`), → detaxizer (`--target detaxizer`), → mag (`--target mag`) | stale `sample_alias` dates leaking into sample names; duplicate sample names silently merging samples. Sample names are identical across targets, which is what makes runs 02, 04 and 05 comparable. `--target mag` additionally refuses a long-read `instrument_platform` in `short_reads_platform`, and refuses an empty `group` — the column mag requires and [detaxizer#100](https://github.com/nf-core/detaxizer/issues/100) writes blank |
+| `mag_to_proteinfamilies.py` | mag → proteinfamilies | pooling per-sample Prodigal FASTAs with plain `cat`, which repeats IDs because MEGAHIT names contigs `k141_<n>` in every assembly — headers are prefixed `<sample>-<id>` instead; a missing assembly (`--expect`); an empty Prodigal file; an output name or sample name proteinfamilies would reject |
 | `metatdenovo_to_proteinfamilies.py` | metatdenovo → proteinfamilies | emitting a samplesheet proteinfamilies would reject (the transdecoder `.pep` case); more than one protein FASTA, which would mean the co-assembly assumption broke |
 | `detaxizer_to_reads_samplesheet.py` | detaxizer → metatdenovo / ampliseq / viralmetagenome | picking up `filter/removed/` instead of `filter/filtered/`; an orphaned mate reaching a co-assembler; silently writing an empty sheet when `--skip_filter` meant no filtered reads were ever published. Handles both `--filtering_tool` naming schemes |
 
 ```bash
 python3 scripts/converters/fetchngs_to_reads_samplesheet.py --selftest
 python3 scripts/converters/metatdenovo_to_proteinfamilies.py --selftest
+python3 scripts/converters/mag_to_proteinfamilies.py --selftest
 python3 scripts/converters/detaxizer_to_reads_samplesheet.py --selftest
 ```
 

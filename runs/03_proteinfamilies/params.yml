@@ -3,7 +3,7 @@
 # Build the samplesheet first (one row, absolute path, so not committed):
 #
 #   python3 scripts/converters/metatdenovo_to_proteinfamilies.py \
-#       <metatdenovo-outdir> runs/03_proteinfamilies/samplesheet.csv
+#       <metatdenovo-outdir> runs/03_proteinfamilies/samplesheet.csv --sample LMO
 #
 # Modern nf-core template. Requires Nextflow >= 26.04.0; no NXF_SYNTAX_PARSER needed.
 

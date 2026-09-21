@@ -123,6 +123,21 @@ Fix is `export NXF_SYNTAX_PARSER=v1`, not a pipeline downgrade or a `-r dev` swi
 this for any pipeline in the chain whose latest release predates ~2024; check with
 `curl -s https://raw.githubusercontent.com/nf-core/<pipeline>/<tag>/nextflow.config | grep -c check_max`.
 
+### Nextflow head JVM `OutOfMemoryError` on large runs
+When a task stages thousands of input files, the Nextflow head process (not the task)
+can run out of heap while writing the task wrappers. It writes one staging line per
+file per task. Symptom, in `.nextflow.log`, while tasks are being submitted:
+
+```
+error [java.lang.OutOfMemoryError]: Java heap space
+  at nextflow.executor.SimpleFileCopyStrategy.getStageInputFilesScript(...)
+```
+
+Workaround: `export NXF_OPTS="-Xms2g -Xmx16g"` and relaunch with `-resume`. Confirmed on
+codon (2026-09-21) for proteinfamilies 2.5.0 `MERGE_SEEDS` at ~2.4 M proteins (run 06). The
+real fix is upstream, staging fewer files per task:
+[nf-core/proteinfamilies#191](https://github.com/nf-core/proteinfamilies/issues/191).
+
 ---
 
 ## Pipeline Quick Reference
@@ -184,6 +199,7 @@ count toward selection.
 | Heintz-Buschart T1DM | PRJNA289586 (SRA) + PRIDE TBC | MG (WGS) + MT (RNA-Seq) + MP; no amplicon | Human gut, T1DM families |
 | Granata oral cancer | PRJNA700849 (SRA) + PXD022859 (PRIDE) | 16S amplicon + MP; no shotgun MG or MT | Human saliva, OSCC |
 | LMO (Linnaeus Microbial Observatory) | 16S: PRJEB52780, PRJEB52782, PRJEB52828 · MG: PRJEB82694 · MT rRNA-depleted: PRJEB69280 · MT polyA: PRJEB90631, PRJEB90671 | 16S amplicon + MG + MT — **passes the gate**; no MP | Environmental (Baltic Sea brackish water, 2 m) |
+| Geodia parva sponge (ASG) | PRJEB65620 umbrella (NCBI UID 1011691, not PRJNA1011691) · reads PRJEB65619 · MAGs PRJEB66616 | Holobiont WGS (HiFi+Illumina+Hi-C) + polyA RNA-Seq; no amplicon — **fails the gate** | Animal host (deep-sea sponge) |
 
 If asked to find more datasets, search SRA/ENA directly or use the PubMed tool — do
 not fabricate accessions. The iHMP (PRJNA398945) is a high-priority unverified candidate

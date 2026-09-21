@@ -3,6 +3,8 @@ output/
 
 # Generated on the cluster from the previous pipeline's output — contains absolute paths.
 runs/*/samplesheet.csv
+# Pooled protein FASTAs written by the converters next to the samplesheet — hundreds of MB.
+runs/*/*.faa.gz
 
 # Obsidian: per-user pane layout and caches. The shared vault config IS committed.
 .obsidian/workspace*

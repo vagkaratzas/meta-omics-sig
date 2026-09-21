@@ -22,8 +22,13 @@ protein stations hang off. Recorded as a row in
 ```bash
 python3 scripts/converters/metatdenovo_to_proteinfamilies.py \
     <metatdenovo-outdir> \
-    runs/03_proteinfamilies/samplesheet.csv
+    runs/03_proteinfamilies/samplesheet.csv \
+    --sample LMO
 ```
+
+`--sample LMO` is what run 03 used, so every output is named `LMO`: the HMM library is
+`hmm/library/LMO.lib.gz` and the representatives are `family_reps/LMO/LMO_reps.faa`. The
+script's default, `LMO_MT_coassembly`, was not used.
 
 proteinfamilies requires `sample,fasta`. Because metatdenovo co-assembles, there is
 exactly one protein FASTA and therefore exactly one row. The converter:

@@ -75,13 +75,13 @@ fetchngs (SRA accessions)
         ├─► createtaxdb (build custom reference DB) [UNTESTED]
         │     └─► taxprofiler (shotgun MG reads → taxonomy profiles) [UNTESTED]
         │           └─► differentialabundance [UNTESTED]
-        ├─► mag (shotgun MG reads → MAGs/contigs) [UNTESTED]
+        ├─► mag (shotgun MG reads → MAGs/contigs) [RUN 2026-09-18]
         │     ├─► seqsubmit (MAGs/bins → ENA accessions) [UNTESTED]
         │     ├─► magmap (MAGs → read abundance profiles) [UNTESTED]
         │     ├─► funcscan (contigs → functional annotation) [UNTESTED]
         │     ├─► phageannotator (contigs → phage annotation) [UNTESTED]
         │     ├─► phyloplace (contigs → phylogenetic placement) [UNTESTED]
-        │     └─► metapep / proteinfamilies (predicted proteins) [UNTESTED]
+        │     └─► metapep / proteinfamilies (predicted proteins) [proteinfamilies RUN 2026-09-21]
         ├─► viralmetagenome (shotgun MG reads → viral contigs) [UNTESTED]
         │     ├─► phageannotator (viral contigs + reads → phage annotation) [UNTESTED]
         │     └─► phyloplace (viral contigs → placement on a reference tree) [UNTESTED]
@@ -89,7 +89,7 @@ fetchngs (SRA accessions)
               ├─► seqsubmit (megahit contigs .fa.gz → ENA assembly accessions) [UNTESTED]
               └─► proteinfamilies (prodigal .faa.gz → protein families) [RUN 2026-08-11]
                     ├─► proteinfold (representatives → structures) [SHEET EMITTED, NOT CONSUMED]
-                    └─► proteinannotator (representatives → annotation) [SHEET EMITTED, NOT CONSUMED]
+                    └─► proteinannotator (representatives → annotation) [SHEET EMITTED, PREPARED AS RUN 07]
 ```
 
 > **Metro map, updated 2026-08-11.** Two branches that this document previously flagged as
@@ -374,7 +374,7 @@ upstream, or shipped as reusable converters.
 | **fetchngs** | **detaxizer** | generic `samplesheet.csv`; no `--nf_core_pipeline` support, and detaxizer's columns are `short_reads_fastq_1/2`, not `fastq_1/2` | **CONVERSION REQUIRED** — covered by `scripts/converters/fetchngs_to_reads_samplesheet.py --target detaxizer`; column rename only, sample names shared with the `--target reads` output; exercised 2026-08-11, detaxizer 1.3.0 ran to completion on the converted sheet |
 | **fetchngs** | **ampliseq** | `--nf_core_pipeline ampliseq` (added in 1.13.0) emits `sample,fastq_1,fastq_2,run`; ampliseq 2.18.0 accepts that spelling | **NATIVE from 1.13.0** — not yet exercised; run 01 used 1.12.0, which had no ampliseq option. Sample names are still ENA experiment accessions, so the `collection_date` rename is still needed |
 | fetchngs | taxprofiler | `--nf_core_pipeline taxprofiler` emits a purpose-built samplesheet | OPEN — flag exists, output not yet verified |
-| **fetchngs** | **mag** | `--nf_core_pipeline mag` (added in 1.13.0) emits a sheet mag cannot use: `group` written empty, read columns named `fastq_1`/`fastq_2` instead of `short_reads_1`/`short_reads_2`, platform hardcoded `ILLUMINA` | **NATIVE, REJECTED BY TARGET** — 1.13.0's emitter fails mag 5.5.0's schema on `group` alone; **CONVERSION REQUIRED** in practice, covered by `scripts/converters/fetchngs_to_reads_samplesheet.py --target mag`. Same defect as [detaxizer#100](https://github.com/nf-core/detaxizer/issues/100), second occurrence; filed 2026-09-15 as [fetchngs#401](https://github.com/nf-core/fetchngs/issues/401) |
+| **fetchngs** | **mag** | `--nf_core_pipeline mag` (added in 1.13.0) emits a sheet mag cannot use: `group` written empty, read columns named `fastq_1`/`fastq_2` instead of `short_reads_1`/`short_reads_2`, platform hardcoded `ILLUMINA` | **NATIVE, REJECTED BY TARGET** — 1.13.0's emitter fails mag 5.5.0's schema on `group` alone; **CONVERSION REQUIRED** in practice, covered by `scripts/converters/fetchngs_to_reads_samplesheet.py --target mag`. Same defect as [detaxizer#100](https://github.com/nf-core/detaxizer/issues/100), second occurrence; filed 2026-09-15 as [fetchngs#401](https://github.com/nf-core/fetchngs/issues/401). Exercised 2026-09-18 through the converter: mag 5.5.0 ran to completion on it (run 05) |
 | **fetchngs** | **metatdenovo** | `--nf_core_pipeline metatdenovo` (added in 1.13.0) emits `sample,fastq_1,fastq_2` plus the metadata columns, which is exactly metatdenovo 1.4.0's required set | **NATIVE from 1.13.0** — not yet exercised natively; exercised 2026-08-11 through `scripts/converters/fetchngs_to_reads_samplesheet.py` against 1.12.0, which had no metatdenovo option. Sample names are still ENA experiment accessions, so the `collection_date` rename is still needed |
 | **fetchngs** | **viralmetagenome** | generic `samplesheet.csv`; **no `--nf_core_pipeline` option**; wants `sample,fastq_1[,fastq_2]` — the same shape metatdenovo takes | **CONVERSION REQUIRED** — existing converter covers it unchanged |
 | detaxizer | ampliseq | filtered FASTQ → ampliseq samplesheet; **excluded** from `--generate_pipeline_samplesheets` | **CONVERSION REQUIRED** |
@@ -387,13 +387,13 @@ upstream, or shipped as reusable converters.
 | mag | phageannotator | contig FASTA → phageannotator input | OPEN |
 | mag | phyloplace | contig FASTA → phyloplace input | OPEN |
 | mag | magmap | MAG FASTA → magmap reference input | OPEN |
-| **mag** | **metapep / proteinfamilies** | Prodigal and Prokka run by default, publishing `Annotation/Prodigal/<assembler>-<sample>.faa.gz` (assembly level) and `Annotation/Prokka/.../<bin>.faa` (per bin) — both extensions proteinfamilies accepts | **CONVERSION REQUIRED** — samplesheet only, no ORF-calling step |
+| **mag** | **metapep / proteinfamilies** | Prodigal and Prokka run by default, publishing `Annotation/Prodigal/<assembler>/<sample>/<assembler>-<sample>_prodigal.faa.gz` (assembly level) and `Annotation/Prokka/.../<bin>.faa` (per bin) — both extensions proteinfamilies accepts | **CONVERSION REQUIRED** — no ORF-calling step; for proteinfamilies covered by `scripts/converters/mag_to_proteinfamilies.py`, which pools the per-sample Prodigal FASTAs into one row with sample-prefixed headers (MEGAHIT contig IDs repeat across assemblies); exercised 2026-09-21 (run 06), 2,513,059 proteins accepted by proteinfamilies 2.5.0, 5,864 families out. metapep not yet checked |
 | **metatdenovo** | **proteinfamilies** | `--orf_caller prodigal` publishes `prodigal/<assembly>.faa.gz`, an extension proteinfamilies accepts | **CONVERSION REQUIRED** — one-row samplesheet, no reformatting; exercised 2026-08-11, 198,252 proteins accepted by proteinfamilies 2.5.0, 405 families out |
 | **metatdenovo** | **seqsubmit** | megahit contigs `.fa.gz` → `--mode metagenomic_assemblies` (`schema_input_assembly.json`); gzipped FASTA transfers unchanged, and the row needs only `id`, `run_accession`, `assembler`, `assembler_version` | **CONVERSION REQUIRED** — metadata, and `assembly_uploader` hardcodes the ENA assembly type as `primary metagenome` |
 | **viralmetagenome** | **phageannotator** | viral contig FASTA → input, but the sheet also wants `group` and `fastq_1` | **CONVERSION REQUIRED** — two-source join, and `.combined.fa` is not gzipped |
 | **viralmetagenome** | **phyloplace** | viral contig FASTA → `queryseqfile` | **CONVERSION REQUIRED** — `refseqfile`, `refphylogeny`, `model` are external per-row inputs |
 | **proteinfamilies** | **proteinfold** | `--skip_proteinfold_samplesheet false` (default `true`) publishes `proteinfold/samplesheet.csv` — `id,fasta`, pointing at the family representatives `<samplename>_reps.faa` | **NATIVE** — emitted 2026-08-11, not yet exercised; native against proteinfold 2.0.0 only, 1.1.1 wants a `sequence` column and rejects `.faa` |
-| **proteinfamilies** | **proteinannotator** | `--skip_proteinannotator_samplesheet false` (default `true`) publishes `proteinannotator/samplesheet.csv` — the same `id,fasta` sheet from the same channel | **NATIVE** — emitted 2026-08-11, not yet exercised; proteinannotator 1.1.0 accepts `id` + `.faa` unmodified |
+| **proteinfamilies** | **proteinannotator** | `--skip_proteinannotator_samplesheet false` (default `true`) publishes `proteinannotator/samplesheet.csv` — the same `id,fasta` sheet from the same channel | **NATIVE** — emitted 2026-08-11, not yet exercised; proteinannotator 1.1.0 accepts `id` + `.faa` unmodified; prepared as run 07 on run 03's sheet |
 | taxprofiler | differentialabundance | abundance profile → differentialabundance input | OPEN |
 | ampliseq | differentialabundance | QIIME2/BIOM profile → differentialabundance input | OPEN |
 | magmap | differentialabundance | coverage profiles → differentialabundance input | OPEN |
@@ -406,11 +406,11 @@ upstream, or shipped as reusable converters.
 |-------|-------|-------|--------|
 | 0 — Dataset decision | Extend search; score against the matrix in [DATASETS.md](DATASETS.md); SIG vote | `lit-synthesizer`, `ncbi-datasets` | OPEN |
 | 1 — Scaffold | fetchngs run; verify raw data availability; build reference DBs | `ncbi-datasets` (reference genomes) | OPEN |
-| 2 — Core chain | ampliseq / taxprofiler / mag / metatdenovo; detaxizer re-added as run 04 for phiX removal | `claw-metagenomics` (validation runs) | IN PROGRESS — metatdenovo run 2026-08-11; detaxizer prepared, not run |
-| 2a — Assembly QC | Assess MAG and transcript completeness | `busco-assessor` | OPEN |
+| 2 — Core chain | ampliseq / taxprofiler / mag / metatdenovo; detaxizer re-added as run 04 for phiX removal | `claw-metagenomics` (validation runs) | IN PROGRESS — metatdenovo and detaxizer run 2026-08-11; mag run 2026-09-18 |
+| 2a — Assembly QC | Assess MAG and transcript completeness | `busco-assessor` | IN PROGRESS — MAG completeness done with CheckM2 inside mag (run 05, 2026-09-18: 24 near-complete, 49 medium-quality of 160 bins); BUSCO in mag unusable ([mag#1115](https://github.com/nf-core/mag/issues/1115)); transcript completeness open |
 | 3 — Samplesheet handoffs | Test and document each edge in the validation table | — | OPEN |
 | 4 — Secondary analysis | differentialabundance; funcscan; phageannotator; phyloplace | — | OPEN |
-| 5 — Stretch nodes | metapep; proteinfamilies; viralmetagenome; proteinfold / proteinannotator off the emitted sheets | — | IN PROGRESS — proteinfamilies run 2026-08-11, 405 families |
+| 5 — Stretch nodes | metapep; proteinfamilies; viralmetagenome; proteinfold / proteinannotator off the emitted sheets | — | IN PROGRESS — proteinfamilies run 2026-08-11 on metatranscriptome proteins (405 families) and 2026-09-21 on metagenome proteins (5,864 families) |
 | 5a — QC aggregation | Aggregate QC across all pipeline runs | `multiqc-reporter` | OPEN |
 | 6 — Publication | Write-up; confirm authorship; submit to nf-core community journal | `lit-synthesizer` (related work section) | OPEN |
 
