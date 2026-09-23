@@ -1,0 +1,38 @@
+# nf-core/ampliseq 2.18.0 — LMO pilot, 16S V3-V4 amplicons
+#
+# Generate the samplesheet first (absolute cluster paths, so it is not committed):
+#
+#   python3 scripts/converters/fetchngs_to_reads_samplesheet.py \
+#       <fetchngs-outdir>/samplesheet/samplesheet.csv \
+#       runs/08_ampliseq/samplesheet.csv \
+#       --strategy AMPLICON --target reads
+#
+# ampliseq 2.18.0 has no check_max, so NXF_SYNTAX_PARSER=v1 is NOT needed. Requires
+# Nextflow >= 25.10.4.
+
+input: "/path/to/runs/08_ampliseq/samplesheet.csv"
+outdir: "/path/to/results/08_ampliseq"
+
+# 341F / 805R (Herlemann et al. 2011, doi:10.1038/ismej.2011.41), the pair the LMO group
+# uses for V3-V4 (Fridolfsson et al. 2023, doi:10.1038/s41598-023-38816-0). The papers
+# name the pair but do not print the sequences; these are the published Herlemann
+# sequences. Check them against the reads before running (see README.md, "Check the
+# primers"): cutadapt discards reads without the primer, so a wrong sequence empties
+# every sample.
+FW_primer: "CCTACGGGNGGCWGCAG"
+RV_primer: "GACTACHVGGGTATCTAATCC"
+
+# Lengths are measured after primer removal. 259 / 199 is what the LMO group used for the
+# same primers on the same MiSeq 2x300 setup (Martinez-Garcia et al. 2022,
+# doi:10.3389/fmicb.2022.834675). The trimmed amplicon is about 427 bp, so this leaves
+# about 31 bp of overlap for merging; DADA2 needs 12. Left unset, ampliseq picks lengths
+# from a quality cutoff, which on 2x300 V3-V4 can cut too much for pairs to merge.
+trunclenf: 259
+trunclenr: 199
+
+# Everything else at default:
+# - taxonomy: dada_ref_taxonomy sbdi-gtdb (small download, no QIIME2 classifier)
+# - no metadata sheet, so diversity and barplot steps are skipped; three samples
+#   give nothing to compare
+# - phiX is removed by DADA2 (rm.phix = TRUE for Illumina), which is why detaxizer
+#   is not upstream

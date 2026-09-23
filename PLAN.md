@@ -70,7 +70,7 @@ that we have not yet exercised on real data.
 ```
 fetchngs (SRA accessions)
   └─► detaxizer (remove contaminant reads — phiX spike-in for LMO, host for host data) [PREPARED, RUN 04]
-        ├─► ampliseq (amplicon reads → taxonomy profiles) [UNTESTED]
+        ├─► ampliseq (amplicon reads → taxonomy profiles) [PREPARED AS RUN 08, fed from fetchngs]
         │     └─► differentialabundance (profiles, condition comparison) [UNTESTED]
         ├─► createtaxdb (build custom reference DB) [UNTESTED]
         │     └─► taxprofiler (shotgun MG reads → taxonomy profiles) [UNTESTED]
@@ -372,7 +372,7 @@ upstream, or shipped as reusable converters.
 | From | To | Samplesheet handoff mechanism | Status |
 |------|----|-------------------------------|--------|
 | **fetchngs** | **detaxizer** | generic `samplesheet.csv`; no `--nf_core_pipeline` support, and detaxizer's columns are `short_reads_fastq_1/2`, not `fastq_1/2` | **CONVERSION REQUIRED** — covered by `scripts/converters/fetchngs_to_reads_samplesheet.py --target detaxizer`; column rename only, sample names shared with the `--target reads` output; exercised 2026-08-11, detaxizer 1.3.0 ran to completion on the converted sheet |
-| **fetchngs** | **ampliseq** | `--nf_core_pipeline ampliseq` (added in 1.13.0) emits `sample,fastq_1,fastq_2,run`; ampliseq 2.18.0 accepts that spelling | **NATIVE from 1.13.0** — not yet exercised; run 01 used 1.12.0, which had no ampliseq option. Sample names are still ENA experiment accessions, so the `collection_date` rename is still needed |
+| **fetchngs** | **ampliseq** | `--nf_core_pipeline ampliseq` (added in 1.13.0) emits `sample,fastq_1,fastq_2,run`; ampliseq 2.18.0 accepts that spelling | **NATIVE from 1.13.0** — not yet exercised; run 01 used 1.12.0, which had no ampliseq option. Sample names are still ENA experiment accessions, so the `collection_date` rename is still needed; run 08 prepared through the converter on run 01's 1.12.0 sheet, which leaves the native emitter unexercised |
 | fetchngs | taxprofiler | `--nf_core_pipeline taxprofiler` emits a purpose-built samplesheet | OPEN — flag exists, output not yet verified |
 | **fetchngs** | **mag** | `--nf_core_pipeline mag` (added in 1.13.0) emits a sheet mag cannot use: `group` written empty, read columns named `fastq_1`/`fastq_2` instead of `short_reads_1`/`short_reads_2`, platform hardcoded `ILLUMINA` | **NATIVE, REJECTED BY TARGET** — 1.13.0's emitter fails mag 5.5.0's schema on `group` alone; **CONVERSION REQUIRED** in practice, covered by `scripts/converters/fetchngs_to_reads_samplesheet.py --target mag`. Same defect as [detaxizer#100](https://github.com/nf-core/detaxizer/issues/100), second occurrence; filed 2026-09-15 as [fetchngs#401](https://github.com/nf-core/fetchngs/issues/401). Exercised 2026-09-18 through the converter: mag 5.5.0 ran to completion on it (run 05) |
 | **fetchngs** | **metatdenovo** | `--nf_core_pipeline metatdenovo` (added in 1.13.0) emits `sample,fastq_1,fastq_2` plus the metadata columns, which is exactly metatdenovo 1.4.0's required set | **NATIVE from 1.13.0** — not yet exercised natively; exercised 2026-08-11 through `scripts/converters/fetchngs_to_reads_samplesheet.py` against 1.12.0, which had no metatdenovo option. Sample names are still ENA experiment accessions, so the `collection_date` rename is still needed |

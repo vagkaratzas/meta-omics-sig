@@ -232,7 +232,7 @@
     },
     {
       "id": "fetchngs__ampliseq", "from": "fetchngs", "to": "ampliseq",
-      "source": "table", "kind": "reads", "repoStatus": "NATIVE from 1.13.0 - not yet exercised", "statusClass": "validated",
+      "source": "table", "kind": "reads", "repoStatus": "NATIVE from 1.13.0 - not yet exercised; run 08 prepared through the converter on run 01's 1.12.0 sheet, which leaves the native emitter unexercised", "statusClass": "validated",
       "routable": true, "unit": "runs", "carries": ["AMPLICON"],
       "note": "--nf_core_pipeline ampliseq, added in 1.13.0, emits sample,fastq_1,fastq_2 plus run and the metadata columns. ampliseq 2.18.0 accepts that spelling (its schema takes either sampleID/forwardReads or sample/fastq_1) and run is optional, so the sheet transfers with no conversion.",
       "caveat": "Native since 2026-09-15 and not yet exercised: run 01 used 1.12.0, whose enum had no ampliseq option. Native is not the same as usable - fetchngs still writes the ENA experiment accession into the sample column, so results would be labelled ERX13368357 unless renamed from collection_date."
