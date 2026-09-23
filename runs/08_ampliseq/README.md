@@ -49,9 +49,9 @@ The three amplicon studies (PRJEB52780, PRJEB52782, PRJEB52828) describe their r
   Hugerth et al. 2014, [doi:10.1128/AEM.01403-14](https://doi.org/10.1128/AEM.01403-14)
   (PMID 24928874) describes the design.
 
-No publication tied to PRJEB52780/82/28 was found, so the protocol is inferred from the
-group's other LMO papers. None of the full texts available through PubMed prints the
-sequences. The ones in `params.yml` are the standard Herlemann sequences:
+No publication tied to PRJEB52780/82/28 was found, and none of the full texts available
+through PubMed prints the sequences. The data author confirmed the sequences in
+`params.yml` on 2026-09-23. They are the standard Herlemann sequences:
 
 | Primer | Sequence |
 |---|---|
@@ -60,20 +60,22 @@ sequences. The ones in `params.yml` are the standard Herlemann sequences:
 
 ### Check the primers before running
 
-cutadapt drops reads that lack the primer, so a wrong primer shows up as empty samples,
-not as an error. Count exact degenerate matches near the start of 10,000 reads per mate:
+The sequences are confirmed, but the reads could still have had them removed before
+submission. cutadapt drops reads that lack the primer, so that would show up as empty
+samples, not as an error. Count exact degenerate matches near the start of 10,000 reads
+per mate. fetchngs names files `<ERX>_<ERR>_<mate>.fastq.gz`:
 
 ```bash
-for r in <fetchngs-outdir>/fastq/ERR9715801_1.fastq.gz; do
-  zcat $r | head -40000 | awk 'NR%4==2' | grep -cE '^.{0,10}CCTACGG[ACGT]GGC[AT]GCAG'
+for r in <fetchngs-outdir>/fastq/*_ERR97{15801,17120,26503}_1.fastq.gz; do
+  echo "$r $(zcat $r | head -40000 | awk 'NR%4==2' | grep -cE '^.{0,10}CCTACGG[ACGT]GGC[AT]GCAG')"
 done
-for r in <fetchngs-outdir>/fastq/ERR9715801_2.fastq.gz; do
-  zcat $r | head -40000 | awk 'NR%4==2' | grep -cE '^.{0,10}GACTAC[ACT][ACG]GGGTATCTAATCC'
+for r in <fetchngs-outdir>/fastq/*_ERR97{15801,17120,26503}_2.fastq.gz; do
+  echo "$r $(zcat $r | head -40000 | awk 'NR%4==2' | grep -cE '^.{0,10}GACTAC[ACT][ACG]GGGTATCTAATCC')"
 done
 ```
 
-Expect most of the 10,000. Near zero means the primers are wrong or were already removed.
-In the second case, set `skip_cutadapt: true` and record it.
+Expect most of the 10,000. Near zero means the primers were already removed: set
+`skip_cutadapt: true` and record it.
 
 ## Build the samplesheet
 
@@ -90,9 +92,9 @@ Expected: three rows, one per collection date, with no replicate suffix:
 
 ```csv
 sample,fastq_1,fastq_2
-LMO_20160315_AMP,.../ERR9715801_1.fastq.gz,.../ERR9715801_2.fastq.gz
-LMO_20160803_AMP,.../ERR9717120_1.fastq.gz,.../ERR9717120_2.fastq.gz
-LMO_20171031_AMP,.../ERR9726503_1.fastq.gz,.../ERR9726503_2.fastq.gz
+LMO_20160315_AMP,.../ERX9265004_ERR9715801_1.fastq.gz,.../ERX9265004_ERR9715801_2.fastq.gz
+LMO_20160803_AMP,.../ERX..._ERR9717120_1.fastq.gz,.../ERX..._ERR9717120_2.fastq.gz
+LMO_20171031_AMP,.../ERX..._ERR9726503_1.fastq.gz,.../ERX..._ERR9726503_2.fastq.gz
 ```
 
 The dates match the MG and MT sample names from runs 02 and 05, so results can be joined
@@ -135,6 +137,6 @@ or failed.
 
 | Step | Status |
 |------|--------|
-| Primers | **From publications**: 341F/805R. Sequences to be checked against the reads |
+| Primers | **Confirmed**: 341F/805R, sequences confirmed by the data author 2026-09-23. Presence in the reads still to be checked |
 | Samplesheet | **Prepared**: converter command above, `--strategy AMPLICON --target reads` |
 | ampliseq run | **Not run** |
