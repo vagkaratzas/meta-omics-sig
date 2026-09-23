@@ -12,11 +12,21 @@
 input: "/path/to/results/03_proteinfamilies/proteinannotator/samplesheet.csv"
 outdir: "/path/to/results/07_proteinannotator"
 
+# As executed on 2026-09-22 (see Seqera run): local copies instead of downloads for three
+# databases. Annotation settings are unchanged.
+pfam_db: "/path/to/ref-dbs/pfam/Pfam-A.38.0.hmm.gz"
+funfam_db: "/path/to/ref-dbs/funfams/funfam-hmm3-v4_3_0.lib.gz"
+# Must be the pressed data/ folder of the 5.59-91.0 release, matching the container. At 1.1.0
+# the module ignores it (nf-core/modules#13009); the site-config bind in the README is what
+# InterProScan actually reads. The default interproscan_db_url (5.72-103.0) does not work
+# with the 5.59 container (nf-core/proteinannotator#114).
+interproscan_db: "/path/to/ref-dbs/interproscan/5.59-91.0/interproscan_db/data"
+
 # Everything else at default, deliberately — this run tests the handoff, not annotation tuning:
-#   Pfam, FunFam, NMPFams, metagRoot   all on; each database downloaded on first use
+#   Pfam, FunFam, NMPFams, metagRoot   all on; NMPFams and metagRoot downloaded, Pfam and FunFam local (above)
 #   hmmsearch_evalue_cutoff            0.001
 #   InterProScan                       on; interproscan_applications Hamap,PANTHER,PIRSF,TIGRFAM,sfld
-#                                      database 5.72-103.0 downloaded (~5.5 GB, can take hours)
+#                                      default database URL is 5.72-103.0: overridden above
 #   s4pred                             on; ss2 output
 #   min_seq_length / max_seq_length    30 / 5000
 #

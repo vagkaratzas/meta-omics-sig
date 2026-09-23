@@ -138,6 +138,27 @@ codon (2026-09-21) for proteinfamilies 2.5.0 `MERGE_SEEDS` at ~2.4 M proteins (r
 real fix is upstream, staging fewer files per task:
 [nf-core/proteinfamilies#191](https://github.com/nf-core/proteinfamilies/issues/191).
 
+### nf-core `interproscan` module ignores the staged database
+Any pipeline using `modules/nf-core/interproscan` (proteinannotator 1.1.0 confirmed) reads
+the container's small, unpressed sample database whatever `--interproscan_db` says, because
+the module exports a relative `INTERPROSCAN_CONF`. Real runs fail with:
+
+```
+Running hmmpress (/usr/local/bin//hmmpress) on data/pirsf/3.10/sf_hmm_all
+failed to open SSI index data/pirsf/3.10/sf_hmm_all.h3i
+```
+
+Workaround (codon, 2026-09-22, run 07): press a release matching the container (5.59-91.0)
+once with `python3 setup.py -f interproscan.properties`, then bind its `data/` over the
+container's copy:
+
+```groovy
+process { withName: '.*:INTERPROSCAN' { containerOptions = '-B <interproscan-5.59-91.0>/data:/usr/local/share/InterProScan/data' } }
+```
+
+Drop it once [nf-core/modules#13009](https://github.com/nf-core/modules/issues/13009) and
+[nf-core/proteinannotator#114](https://github.com/nf-core/proteinannotator/issues/114) ship.
+
 ---
 
 ## Pipeline Quick Reference

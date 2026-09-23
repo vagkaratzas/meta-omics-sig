@@ -26,6 +26,7 @@ site-specific and go stale; the Seqera link preserves the full execution record.
 | 04 | nf-core/detaxizer | 1.3.0 | 2026-08-11 | phiX removal from the 6 MT libraries | **SUCCESS** — 172 phiX pairs in 161 M | [Seqera run](https://cloud.seqera.io/user/vangelis/watch/5qFu9n8YSLmCxP) |
 | 05 | nf-core/mag | 5.5.0 | 2026-09-18 | 3 MG libraries → 3 assemblies, MetaBAT2 bins, protein FASTA | **SUCCESS** — 160 bins (CheckM2: 24 near-complete, 49 medium-quality), 2,513,059 proteins; BUSCO columns unreliable ([mag#1115](https://github.com/nf-core/mag/issues/1115)) | [Seqera run](https://cloud.seqera.io/user/vangelis/watch/2wiu8ZycJHfAVC) · [CheckM2 re-run](https://cloud.seqera.io/user/vangelis/watch/2Nloa7fgPEWnlX) |
 | 06 | nf-core/proteinfamilies | 2.5.0 | 2026-09-21 | protein families from the run-05 ORFs, pooled into one row | **SUCCESS** — 5,864 families | [Seqera run](https://cloud.seqera.io/user/vangelis/watch/4VgXDoIUSqHCpZ) |
+| 07 | nf-core/proteinannotator | 1.1.0 | 2026-09-22 | annotation of run 03's 405 family representatives, from the samplesheet run 03 emitted | **SUCCESS** — first handoff with no conversion step; InterProScan needed a container bind workaround ([proteinannotator#114](https://github.com/nf-core/proteinannotator/issues/114), [modules#13009](https://github.com/nf-core/modules/issues/13009)) | [Seqera run](https://cloud.seqera.io/user/vangelis/watch/24aruma1zIUWbf) |
 
 
 ## Upstream issues filed from this project
@@ -44,6 +45,8 @@ surfaced it. Details are in the run sections below.
 | [nf-core/fetchngs#401](https://github.com/nf-core/fetchngs/issues/401) — 1.13.0 `--nf_core_pipeline mag` sheet rejected by mag | 2026-09-15 | 1.13.0 schema check | open |
 | [nf-core/mag#1115](https://github.com/nf-core/mag/issues/1115) — BUSCO batch mode leaks lineage state between bins, corrupting `bin_summary.tsv` | 2026-09-18 | run 05 | open |
 | [nf-core/proteinfamilies#191](https://github.com/nf-core/proteinfamilies/issues/191) — `MERGE_SEEDS` stages every seed MSA of the sample per task; head JVM `OutOfMemoryError` at scale | 2026-09-21 | run 06 | open |
+| [nf-core/proteinannotator#114](https://github.com/nf-core/proteinannotator/issues/114) — InterProScan fails with a real database: container 5.59 vs default database URL 5.72, and the untarred database is staged one directory too deep | 2026-09-22 | run 07 | open |
+| [nf-core/modules#13009](https://github.com/nf-core/modules/issues/13009) — `interproscan` module ignores the staged database: relative `INTERPROSCAN_CONF`, wrong `bin.directory`, `data.directory` never set | 2026-09-22 | run 07 | open |
 
 ---
 
@@ -592,8 +595,9 @@ the omics layer:
   says nothing about how many families the two layers share. That needs the families
   compared directly. That was done on 2026-09-21; the results are in the next section.
 
-Both runs emitted `proteinfold/` and `proteinannotator/` samplesheets. None has been
-consumed yet.
+Both runs emitted `proteinfold/` and `proteinannotator/` samplesheets. Run 03's
+proteinannotator sheet was consumed by run 07 on 2026-09-22. The other three have not been
+consumed.
 
 ### Metatranscriptome families against metagenome families
 
@@ -664,6 +668,98 @@ run 03. Filed 2026-09-21 as
 [nf-core/proteinfamilies#191](https://github.com/nf-core/proteinfamilies/issues/191),
 proposing to filter the seed collection down to each pool's members before `MERGE_SEEDS`,
 with an nf-test that checks what each task stages.
+
+---
+
+## 07 — proteinannotator, annotating the metatranscriptome family representatives
+
+**Status: SUCCESS, 2026-09-22.**
+
+**Provenance:** <https://cloud.seqera.io/user/vangelis/watch/24aruma1zIUWbf>
+
+| | |
+|---|---|
+| Pipeline | `nf-core/proteinannotator` `-r 1.1.0` (`cbf78d4`) |
+| Nextflow | 26.04.4 |
+| Input | one row, `LMO` → run 03's `LMO_reps.faa` (405 family representatives) |
+| Samplesheet | **run 03's `proteinannotator/samplesheet.csv`, copied verbatim.** No converter |
+| Params | [`runs/07_proteinannotator/params.yml`](runs/07_proteinannotator/params.yml). Annotation settings at default; Pfam, FunFam and InterProScan databases pointed at local copies |
+| Date | 2026-09-22 |
+| Outcome | Success. Pfam, FunFam, NMPFams, metagRoot, InterProScan and s4pred all completed |
+
+This is the first handoff in the chain with **no conversion step**. proteinfamilies 2.5.0
+emitted the sheet and proteinannotator 1.1.0 read it unmodified. Every earlier edge went
+through a script in `scripts/converters/`. The sheet's absolute FASTA path was still valid
+because run 03's output had not moved.
+
+The successful launch was a `-resume`. Everything except `INTERPROSCAN` and `MULTIQC` came
+from cache (96.5% of compute). The earlier attempts failed in `INTERPROSCAN`, as described
+below. Those attempts are not in Seqera. `INTERPROSCAN` itself took 5 min on 1 CPU, with a
+peak RSS of 3.3 GB.
+
+### What was annotated, and with what
+
+| Source | Database | How it was supplied |
+|---|---|---|
+| hmmsearch | Pfam-A 38.0 | local copy (`pfam_db`) |
+| hmmsearch | CATH FunFam v4.3.0 | local copy (`funfam_db`) |
+| hmmsearch | NMPFams, metagRoot (envofams.org) | downloaded by the run |
+| InterProScan 5.59-91.0 | Hamap, PANTHER, PIRSF, TIGRFAM, SFLD (`--disable-precalc`) | local, pressed 5.59-91.0 `data/`, bind-mounted (see below) |
+| s4pred | secondary structure, `ss2` | model in container |
+
+`hmmsearch_evalue_cutoff` 0.001, `min_seq_length` 30, `max_seq_length` 5000, all default.
+The InterProScan call has no `--iprlookup`, `--goterms` or `--pathways`. Check whether the
+TSV has InterPro entry and GO columns (12–14) before planning any GO-level summary.
+
+Annotation counts, and the number of the 405 that survived SeqKit preprocessing, are
+**not recorded yet**. See [the run README](runs/07_proteinannotator/README.md#verify).
+
+### InterProScan ignored the database it was given, needed a bind mount
+
+With the database from the pipeline defaults, and again with a local 5.59-91.0 database
+passed as `--interproscan_db`, `INTERPROSCAN` failed the same way:
+
+```
+Running hmmpress (/usr/local/bin//hmmpress) on data/pirsf/3.10/sf_hmm_all
+failed to open SSI index data/pirsf/3.10/sf_hmm_all.h3i
+Could not run hmmpress!
+```
+
+Three problems stack up. The first is in the shared module, the other two in the pipeline:
+
+- **The module never uses the staged database**
+  ([nf-core/modules#13009](https://github.com/nf-core/modules/issues/13009)).
+  `interproscan.sh` changes into its install directory before it reads `INTERPROSCAN_CONF`.
+  The module sets that variable to a relative path, so InterProScan loads the container's
+  own `interproscan.properties`. That file points at the small, unpressed sample database
+  on the read-only image. Whatever is passed as `--interproscan_db` is ignored. This is why
+  the error did not change when the database did.
+- **Container and default database versions differ**
+  ([nf-core/proteinannotator#114](https://github.com/nf-core/proteinannotator/issues/114)).
+  The container is InterProScan 5.59-91.0, but `interproscan_db_url` defaults to the
+  5.72-103.0 release. 5.59 looks for member databases that 5.72 does not ship, for example
+  `pirsf/3.10`, `panther/17.0` and `tigrfam/15.0`. TIGRFAM was merged into NCBIfam after
+  5.59, so the default `interproscan_applications` only works with 5.59.
+- **The untarred release is staged one directory too deep**, also in #114. The full EBI
+  tarball untars to the whole install, so member databases end up at `data/data/...`.
+
+CI does not catch any of these, because the test profile uses the small test database.
+
+Worked around with a pressed 5.59-91.0 `data/` folder, set up once with
+`python3 setup.py -f interproscan.properties`, and bind-mounted over the container's copy
+in the site config:
+
+```groovy
+process {
+    withName: '.*:INTERPROSCAN' {
+        containerOptions = '-B <interproscan-5.59-91.0>/data:/usr/local/share/InterProScan/data'
+    }
+}
+```
+
+`--interproscan_db` was also pointed at that folder, but the bind is what took effect. The
+workaround changes only where the database is read from. The applications and InterProScan
+version are the pipeline's own.
 
 ---
 

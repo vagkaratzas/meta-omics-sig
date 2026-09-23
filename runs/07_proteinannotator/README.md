@@ -68,6 +68,29 @@ that is the missing-`/etc/resolv.conf` container problem in
 [AGENTS.md](../../AGENTS.md#singularity-containers-without-etcresolvconf-no-dns-in-container),
 not a firewall.
 
+## InterProScan needs a bind mount until upstream fixes land
+
+At 1.1.0, `INTERPROSCAN` ignores `--interproscan_db` and reads the container's unpressed
+sample database, so any real run fails in `hmmpress`
+([nf-core/modules#13009](https://github.com/nf-core/modules/issues/13009)). The default
+`interproscan_db_url` (5.72-103.0) also does not match the 5.59-91.0 container
+([nf-core/proteinannotator#114](https://github.com/nf-core/proteinannotator/issues/114)).
+Workaround used by this run:
+
+1. Download and untar `interproscan-5.59-91.0-64-bit.tar.gz` once, then press its HMMs:
+   `python3 setup.py -f interproscan.properties` inside the untarred folder.
+2. Bind its `data/` folder over the container's copy, in the site config:
+
+```groovy
+process {
+    withName: '.*:INTERPROSCAN' {
+        containerOptions = '-B <interproscan-5.59-91.0>/data:/usr/local/share/InterProScan/data'
+    }
+}
+```
+
+Remove the bind once the module fix reaches a proteinannotator release.
+
 ## Things to know before joining results back to families
 
 - **Headers change.** proteinannotator's SeqKit preprocessing replaces `/` with `_`
@@ -89,6 +112,12 @@ ls <outdir>/qc/LMO/
 # annotation outputs
 ls <outdir>/
 ls <outdir>/downloaded_dbs/          # keep for reuse
+
+# still to record in RUNS.md: sequences annotated per source
+cat <outdir>/qc/LMO/LMO_after.tsv                   # sequences left after SeqKit
+cut -f1 <outdir>/functional_annotation/interproscan/LMO/LMO.tsv | sort -u | wc -l
+cut -f4 <outdir>/functional_annotation/interproscan/LMO/LMO.tsv | sort | uniq -c   # hits per member DB
+awk -F'\t' '{print NF}' <outdir>/functional_annotation/interproscan/LMO/LMO.tsv | sort -u  # 11 = no InterPro/GO columns
 ```
 
 ## Status
@@ -96,6 +125,8 @@ ls <outdir>/downloaded_dbs/          # keep for reuse
 | Step | Status |
 |------|--------|
 | Samplesheet | **EMITTED** by run 03 on 2026-08-11. Used as-is, no conversion |
-| proteinannotator run | **NOT RUN** |
+| proteinannotator run | **SUCCESS**, 2026-09-22, Nextflow 26.04.4. [Seqera run](https://cloud.seqera.io/user/vangelis/watch/24aruma1zIUWbf) |
+| InterProScan | **Needed a workaround.** Container bind of a pressed 5.59-91.0 `data/` folder; see [below](#interproscan-needs-a-bind-mount-until-upstream-fixes-land) |
+| Annotation counts | **Not recorded yet.** Run the Verify commands |
 
-Full run record, once executed: [RUNS.md](../../RUNS.md).
+Full run record: [RUNS.md, run 07](../../RUNS.md#07--proteinannotator-annotating-the-metatranscriptome-family-representatives).

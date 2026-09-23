@@ -89,7 +89,7 @@ fetchngs (SRA accessions)
               ├─► seqsubmit (megahit contigs .fa.gz → ENA assembly accessions) [UNTESTED]
               └─► proteinfamilies (prodigal .faa.gz → protein families) [RUN 2026-08-11]
                     ├─► proteinfold (representatives → structures) [SHEET EMITTED, NOT CONSUMED]
-                    └─► proteinannotator (representatives → annotation) [SHEET EMITTED, PREPARED AS RUN 07]
+                    └─► proteinannotator (representatives → annotation) [RUN 2026-09-22, SHEET AS EMITTED]
 ```
 
 > **Metro map, updated 2026-08-11.** Two branches that this document previously flagged as
@@ -393,7 +393,7 @@ upstream, or shipped as reusable converters.
 | **viralmetagenome** | **phageannotator** | viral contig FASTA → input, but the sheet also wants `group` and `fastq_1` | **CONVERSION REQUIRED** — two-source join, and `.combined.fa` is not gzipped |
 | **viralmetagenome** | **phyloplace** | viral contig FASTA → `queryseqfile` | **CONVERSION REQUIRED** — `refseqfile`, `refphylogeny`, `model` are external per-row inputs |
 | **proteinfamilies** | **proteinfold** | `--skip_proteinfold_samplesheet false` (default `true`) publishes `proteinfold/samplesheet.csv` — `id,fasta`, pointing at the family representatives `<samplename>_reps.faa` | **NATIVE** — emitted 2026-08-11, not yet exercised; native against proteinfold 2.0.0 only, 1.1.1 wants a `sequence` column and rejects `.faa` |
-| **proteinfamilies** | **proteinannotator** | `--skip_proteinannotator_samplesheet false` (default `true`) publishes `proteinannotator/samplesheet.csv` — the same `id,fasta` sheet from the same channel | **NATIVE** — emitted 2026-08-11, not yet exercised; proteinannotator 1.1.0 accepts `id` + `.faa` unmodified; prepared as run 07 on run 03's sheet |
+| **proteinfamilies** | **proteinannotator** | `--skip_proteinannotator_samplesheet false` (default `true`) publishes `proteinannotator/samplesheet.csv` — the same `id,fasta` sheet from the same channel | **NATIVE** — exercised 2026-09-22 (run 07): run 03's sheet consumed unmodified by proteinannotator 1.1.0, the first handoff with no conversion step; InterProScan inside proteinannotator needed a container workaround ([proteinannotator#114](https://github.com/nf-core/proteinannotator/issues/114), [modules#13009](https://github.com/nf-core/modules/issues/13009)), unrelated to the sheet |
 | taxprofiler | differentialabundance | abundance profile → differentialabundance input | OPEN |
 | ampliseq | differentialabundance | QIIME2/BIOM profile → differentialabundance input | OPEN |
 | magmap | differentialabundance | coverage profiles → differentialabundance input | OPEN |
@@ -410,7 +410,7 @@ upstream, or shipped as reusable converters.
 | 2a — Assembly QC | Assess MAG and transcript completeness | `busco-assessor` | IN PROGRESS — MAG completeness done with CheckM2 inside mag (run 05, 2026-09-18: 24 near-complete, 49 medium-quality of 160 bins); BUSCO in mag unusable ([mag#1115](https://github.com/nf-core/mag/issues/1115)); transcript completeness open |
 | 3 — Samplesheet handoffs | Test and document each edge in the validation table | — | OPEN |
 | 4 — Secondary analysis | differentialabundance; funcscan; phageannotator; phyloplace | — | OPEN |
-| 5 — Stretch nodes | metapep; proteinfamilies; viralmetagenome; proteinfold / proteinannotator off the emitted sheets | — | IN PROGRESS — proteinfamilies run 2026-08-11 on metatranscriptome proteins (405 families) and 2026-09-21 on metagenome proteins (5,864 families) |
+| 5 — Stretch nodes | metapep; proteinfamilies; viralmetagenome; proteinfold / proteinannotator off the emitted sheets | — | IN PROGRESS — proteinfamilies run 2026-08-11 on metatranscriptome proteins (405 families) and 2026-09-21 on metagenome proteins (5,864 families); proteinannotator run 2026-09-22 on run 03's emitted sheet |
 | 5a — QC aggregation | Aggregate QC across all pipeline runs | `multiqc-reporter` | OPEN |
 | 6 — Publication | Write-up; confirm authorship; submit to nf-core community journal | `lit-synthesizer` (related work section) | OPEN |
 
@@ -447,7 +447,9 @@ upstream, or shipped as reusable converters.
    dataset to be biologically meaningful, and the question of whether taxprofiler and mag
    accept the generated sheets unmodified — run 04 produces them, but nothing consumes them
    until those two pipelines run.
-10. **Do the two sheets proteinfamilies emitted actually run?** Run 03 produced
+10. **Do the two sheets proteinfamilies emitted actually run?** **Half answered
+    (2026-09-22):** the proteinannotator sheet does. Run 07 consumed it unmodified. The
+    proteinfold sheet is still untested. Run 03 produced
     `proteinfold/samplesheet.csv` and `proteinannotator/samplesheet.csv` on 2026-08-11 and
     nothing has consumed either. Feeding them straight into proteinfold 2.0.0 and
     proteinannotator 1.1.0 unmodified is the cheapest remaining test of nf-core samplesheet
