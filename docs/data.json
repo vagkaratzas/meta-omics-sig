@@ -1,7 +1,7 @@
 {
   "_schema": "Hand-maintained data for the meta-omics SIG conveyor-belt site. Strict JSON: no comments, no trailing commas. Three vocabularies are kept apart and must not be blended. (1) repoStatus = a string copied VERBATIM from the 'Samplesheet Chaining - Validation Table' in PLAN.md; edges not in that table have no repoStatus key at all. (2) Site annotations (caveat, siteState, routable, layer, routingBasis) are this site's own notes and are always rendered as such, never as a status. (3) statusClass is a render class only. Two version fields exist and must not be conflated: stations[].release is the version whose documentation the `requires` list was read from (see requiresReadFrom), while datasets[].siteState[id].version is the version actually used for that dataset. The site shows the executed version, and both when they differ. When you change PLAN.md's validation table, change this file.",
   "meta": {
-    "updated": "2026-09-15",
+    "updated": "2026-09-23",
     "repo": "https://github.com/vagkaratzas/meta-omics-sig",
     "sig": "https://nf-co.re/special-interest-groups/meta-omics",
     "plan": "https://github.com/vagkaratzas/meta-omics-sig/blob/main/PLAN.md",
@@ -412,10 +412,11 @@
     {
       "id": "proteinfamilies__proteinannotator", "from": "proteinfamilies", "to": "proteinannotator",
       "source": "table", "kind": "artifact",
-      "repoStatus": "NATIVE - emitted 2026-08-11, not yet exercised; prepared as run 07 on run 03's sheet", "statusClass": "validated",
-      "routable": false, "unit": "representative proteins", "carries": [],
-      "note": "--skip_proteinannotator_samplesheet false (default true) publishes proteinannotator/samplesheet.csv - the same id,fasta sheet, built from the same channel as the proteinfold one. Emitted by run 03 on 2026-08-11; no proteinannotator run has read it yet.",
-      "caveat": "proteinannotator 1.1.0 takes id + .fa/.fasta/.faa/.fas (optionally .gz), so this sheet needs nothing done to it. It is the cheaper of the two emitted handoffs to exercise - proteinfold needs --split_fasta and GPU-scale resources, this does not."
+      "repoStatus": "NATIVE - exercised 2026-09-22 (run 07): run 03's sheet consumed unmodified by proteinannotator 1.1.0, the first handoff with no conversion step; InterProScan inside proteinannotator needed a container workaround (proteinannotator#114, modules#13009), unrelated to the sheet", "statusClass": "validated",
+      "executed": true,
+      "routable": true, "unit": "representative proteins", "carries": [], "dotCount": 1,
+      "note": "--skip_proteinannotator_samplesheet false (default true) publishes proteinannotator/samplesheet.csv - the same id,fasta sheet, built from the same channel as the proteinfold one. Emitted by run 03 on 2026-08-11 and read, unmodified, by proteinannotator 1.1.0 in run 07 on 2026-09-22.",
+      "caveat": "The fasta column is an absolute path, so the sheet only works while the proteinfamilies output stays where it was written. Separately, InterProScan inside proteinannotator 1.1.0 ignores the database it is given and its default database URL does not match its container; run 07 bind-mounted a 5.59-91.0 database into the container to get round it."
     },
     {
       "id": "taxprofiler__differentialabundance", "from": "taxprofiler", "to": "differentialabundance",
@@ -448,7 +449,7 @@
       "summary": "Linnaeus Microbial Observatory, Baltic Sea brackish water at 2 m. Three collection dates carrying all three omics layers, 12 runs, 34.5 GB.",
       "notice": "Working recommendation only - the SIG dataset decision is still open, and the LMO sample-count discrepancy in DATASETS.md is unresolved.",
       "routingBasis": "Illustrative: items are routed by library_strategy alone. That is a drawing rule, not evidence that a run is suitable for a given pipeline.",
-      "activeRoute": ["fetchngs__ampliseq", "fetchngs__taxprofiler", "fetchngs__mag", "fetchngs__metatdenovo", "fetchngs__detaxizer", "metatdenovo__proteinfamilies", "mag__proteinfamilies"],
+      "activeRoute": ["fetchngs__ampliseq", "fetchngs__taxprofiler", "fetchngs__mag", "fetchngs__metatdenovo", "fetchngs__detaxizer", "metatdenovo__proteinfamilies", "mag__proteinfamilies", "proteinfamilies__proteinannotator"],
       "runs": [
         { "acc": "ERR9715801",  "strategy": "AMPLICON", "layer": "amplicon",          "collectionDate": "2016-03-15", "study": "PRJEB52780", "instrument": "MiSeq",       "fraction": "0.2", "fractionSource": "selection-criteria", "gb": 0.42 },
         { "acc": "ERR12258632", "strategy": "RNA-Seq",  "layer": "metatranscriptome", "collectionDate": "2016-03-15", "study": "PRJEB69280", "instrument": "HiSeq 2500",  "fraction": "0.2", "fractionSource": "selection-criteria", "gb": 2.22 },
@@ -501,8 +502,8 @@
           "note": "Not run. Its input samplesheet already exists: run 03 emitted proteinfold/samplesheet.csv on 2026-08-11, one row pointing at the 405 families' representative sequences. Blocked on nothing but compute - though it needs --split_fasta, since _reps.faa is one multi-FASTA, and version 2.0.0 specifically, because 1.1.1 rejects both the id column and the .faa extension."
         },
         "proteinannotator": {
-          "state": "pending", "in": 1, "out": null, "version": null,
-          "note": "Not run yet; prepared as run 07, which feeds it run 03's sheet as emitted. Its input samplesheet already exists: run 03 emitted proteinannotator/samplesheet.csv on 2026-08-11, the same single row of family representatives. proteinannotator 1.1.0 accepts it unmodified, which makes it the cheapest remaining test of nf-core samplesheet standardisation available to this project."
+          "state": "run", "in": 1, "out": "358 / 405", "version": "1.1.0",
+          "note": "Run 2026-09-22 (run 07) on run 03's emitted samplesheet, unmodified: one row, the 405 metatranscriptome family representatives. Pfam, FunFam, NMPFams, metagRoot, InterProScan (Hamap, PANTHER, PIRSF, TIGRFAM, SFLD) and s4pred all completed. InterProScan needed a bind-mounted 5.59-91.0 database because of proteinannotator#114 and modules#13009. Out is representatives with at least one InterProScan match over representatives annotated: all 405 passed QC, and 358 matched. Pfam and the other hmmsearch counts are not recorded yet."
         }
       }
     }

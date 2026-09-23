@@ -118,7 +118,7 @@ grep -c '^>' <outdir>/proteinfold/*/*_reps.faa
 |------|--------|
 | Samplesheet conversion | **DONE** — one row, 198,252 proteins, accepted by proteinfamilies 2.5.0 |
 | proteinfamilies run | **SUCCESS** 2026-08-11 — **405 protein families** |
-| Downstream samplesheets | **EMITTED** — `proteinfold/` and `proteinannotator/`, neither consumed by a run yet |
+| Downstream samplesheets | **EMITTED** — `proteinannotator/` consumed unmodified by [run 07](../07_proteinannotator/README.md) on 2026-09-22; `proteinfold/` not consumed yet |
 
 Provenance: <https://cloud.seqera.io/user/vangelis/watch/H1MTwbD6IUKz3>
 
