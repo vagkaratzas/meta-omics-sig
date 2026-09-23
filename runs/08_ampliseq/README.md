@@ -67,7 +67,7 @@ per mate. fetchngs names files `<ERX>_<ERR>_<mate>.fastq.gz`:
 
 ```bash
 for r in <fetchngs-outdir>/fastq/*_ERR97{15801,17120,26503}_1.fastq.gz; do
-  echo "$r $(zcat $r | head -40000 | awk 'NR%4==2' | grep -cE '^.{0,10}CCTACGG[ACGT]GGC[AT]GCAG')"
+  echo "$r $(zcat $r | head -40000 | awk 'NR%4==2' | grep -cE '^.{0,10}CCTACGGG[ACGT]GGC[AT]GCAG')"
 done
 for r in <fetchngs-outdir>/fastq/*_ERR97{15801,17120,26503}_2.fastq.gz; do
   echo "$r $(zcat $r | head -40000 | awk 'NR%4==2' | grep -cE '^.{0,10}GACTAC[ACT][ACG]GGGTATCTAATCC')"
@@ -76,6 +76,12 @@ done
 
 Expect most of the 10,000. Near zero means the primers were already removed: set
 `skip_cutadapt: true` and record it.
+
+On codon (2026-09-23) R2 matched 9,642–9,804 of 10,000 reads. Every R1 read starts with
+4 random bases before 341F (`NNNN CCTACGGGGGGCTGCAG…`). ampliseq 2.18.0 runs cutadapt
+with an unanchored `-g`, which removes the primer and everything before it, so the spacer
+needs no extra setting. A first version of this check dropped a `G` from the forward
+pattern and matched almost nothing; the pattern above is corrected.
 
 ## Build the samplesheet
 
