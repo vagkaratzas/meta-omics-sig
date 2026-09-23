@@ -708,11 +708,27 @@ peak RSS of 3.3 GB.
 | s4pred | secondary structure, `ss2` | model in container |
 
 `hmmsearch_evalue_cutoff` 0.001, `min_seq_length` 30, `max_seq_length` 5000, all default.
-The InterProScan call has no `--iprlookup`, `--goterms` or `--pathways`. Check whether the
-TSV has InterPro entry and GO columns (12–14) before planning any GO-level summary.
+### InterProScan results
 
-Annotation counts, and the number of the 405 that survived SeqKit preprocessing, are
-**not recorded yet**. See [the run README](runs/07_proteinannotator/README.md#verify).
+All **405 representatives survived** SeqKit preprocessing (33–478 aa, mean 146.7). Of these,
+**358 (88.4%) have at least one InterProScan match**.
+
+| Member database | Match rows |
+|---|---|
+| PANTHER | 355 |
+| TIGRFAM | 101 |
+| Hamap | 86 |
+| PIRSF | 32 |
+| SFLD | 2 |
+
+These are TSV rows, so a protein with several matches in one database is counted more than
+once. They are not protein counts. The TSV has 13 columns, so InterPro entry accessions
+(columns 12–13) are present but GO terms and pathways are not. The call had no `--goterms` or
+`--pathways`, so a GO-level summary would need a rerun or a mapping outside the pipeline.
+
+Pfam, FunFam, NMPFams, metagRoot and s4pred results are not summarised yet. Neither is the
+split of annotation between the 248 matched and 157 unmatched families from run 06's
+comparison.
 
 ### InterProScan ignored the database it was given, needed a bind mount
 

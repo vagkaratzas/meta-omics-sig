@@ -117,7 +117,7 @@ ls <outdir>/downloaded_dbs/          # keep for reuse
 cat <outdir>/qc/LMO/LMO_after.tsv                   # sequences left after SeqKit
 cut -f1 <outdir>/functional_annotation/interproscan/LMO/LMO.tsv | sort -u | wc -l
 cut -f4 <outdir>/functional_annotation/interproscan/LMO/LMO.tsv | sort | uniq -c   # hits per member DB
-awk -F'\t' '{print NF}' <outdir>/functional_annotation/interproscan/LMO/LMO.tsv | sort -u  # 11 = no InterPro/GO columns
+awk -F'\t' '{print NF}' <outdir>/functional_annotation/interproscan/LMO/LMO.tsv | sort -u  # 13 = InterPro entries, no GO (14) or pathways (15)
 ```
 
 ## Status
@@ -127,6 +127,7 @@ awk -F'\t' '{print NF}' <outdir>/functional_annotation/interproscan/LMO/LMO.tsv 
 | Samplesheet | **EMITTED** by run 03 on 2026-08-11. Used as-is, no conversion |
 | proteinannotator run | **SUCCESS**, 2026-09-22, Nextflow 26.04.4. [Seqera run](https://cloud.seqera.io/user/vangelis/watch/24aruma1zIUWbf) |
 | InterProScan | **Needed a workaround.** Container bind of a pressed 5.59-91.0 `data/` folder; see [below](#interproscan-needs-a-bind-mount-until-upstream-fixes-land) |
-| Annotation counts | **Not recorded yet.** Run the Verify commands |
+| InterProScan counts | **Recorded.** 405 of 405 kept by QC, 358 with at least one match; see [RUNS.md](../../RUNS.md#interproscan-results) |
+| Other annotation counts | **Not recorded yet.** Pfam, FunFam, NMPFams, metagRoot, s4pred |
 
 Full run record: [RUNS.md, run 07](../../RUNS.md#07--proteinannotator-annotating-the-metatranscriptome-family-representatives).

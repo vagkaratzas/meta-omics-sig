@@ -502,8 +502,8 @@
           "note": "Not run. Its input samplesheet already exists: run 03 emitted proteinfold/samplesheet.csv on 2026-08-11, one row pointing at the 405 families' representative sequences. Blocked on nothing but compute - though it needs --split_fasta, since _reps.faa is one multi-FASTA, and version 2.0.0 specifically, because 1.1.1 rejects both the id column and the .faa extension."
         },
         "proteinannotator": {
-          "state": "run", "in": 1, "out": null, "version": "1.1.0",
-          "note": "Run 2026-09-22 (run 07) on run 03's emitted samplesheet, unmodified: one row, the 405 metatranscriptome family representatives. Pfam, FunFam, NMPFams, metagRoot, InterProScan (Hamap, PANTHER, PIRSF, TIGRFAM, SFLD) and s4pred all completed. InterProScan needed a bind-mounted 5.59-91.0 database because of proteinannotator#114 and modules#13009. Annotation counts are not recorded yet, so out is left empty."
+          "state": "run", "in": 1, "out": "358 / 405", "version": "1.1.0",
+          "note": "Run 2026-09-22 (run 07) on run 03's emitted samplesheet, unmodified: one row, the 405 metatranscriptome family representatives. Pfam, FunFam, NMPFams, metagRoot, InterProScan (Hamap, PANTHER, PIRSF, TIGRFAM, SFLD) and s4pred all completed. InterProScan needed a bind-mounted 5.59-91.0 database because of proteinannotator#114 and modules#13009. Out is representatives with at least one InterProScan match over representatives annotated: all 405 passed QC, and 358 matched. Pfam and the other hmmsearch counts are not recorded yet."
         }
       }
     }
