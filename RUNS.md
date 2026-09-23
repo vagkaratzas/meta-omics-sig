@@ -744,6 +744,53 @@ python3 scripts/analysis/annotate_family_groups.py \
 It stops if the match table's model names are not run 03 family IDs, or if an InterProScan
 protein is not a run 03 representative after the `/` → `_` substitution.
 
+### Matched against unmatched metatranscriptome families
+
+Run 2026-09-23 with `annotate_family_groups.py`. The P-values are two-sided Fisher's exact
+tests (SciPy) on the 2×2 table for each row.
+
+| | Matched (248) | Unmatched (157) | Fisher P |
+|---|---|---|---|
+| Any InterProScan match | 228 (91.9%) | 130 (82.8%) | 0.0066 |
+| PANTHER | 226 (91.1%) | 129 (82.2%) | 0.0086 |
+| Hamap | 65 (26.2%) | 21 (13.4%) | 0.0026 |
+| TIGRFAM | 74 (29.8%) | 27 (17.2%) | 0.0046 |
+| PIRSF | 20 (8.1%) | 12 (7.6%) | 1.0 |
+| SFLD | 1 (0.4%) | 0 | — |
+| InterPro entry | 163 (65.7%) | 104 (66.2%) | 1.0 |
+
+- **Unmatched families are only a little less annotated.** 82.8% still have a PANTHER or
+  other match, so most of the 157 are known protein families, not novel ones.
+- **The prokaryote-specific databases carry the difference.** Hamap and TIGRFAM hit about
+  half as often in the unmatched group. PIRSF, which is not restricted to prokaryotes, and
+  InterPro entry coverage do not differ.
+- **Eukaryotic cytosolic ribosomal proteins dominate the unmatched group.** A PANTHER family
+  named "40S" or "60S RIBOSOMAL" is found for **43 of 157 unmatched (27.4%)**, against 11 of
+  248 matched (4.4%). Fisher P = 6.7e-11, odds ratio 8.1. Other eukaryotic markers show up in
+  the unmatched group too, for example actin, cofilin, HSP90, calreticulin, SKP1 and a Rho
+  GTPase.
+- **Organellar proteins do not follow the same pattern.** Families named mitochondrial (18
+  against 6) or chloroplastic / photosystem (13 against 6) are more common in the matched
+  group. One plausible reason is that multi-copy organelle genomes assemble well from
+  shotgun metagenome reads. This was not tested.
+- **The unmatched families with no match at all are short.** The 27 have a median
+  representative length of 64 aa, against 158 aa for the 20 matched families with no match.
+  They look like fragments rather than a block of novel proteins.
+- **Unmatched families are smaller.** The median size is 29 members against 40
+  (Mann–Whitney P = 3.3e-5), and the family threshold is 25. Some unmatched families may be
+  near-threshold clusters rather than genes absent from the metagenome.
+
+Together, these results favour the first of the two explanations for unmatched families
+given under run 06: **eukaryotic transcripts that short-read metagenome assembly did not
+recover**. They do not rule out the second explanation, genes that are present but never
+formed a metagenome family, for part of the group.
+
+The eukaryotic call is a **keyword heuristic on PANTHER family names**, not a taxonomic
+assignment. The regex was `\b(40S|60S) RIBOSOMAL`. Some archaeal ribosomal proteins share
+eukaryotic names, such as L7Ae. Before this goes into the paper, confirm it by
+classifying the representatives taxonomically, for example against eukaryote-inclusive
+references such as EukProt or MMETSP.
+
 ### InterProScan ignored the database it was given, needed a bind mount
 
 With the database from the pipeline defaults, and again with a local 5.59-91.0 database
