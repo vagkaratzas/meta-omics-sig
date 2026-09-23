@@ -713,22 +713,36 @@ peak RSS of 3.3 GB.
 All **405 representatives survived** SeqKit preprocessing (33–478 aa, mean 146.7). Of these,
 **358 (88.4%) have at least one InterProScan match**.
 
-| Member database | Match rows |
+| Member database | Representatives with a match |
 |---|---|
 | PANTHER | 355 |
 | TIGRFAM | 101 |
 | Hamap | 86 |
 | PIRSF | 32 |
-| SFLD | 2 |
+| SFLD | 1 (2 match rows) |
 
-These are TSV rows, so a protein with several matches in one database is counted more than
-once. They are not protein counts. The TSV has 13 columns, so InterPro entry accessions
+Apart from SFLD, each database reports at most one match per representative. PANTHER
+covers 355 of the 358 annotated representatives, so it is the only database that can
+compare every group on the same footing. The TSV has 13 columns, so InterPro entry accessions
 (columns 12–13) are present but GO terms and pathways are not. The call had no `--goterms` or
 `--pathways`, so a GO-level summary would need a rerun or a mapping outside the pipeline.
 
 Pfam, FunFam, NMPFams, metagRoot and s4pred results are not summarised yet. Neither is the
 split of annotation between the 248 matched and 157 unmatched families from run 06's
-comparison.
+comparison. `scripts/analysis/annotate_family_groups.py` does that split. It joins run 03's
+family metadata, the `summarise_family_hits.py` match table and this TSV, and prints the
+annotation rate per member database for each group:
+
+```bash
+python3 scripts/analysis/annotate_family_groups.py \
+    <run03-outdir>/family_reps/LMO/LMO_meta_mqc.csv \
+    <summarise_family_hits.py OUT.tsv, run 03 HMMs vs run 06 reps> \
+    <run07-outdir>/functional_annotation/interproscan/LMO/LMO.tsv \
+    output/run03_families_by_group.tsv
+```
+
+It stops if the match table's model names are not run 03 family IDs, or if an InterProScan
+protein is not a run 03 representative after the `/` → `_` substitution.
 
 ### InterProScan ignored the database it was given, needed a bind mount
 
