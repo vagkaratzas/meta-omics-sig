@@ -77,7 +77,7 @@ done
 Expect most of the 10,000. Near zero means the primers were already removed: set
 `skip_cutadapt: true` and record it.
 
-On codon (2026-09-23) R2 matched 9,642–9,804 of 10,000 reads. Every R1 read starts with
+On codon (2026-09-23) R1 matched 9,739–9,825 and R2 9,642–9,804 of 10,000 reads. Every R1 read starts with
 4 random bases before 341F (`NNNN CCTACGGGGGGCTGCAG…`). ampliseq 2.18.0 runs cutadapt
 with an unanchored `-g`, which removes the primer and everything before it, so the spacer
 needs no extra setting. A first version of this check dropped a `G` from the forward
@@ -143,6 +143,6 @@ or failed.
 
 | Step | Status |
 |------|--------|
-| Primers | **Confirmed**: 341F/805R, sequences confirmed by the data author 2026-09-23. Presence in the reads still to be checked |
+| Primers | **Confirmed**: 341F/805R, sequences confirmed by the data author and found in about 98% of R1 and R2 reads (2026-09-23) |
 | Samplesheet | **Prepared**: converter command above, `--strategy AMPLICON --target reads` |
 | ampliseq run | **Not run** |
