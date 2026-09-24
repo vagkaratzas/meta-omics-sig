@@ -47,6 +47,7 @@ surfaced it. Details are in the run sections below.
 | [nf-core/proteinfamilies#191](https://github.com/nf-core/proteinfamilies/issues/191) — `MERGE_SEEDS` stages every seed MSA of the sample per task; head JVM `OutOfMemoryError` at scale | 2026-09-21 | run 06 | open |
 | [nf-core/proteinannotator#114](https://github.com/nf-core/proteinannotator/issues/114) — InterProScan fails with a real database: container 5.59 vs default database URL 5.72, and the untarred database is staged one directory too deep | 2026-09-22 | run 07 | open |
 | [nf-core/modules#13009](https://github.com/nf-core/modules/issues/13009) — `interproscan` module ignores the staged database: relative `INTERPROSCAN_CONF`, wrong `bin.directory`, `data.directory` never set | 2026-09-22 | run 07 | open |
+| [nf-core/ampliseq#1081](https://github.com/nf-core/ampliseq/issues/1081) — `FORMAT_TAXONOMY` Singularity image is a legacy biocontainers `.img`; pull hangs after download | 2026-09-24 | run 08 | open |
 
 ---
 
