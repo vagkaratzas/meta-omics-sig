@@ -117,6 +117,15 @@ nextflow run nf-core/ampliseq \
   -resume
 ```
 
+The site config must also contain this override, otherwise the run hangs pulling the
+`FORMAT_TAXONOMY` image
+([nf-core/ampliseq#1081](https://github.com/nf-core/ampliseq/issues/1081); see
+"Legacy `containers.biocontainers.pro` `.img` images" in [AGENTS.md](../../AGENTS.md)):
+
+```groovy
+process { withName: '.*:FORMAT_TAXONOMY' { ext.singularity_pull_docker_container = true } }
+```
+
 ## Verify
 
 ```bash
