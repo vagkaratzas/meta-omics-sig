@@ -159,6 +159,34 @@ process { withName: '.*:INTERPROSCAN' { containerOptions = '-B <interproscan-5.5
 Drop it once [nf-core/modules#13009](https://github.com/nf-core/modules/issues/13009) and
 [nf-core/proteinannotator#114](https://github.com/nf-core/proteinannotator/issues/114) ship.
 
+### Legacy `containers.biocontainers.pro` `.img` images hang the Singularity pull
+A container URL of the form `https://containers.biocontainers.pro/s3/SingImgsRepo/...img`
+is an old Singularity 2.x squashfs image, not a SIF. The header is
+`#!/usr/bin/env run-singularity` followed directly by `hsqs`. With singularity-ce 3.10.3 on
+codon, the pull downloads the whole file and then never finishes, even with
+`singularity.pullTimeout = "3 hours"`. The run sits at:
+
+```
+Pulling Singularity image https://containers.biocontainers.pro/s3/SingImgsRepo/biocontainers/v1.2.0_cv1/biocontainers_v1.2.0_cv1.img [cache ...]
+```
+
+The `.pulling.<timestamp>` files in `singularity.cacheDir` reach full size and stay there.
+This is not a Slurm or network problem; the pull runs on the head node before any job is
+submitted. The cause of the hang after the download is unconfirmed (likely the conversion
+of the legacy image to SIF). Confirmed for ampliseq 2.18.0 `FORMAT_TAXONOMY` (2026-09-24,
+run 08). Workaround: pull the Docker image instead. This works for any module with the
+standard nf-core container ternary:
+
+```groovy
+process { withName: '.*:FORMAT_TAXONOMY' { ext.singularity_pull_docker_container = true } }
+```
+
+Kill the stuck `singularity pull` and delete the `.pulling.*` files before relaunching with
+`-resume`. Confirmed working: run 08 completed with the override on 2026-09-24. Drop the override once
+[nf-core/ampliseq#1081](https://github.com/nf-core/ampliseq/issues/1081) ships. To check
+another pipeline for the same problem:
+`grep -rn 'containers.biocontainers.pro' modules/`.
+
 ---
 
 ## Pipeline Quick Reference
