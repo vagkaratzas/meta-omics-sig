@@ -1,7 +1,7 @@
 {
   "_schema": "Hand-maintained data for the meta-omics SIG conveyor-belt site. Strict JSON: no comments, no trailing commas. Three vocabularies are kept apart and must not be blended. (1) repoStatus = a string copied VERBATIM from the 'Samplesheet Chaining - Validation Table' in PLAN.md; edges not in that table have no repoStatus key at all. (2) Site annotations (caveat, siteState, routable, layer, routingBasis) are this site's own notes and are always rendered as such, never as a status. (3) statusClass is a render class only. Two version fields exist and must not be conflated: stations[].release is the version whose documentation the `requires` list was read from (see requiresReadFrom), while datasets[].siteState[id].version is the version actually used for that dataset. The site shows the executed version, and both when they differ. When you change PLAN.md's validation table, change this file.",
   "meta": {
-    "updated": "2026-09-23",
+    "updated": "2026-09-25",
     "repo": "https://github.com/vagkaratzas/meta-omics-sig",
     "sig": "https://nf-co.re/special-interest-groups/meta-omics",
     "plan": "https://github.com/vagkaratzas/meta-omics-sig/blob/main/PLAN.md",
@@ -232,10 +232,11 @@
     },
     {
       "id": "fetchngs__ampliseq", "from": "fetchngs", "to": "ampliseq",
-      "source": "table", "kind": "reads", "repoStatus": "NATIVE from 1.13.0 - not yet exercised; run 08 prepared through the converter on run 01's 1.12.0 sheet, which leaves the native emitter unexercised", "statusClass": "validated",
+      "source": "table", "kind": "reads", "repoStatus": "NATIVE from 1.13.0 - not yet exercised natively; exercised 2026-09-24 through the converter against 1.12.0 (run 08)", "statusClass": "validated",
+      "executed": true,
       "routable": true, "unit": "runs", "carries": ["AMPLICON"],
       "note": "--nf_core_pipeline ampliseq, added in 1.13.0, emits sample,fastq_1,fastq_2 plus run and the metadata columns. ampliseq 2.18.0 accepts that spelling (its schema takes either sampleID/forwardReads or sample/fastq_1) and run is optional, so the sheet transfers with no conversion.",
-      "caveat": "Native since 2026-09-15 and not yet exercised: run 01 used 1.12.0, whose enum had no ampliseq option. Native is not the same as usable - fetchngs still writes the ENA experiment accession into the sample column, so results would be labelled ERX13368357 unless renamed from collection_date."
+      "caveat": "Native since 2026-09-15 and not yet exercised natively: run 01 used 1.12.0, whose enum had no ampliseq option, so run 08 went through scripts/converters/fetchngs_to_reads_samplesheet.py --strategy AMPLICON --target reads. Native is not the same as usable - fetchngs still writes the ENA experiment accession into the sample column, so results would be labelled ERX13368357 unless renamed from collection_date."
     },
     {
       "id": "fetchngs__taxprofiler", "from": "fetchngs", "to": "taxprofiler",
@@ -476,6 +477,10 @@
         "mag": {
           "state": "run", "in": 3, "out": 160, "version": "5.5.0",
           "note": "Run 2026-09-18 on the three WGS libraries, one per collection date, from a sheet built by scripts/converters/fetchngs_to_reads_samplesheet.py --target mag - the first time that conversion has been consumed. Three per-sample megahit assemblies (153 to 368 Mb, N50 about 1 kb), all in binning group 0 so each gets the whole series' differential coverage. Out is 160 MetaBAT2 bins (27, 63 and 70 per date), scored by CheckM2 (re-run with -resume): 24 near-complete (at least 90% complete, under 5% contaminated), 49 medium-quality (at least 50%, under 10%), 75 low-quality and 12 at least 10% contaminated. Near-complete rather than MIMAG high-quality, because rRNA and tRNA genes were not checked. mag's BUSCO columns are not used: BUSCO 6.1.0 in batch mode mixed odb10 and odb12.2 lineages within one run and misaligned bin_summary.tsv - filed 2026-09-18 as nf-core/mag#1115. Prodigal predicted 2,513,059 proteins, 12.7 times run 02's 198,252, though three separate assemblies count a shared genome up to three times. mag's own phiX removal found 1 read pair in 111.7 million, which confirms detaxizer is not needed upstream. GTDB-Tk skipped, MetaBAT2 the only binner."
+        },
+        "ampliseq": {
+          "state": "run", "in": 3, "out": 1755, "version": "2.18.0",
+          "note": "Run 2026-09-24 (run 08) on the three V3-V4 amplicon libraries, one per collection date, with 341F/805R primers confirmed by the data author and sbdi-gtdb R11-RS232-1 taxonomy. Out is 1,755 ASVs. 54-66% of raw read pairs survive to the final table (112,492-591,380 per sample): cutadapt kept over 99%, 92-94% of pairs merged, and chimera removal took 17-21%. Reads are at least 99.9% Bacteria in every sample; 9.3% of ASVs are unassigned at phylum. GTDB has no chloroplast or mitochondrial lineages, so the default filter for them removed nothing. The only workaround was pulling the FORMAT_TAXONOMY image from Docker (nf-core/ampliseq#1081). ampliseq -> differentialabundance stays blocked: one sample per date."
         },
         "differentialabundance": {
           "state": "unavailable", "in": null, "out": null, "version": null,

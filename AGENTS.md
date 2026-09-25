@@ -182,7 +182,7 @@ process { withName: '.*:FORMAT_TAXONOMY' { ext.singularity_pull_docker_container
 ```
 
 Kill the stuck `singularity pull` and delete the `.pulling.*` files before relaunching with
-`-resume`. Drop the override once
+`-resume`. Confirmed working: run 08 completed with the override on 2026-09-24. Drop the override once
 [nf-core/ampliseq#1081](https://github.com/nf-core/ampliseq/issues/1081) ships. To check
 another pipeline for the same problem:
 `grep -rn 'containers.biocontainers.pro' modules/`.

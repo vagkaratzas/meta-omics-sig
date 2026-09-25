@@ -27,6 +27,7 @@ site-specific and go stale; the Seqera link preserves the full execution record.
 | 05 | nf-core/mag | 5.5.0 | 2026-09-18 | 3 MG libraries → 3 assemblies, MetaBAT2 bins, protein FASTA | **SUCCESS** — 160 bins (CheckM2: 24 near-complete, 49 medium-quality), 2,513,059 proteins; BUSCO columns unreliable ([mag#1115](https://github.com/nf-core/mag/issues/1115)) | [Seqera run](https://cloud.seqera.io/user/vangelis/watch/2wiu8ZycJHfAVC) · [CheckM2 re-run](https://cloud.seqera.io/user/vangelis/watch/2Nloa7fgPEWnlX) |
 | 06 | nf-core/proteinfamilies | 2.5.0 | 2026-09-21 | protein families from the run-05 ORFs, pooled into one row | **SUCCESS** — 5,864 families | [Seqera run](https://cloud.seqera.io/user/vangelis/watch/4VgXDoIUSqHCpZ) |
 | 07 | nf-core/proteinannotator | 1.1.0 | 2026-09-22 | annotation of run 03's 405 family representatives, from the samplesheet run 03 emitted | **SUCCESS** — first handoff with no conversion step; InterProScan needed a container bind workaround ([proteinannotator#114](https://github.com/nf-core/proteinannotator/issues/114), [modules#13009](https://github.com/nf-core/modules/issues/13009)) | [Seqera run](https://cloud.seqera.io/user/vangelis/watch/24aruma1zIUWbf) |
+| 08 | nf-core/ampliseq | 2.18.0 | 2026-09-24 | 3 V3-V4 16S amplicon libraries, one per date | **SUCCESS** — 1,755 ASVs, 54–66% of reads retained; `FORMAT_TAXONOMY` needed a container override ([ampliseq#1081](https://github.com/nf-core/ampliseq/issues/1081)) | [Seqera run](https://cloud.seqera.io/user/vangelis/watch/4suWRAScaxYhzE) |
 
 
 ## Upstream issues filed from this project
@@ -838,6 +839,52 @@ process {
 `--interproscan_db` was also pointed at that folder, but the bind is what took effect. The
 workaround changes only where the database is read from. The applications and InterProScan
 version are the pipeline's own.
+
+---
+
+## 08 — ampliseq, the LMO amplicon layer
+
+**Status: SUCCESS, 2026-09-24.**
+
+**Provenance:** <https://cloud.seqera.io/user/vangelis/watch/4suWRAScaxYhzE>
+
+| | |
+|---|---|
+| Pipeline | `nf-core/ampliseq` `-r 2.18.0` (`2723d4c`) |
+| Nextflow | 26.04.4 |
+| Input | 3 MiSeq 2×300 V3-V4 libraries from run 01, one per collection date (PRJEB52780, PRJEB52782, PRJEB52828) |
+| Samplesheet | generated on-cluster by `scripts/converters/fetchngs_to_reads_samplesheet.py --strategy AMPLICON --target reads` |
+| Params | [`runs/08_ampliseq/params.yml`](runs/08_ampliseq/params.yml). 341F/805R primers, `trunclenf` 259, `trunclenr` 199, taxonomy `sbdi-gtdb` (resolved to R11-RS232-1), no metadata sheet |
+| Date | 2026-09-23 first launch, stalled on an image pull; completed 2026-09-24 with `-resume` |
+| Outcome | Success. **1,755 ASVs**; 112,492–591,380 reads per sample after chimera removal |
+
+This is the first run on the amplicon layer. It is also the first test of the
+`fetchngs → ampliseq` edge, through the converter rather than 1.13.0's native emitter. Sample
+names are `LMO_<date>_AMP`, the same date keys as runs 02 and 05.
+
+| Sample | cutadapt | filter | merge | non-chimeric | Final reads | Overall |
+|---|---|---|---|---|---|---|
+| LMO_20160315_AMP | 99.5% | 71.0% | 94.4% | 82.8% | 591,380 | 53.7% |
+| LMO_20160803_AMP | 99.2% | 90.1% | 94.4% | 82.1% | 181,527 | 65.9% |
+| LMO_20171031_AMP | 99.6% | 93.7% | 91.7% | 78.6% | 112,492 | 62.3% |
+
+- **The primers and truncation lengths work.** cutadapt kept over 99% of reads and 92–94% of
+  pairs merged.
+- **The March library lost 29% at the quality filter.** It is 4–6× deeper than the other two
+  and comes from a different study. The cause has not been checked.
+- **The default mitochondria/chloroplast filter removed nothing.** GTDB has no such lineages, so
+  any chloroplast reads stay in the table.
+- **Reads are ≥99.9% Bacteria in every sample.** At phylum level, 164 of 1,755 ASVs (9.3%) are
+  unassigned. Pseudomonadota, Bacteroidota and Actinomycetota have the most ASVs.
+- **`sbdi-gtdb` repeats the domain in a `Kingdom` column**, so QIIME2's `rel-table-3.tsv` is
+  phylum level, not `rel-table-2.tsv`.
+- `QIIME2_EXPORT_RELTAX` was OOM-killed once at 1 GB (exit 137) and passed on the automatic
+  retry at 2 GB. `DADA2_TAXONOMY` peaked at 19.4 of its 20 GB.
+
+The only environment workaround was the `FORMAT_TAXONOMY` Docker pull
+([ampliseq#1081](https://github.com/nf-core/ampliseq/issues/1081)). The full results, the
+versions and the checks not yet done are in
+[`runs/08_ampliseq/README.md`](runs/08_ampliseq/README.md).
 
 ---
 

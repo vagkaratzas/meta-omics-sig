@@ -70,7 +70,7 @@ that we have not yet exercised on real data.
 ```
 fetchngs (SRA accessions)
   └─► detaxizer (remove contaminant reads — phiX spike-in for LMO, host for host data) [PREPARED, RUN 04]
-        ├─► ampliseq (amplicon reads → taxonomy profiles) [PREPARED AS RUN 08, fed from fetchngs]
+        ├─► ampliseq (amplicon reads → taxonomy profiles) [RUN 2026-09-24, fed from fetchngs]
         │     └─► differentialabundance (profiles, condition comparison) [UNTESTED]
         ├─► createtaxdb (build custom reference DB) [UNTESTED]
         │     └─► taxprofiler (shotgun MG reads → taxonomy profiles) [UNTESTED]
@@ -372,7 +372,7 @@ upstream, or shipped as reusable converters.
 | From | To | Samplesheet handoff mechanism | Status |
 |------|----|-------------------------------|--------|
 | **fetchngs** | **detaxizer** | generic `samplesheet.csv`; no `--nf_core_pipeline` support, and detaxizer's columns are `short_reads_fastq_1/2`, not `fastq_1/2` | **CONVERSION REQUIRED** — covered by `scripts/converters/fetchngs_to_reads_samplesheet.py --target detaxizer`; column rename only, sample names shared with the `--target reads` output; exercised 2026-08-11, detaxizer 1.3.0 ran to completion on the converted sheet |
-| **fetchngs** | **ampliseq** | `--nf_core_pipeline ampliseq` (added in 1.13.0) emits `sample,fastq_1,fastq_2,run`; ampliseq 2.18.0 accepts that spelling | **NATIVE from 1.13.0** — not yet exercised; run 01 used 1.12.0, which had no ampliseq option. Sample names are still ENA experiment accessions, so the `collection_date` rename is still needed; run 08 prepared through the converter on run 01's 1.12.0 sheet, which leaves the native emitter unexercised |
+| **fetchngs** | **ampliseq** | `--nf_core_pipeline ampliseq` (added in 1.13.0) emits `sample,fastq_1,fastq_2,run`; ampliseq 2.18.0 accepts that spelling | **NATIVE from 1.13.0** — not yet exercised natively; exercised 2026-09-24 through `scripts/converters/fetchngs_to_reads_samplesheet.py --strategy AMPLICON --target reads` against 1.12.0 (run 08), which had no ampliseq option: ampliseq 2.18.0 ran to completion on it, 1,755 ASVs. Sample names are still ENA experiment accessions, so the `collection_date` rename is still needed |
 | fetchngs | taxprofiler | `--nf_core_pipeline taxprofiler` emits a purpose-built samplesheet | OPEN — flag exists, output not yet verified |
 | **fetchngs** | **mag** | `--nf_core_pipeline mag` (added in 1.13.0) emits a sheet mag cannot use: `group` written empty, read columns named `fastq_1`/`fastq_2` instead of `short_reads_1`/`short_reads_2`, platform hardcoded `ILLUMINA` | **NATIVE, REJECTED BY TARGET** — 1.13.0's emitter fails mag 5.5.0's schema on `group` alone; **CONVERSION REQUIRED** in practice, covered by `scripts/converters/fetchngs_to_reads_samplesheet.py --target mag`. Same defect as [detaxizer#100](https://github.com/nf-core/detaxizer/issues/100), second occurrence; filed 2026-09-15 as [fetchngs#401](https://github.com/nf-core/fetchngs/issues/401). Exercised 2026-09-18 through the converter: mag 5.5.0 ran to completion on it (run 05) |
 | **fetchngs** | **metatdenovo** | `--nf_core_pipeline metatdenovo` (added in 1.13.0) emits `sample,fastq_1,fastq_2` plus the metadata columns, which is exactly metatdenovo 1.4.0's required set | **NATIVE from 1.13.0** — not yet exercised natively; exercised 2026-08-11 through `scripts/converters/fetchngs_to_reads_samplesheet.py` against 1.12.0, which had no metatdenovo option. Sample names are still ENA experiment accessions, so the `collection_date` rename is still needed |
@@ -406,7 +406,7 @@ upstream, or shipped as reusable converters.
 |-------|-------|-------|--------|
 | 0 — Dataset decision | Extend search; score against the matrix in [DATASETS.md](DATASETS.md); SIG vote | `lit-synthesizer`, `ncbi-datasets` | OPEN |
 | 1 — Scaffold | fetchngs run; verify raw data availability; build reference DBs | `ncbi-datasets` (reference genomes) | OPEN |
-| 2 — Core chain | ampliseq / taxprofiler / mag / metatdenovo; detaxizer re-added as run 04 for phiX removal | `claw-metagenomics` (validation runs) | IN PROGRESS — metatdenovo and detaxizer run 2026-08-11; mag run 2026-09-18 |
+| 2 — Core chain | ampliseq / taxprofiler / mag / metatdenovo; detaxizer re-added as run 04 for phiX removal | `claw-metagenomics` (validation runs) | IN PROGRESS — metatdenovo and detaxizer run 2026-08-11; mag run 2026-09-18; ampliseq run 2026-09-24; taxprofiler not run |
 | 2a — Assembly QC | Assess MAG and transcript completeness | `busco-assessor` | IN PROGRESS — MAG completeness done with CheckM2 inside mag (run 05, 2026-09-18: 24 near-complete, 49 medium-quality of 160 bins); BUSCO in mag unusable ([mag#1115](https://github.com/nf-core/mag/issues/1115)); transcript completeness open |
 | 3 — Samplesheet handoffs | Test and document each edge in the validation table | — | OPEN |
 | 4 — Secondary analysis | differentialabundance; funcscan; phageannotator; phyloplace | — | OPEN |

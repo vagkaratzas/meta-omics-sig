@@ -153,5 +153,148 @@ or failed.
 | Step | Status |
 |------|--------|
 | Primers | **Confirmed**: 341F/805R, sequences confirmed by the data author and found in about 98% of R1 and R2 reads (2026-09-23) |
-| Samplesheet | **Prepared**: converter command above, `--strategy AMPLICON --target reads` |
-| ampliseq run | **Not run** |
+| Samplesheet | **Done**: converter command above, `--strategy AMPLICON --target reads`, accepted by ampliseq 2.18.0 |
+| ampliseq run | **SUCCESS** 2026-09-24: 3 samples, 1,755 ASVs, 54–66% of raw reads retained ([results](#results)) |
+
+## Results
+
+Provenance: <https://cloud.seqera.io/user/vangelis/watch/4suWRAScaxYhzE>. The first launch on
+2026-09-23 stalled on the `FORMAT_TAXONOMY` image pull. The run then completed on 2026-09-24
+with `-resume` and the override above, and everything up to `BARRNAPSUMMARY` came from cache.
+
+### Read retention (`overall_summary.tsv`)
+
+| Sample | Raw pairs | cutadapt | filter | merge | non-chimeric | Final | Overall |
+|---|---|---|---|---|---|---|---|
+| LMO_20160315_AMP | 1,100,544 | 99.5% | **71.0%** | 94.4% | 82.8% | 591,380 | 53.7% |
+| LMO_20160803_AMP | 275,555 | 99.2% | 90.1% | 94.4% | 82.1% | 181,527 | 65.9% |
+| LMO_20171031_AMP | 180,474 | 99.6% | 93.7% | 91.7% | 78.6% | 112,492 | 62.3% |
+
+The filter, merge and non-chimeric columns are the share of the previous step's output that
+survives the step. The merge step uses the denoised pairs as its input.
+
+- **Primers and truncation hold.** cutadapt kept over 99% of reads, and 92–94% of denoised
+  pairs merged. The ~31 bp overlap left by 259 / 199 is enough.
+- **Chimeras removed 17–21% of reads.** That is high but within the normal range for V3-V4.
+- **The March sample lost 29% at the quality filter**, against 6–10% for the other two. It is
+  also the deepest library (4–6× the others) and comes from a different study (PRJEB52780),
+  so a lower-quality sequencing run is the likely cause. The FastQC report was not checked. The
+  591,380 reads that remain are the most of any sample.
+- **The taxonomy filter removed nothing.** `QIIME2_TABLEFILTERTAXA` ran with
+  `taxa:mitochondria,chloroplast` and lost 0 reads. GTDB has no chloroplast or mitochondrial
+  lineages, so the default `exclude_taxa` has nothing to match. Any chloroplast 16S reads from the
+  spring bloom are still in the table, most likely as Cyanobacteriota or unassigned. That was not
+  checked.
+
+### ASVs and taxonomy
+
+Database `sbdi-gtdb` resolved to **R11-RS232-1**. The output file is
+`dada2/ASV_tax.sbdi-gtdb_R11-RS232-1.tsv`.
+
+- **1,755 ASVs** in `dada2/ASV_seqs.fasta`.
+- **Domain level:** Bacteria make up at least 99.9% of reads in every sample. Archaea make up
+  ≤0.014%, and reads unassigned at domain level ≤0.07%.
+- **Phylum level, by ASV count:** Pseudomonadota 552, Bacteroidota 280, Actinomycetota 174,
+  **unassigned 164 (9.3%)**, Planctomycetota 120, Cyanobacteriota 99, Verrucomicrobiota 76.
+
+**ASV lengths are clean.** 1,739 of 1,755 ASVs (99.1%) are 400–430 bp. There are two peaks,
+at 402–407 bp and 420–428 bp; the most common lengths are 402 (340 ASVs) and 427 (332). Two
+peaks are expected from V3-V4 length variation between taxa. Only 16 ASVs fall outside
+400–430 bp, so there is no sign of off-target amplification.
+
+**Read-weighted phylum profile** (`qiime2/rel_abundance_tables/rel-table-3.tsv`, share of
+final reads):
+
+| Phylum | 2016-03-15 | 2016-08-03 | 2017-10-31 |
+|---|---|---|---|
+| Bacteroidota | **30.5%** | 10.7% | 18.9% |
+| Cyanobacteriota | 22.0% | **36.0%** | 8.1% |
+| Pseudomonadota | 15.5% | 13.0% | 14.3% |
+| Actinomycetota | 12.1% | 10.5% | **36.8%** |
+| unassigned at phylum | 4.8% | **13.8%** | 6.8% |
+| Planctomycetota | 4.5% | 5.8% | 5.9% |
+| Patescibacteriota | 5.3% | 0.2% | 0.1% |
+| Verrucomicrobiota | 1.6% | 4.6% | 3.6% |
+| Chloroflexota | 2.1% | 1.1% | 0.4% |
+| Desulfobacterota | 0.1% | 1.4% | 3.4% |
+
+Each date has a different dominant phylum: Bacteroidota in March, Cyanobacteriota in August
+and Actinomycetota in October. The profiles have not yet been compared with the published LMO
+time series.
+
+Two numbers need a check before they are interpreted:
+
+- **Cyanobacteriota at 22% in March.** Cyanobacteria are usually a summer signal, and GTDB has
+  no chloroplast lineage, so chloroplast 16S could land here. Checked at family level
+  (`rel-table-6.tsv`): **no sign of chloroplasts.** In March, 15.2% of reads are Cyanobiaceae
+  (the *Synechococcus* / *Cyanobium* family) and 5.5% Phormidesmidaceae. Cyanobacteriia with no
+  family assigned, where a chloroplast would most likely fall, are 0.3% in March, 1.4% in August
+  and 0.2% in October. This does not rule out chloroplasts forced into a named family.
+- **13.8% unassigned at phylum in August.** This could be eukaryotic or chloroplast
+  sequences, or bacteria that GTDB does not resolve.
+
+**`sbdi-gtdb` has both a `Domain` and a `Kingdom` column, and both hold the domain name.** QIIME2
+therefore counts ranks one level later than usual. `rel-table-2.tsv` is `Bacteria;Bacteria`, not
+phylum level. **Phylum is `rel-table-3.tsv`**, and so on down. Take this into account before
+comparing these tables with taxprofiler or any other GTDB profile by level number.
+
+### barrnap and the unassigned reads
+
+barrnap found an rRNA gene in 1,754 of 1,755 ASVs. For **1,750** the best-scoring model is
+bacterial and for **4** it is archaeal. No ASV scores best against the eukaryotic or the
+mitochondrial model. One ASV has no rRNA hit at all. It is probably the phylum-unassigned ASV
+missing from a join of the barrnap and taxonomy files (163 unassigned there, against 164 in
+the taxonomy file).
+
+**Five ASVs make up most of August's reads with no phylum.** Together they hold 15,822 of
+181,527 August reads (8.7%), about 63% of the 13.8% unassigned. barrnap scores all five best as
+bacterial. That rules out eukaryotic nuclear rRNA, but not chloroplasts. Chloroplast 16S comes
+from cyanobacteria and also scores best against the bacterial model, and barrnap has no
+chloroplast model. The ASVs are either chloroplasts or bacteria that GTDB cannot place at
+phylum level. Only BLAST or a SILVA classification can tell these apart.
+
+| ASV | Mar | Aug | Oct |
+|---|---|---|---|
+| `b9a924b9f65ece84b5528ab8d640a6e7` | 1,446 | 6,287 | 48 |
+| `83073fd45fe992e623cba8ef4b275cfd` | 236 | 3,939 | 678 |
+| `cb8818c331eb97f13778cef034bb3af0` | 1,006 | 2,545 | 1,016 |
+| `23e86eb2b1557088fb1b0c7f54772396` | 0 | 1,825 | 0 |
+| `8a7a98a1eb1404d3a2cededbd43c5b3c` | 0 | 1,226 | 3 |
+
+### Outputs for the next edges
+
+- `qiime2/abundance_tables/feature-table.tsv` (ASV × sample counts, from the `.biom`) and
+  `qiime2/rel_abundance_tables/rel-table-{2..6,ASV}.tsv` exist. These are the inputs for
+  `ampliseq → differentialabundance`, which stays blocked because each date has only one sample.
+- Sample names are `LMO_<date>_AMP`, the same date keys as the MG and MT runs.
+
+### Resources and retries
+
+- `QIIME2_EXPORT_RELTAX` **failed once with exit 137 at 1 GB** after 16 min, then passed on the
+  automatic retry at 2 GB (peak RSS 1.2 GB). The retry handled it; no site-config change needed.
+- `DADA2_TAXONOMY` peaked at **19.4 GB of its 20 GB** allocation. A larger reference or more
+  ASVs would push it over the limit.
+- The longest task was `DADA2_ERR`, at 22 min 47 s.
+
+### Versions (`pipeline_info/software_versions.yml`)
+
+nf-core/ampliseq v2.18.0-g2723d4c · Nextflow 26.04.4 · cutadapt 5.2 · DADA2 1.38.0 (R 4.5.2)
+· QIIME2 2026.4.0 · barrnap 0.9 · FastQC 0.12.1 · phyloseq 1.50.0 · TreeSummarizedExperiment 2.10.0
+
+### Not yet checked
+
+- **TODO: classify the five top unassigned ASVs.** Run the sequences in `top_unassigned.fasta`
+  (from the commands below) through SILVA SINA (<https://www.arb-silva.de/aligner/>) with "search
+  and classify" on. SILVA has chloroplast and mitochondrial lineages, so this decides between
+  chloroplast and bacteria GTDB cannot place. NCBI BLAST against nt, with uncultured/environmental
+  sequences excluded, is the fallback. This does not block taxprofiler; it only changes how the
+  August profile is described.
+
+  ```bash
+  TAX=dada2/ASV_tax.sbdi-gtdb_R11-RS232-1.tsv
+  awk -F'\t' 'NR>1 && $4==""{print $1}' $TAX > unassigned.txt
+  grep -Ff unassigned.txt qiime2/abundance_tables/feature-table.tsv | sort -k3,3gr | head -5 > top_unassigned.tsv
+  cut -f1 top_unassigned.tsv | seqkit grep -f - dada2/ASV_seqs.fasta > top_unassigned.fasta
+  ```
+- Comparison of the profiles with the published LMO time series (Fridolfsson et al. 2023,
+  doi:10.1038/s41598-023-38816-0).
