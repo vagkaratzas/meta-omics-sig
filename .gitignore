@@ -3,6 +3,7 @@ output/
 
 # Generated on the cluster from the previous pipeline's output — contains absolute paths.
 runs/*/samplesheet.csv
+runs/*/databases.csv
 # Pooled protein FASTAs written by the converters next to the samplesheet — hundreds of MB.
 runs/*/*.faa.gz
 

@@ -53,6 +53,7 @@ with the Seqera Platform provenance link lives in [RUNS.md](RUNS.md).
 | 06 | proteinfamilies | [runs/06_proteinfamilies/README.md](runs/06_proteinfamilies/README.md) |
 | 07 | proteinannotator | [runs/07_proteinannotator/README.md](runs/07_proteinannotator/README.md) — run 2026-09-22 |
 | 08 | ampliseq | [runs/08_ampliseq/README.md](runs/08_ampliseq/README.md) — run 2026-09-24 |
+| 09 | taxprofiler | [runs/09_taxprofiler/README.md](runs/09_taxprofiler/README.md) — prepared, not run |
 
 ## Scripts
 
