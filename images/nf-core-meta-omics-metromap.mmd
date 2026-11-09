@@ -1,0 +1,93 @@
+%% nf-core meta-omics SIG metro map: how the SIG's pipelines chain.
+%% Edges follow docs/data.json (the validation table) plus the SIG-agreed map additions.
+%% Render and check: .claude/skills/update-metro-map/SKILL.md (nf-metro >= 2.1.0).
+%% Baseline 2026-11-09, a draft for the SIG: images/nf-core-meta-omics-metromap.png is still the hand-drawn map until the SIG approves this one.
+%%metro title: nf-core meta-omics pipelines
+%%metro style: nfcore
+%%metro mode: light
+%%metro line: amplicon | amplicon reads | #e8c547
+%%metro line: shotgun | shotgun reads | #24b064
+%%metro line: mt | metatranscriptome contigs | #7b4fa0
+%%metro line: mags | MAGs / genome bins | #3e2f2f
+%%metro line: viral | viral contigs | #d0453a
+%%metro line: db | reference database | #7a7a7a | dashed
+%%metro file: ref_in | FASTA | reference genomes
+%%metro files: magmap_reads | FASTQ | MG / MT reads
+%%metro legend: bl
+
+graph LR
+    subgraph input [Data input]
+        ref_in[ ]
+        fetchngs[fetchngs]
+        detaxizer[detaxizer]
+        createtaxdb[createtaxdb]
+
+        fetchngs -->|amplicon,shotgun| detaxizer
+        ref_in -->|db| createtaxdb
+    end
+
+    subgraph primary [Primary analysis]
+        _reads
+        ampliseq[ampliseq]
+        taxprofiler[taxprofiler]
+        funcprofiler[funcprofiler]
+        eager[eager]
+        mag[mag]
+        metatdenovo[metatdenovo]
+        viralmetagenome[viralmetagenome]
+
+        _reads -->|amplicon| ampliseq
+        _reads -->|shotgun| taxprofiler
+        _reads -->|shotgun| funcprofiler
+        _reads -->|shotgun| eager
+        _reads -->|shotgun| mag
+        _reads -->|shotgun| metatdenovo
+        _reads -->|shotgun| viralmetagenome
+    end
+
+    subgraph secondary [Secondary analysis]
+        magmap_reads[ ]
+        magmap[magmap]
+        differentialabundance[differentialabundance]
+        metapep[metapep]
+        phageannotator[phageannotator]
+        funcscan[funcscan]
+        phyloplace[phyloplace]
+        proteinfamilies[proteinfamilies]
+        bacmodel[bacmodel]
+
+        magmap_reads -->|shotgun| magmap
+        magmap -->|mags| differentialabundance
+    end
+
+    subgraph upload [Data upload]
+        seqsubmit[seqsubmit]
+    end
+
+    %% detaxizer is optional: reads reach primary analysis from either station
+    fetchngs -->|amplicon,shotgun| _reads
+    detaxizer -->|amplicon,shotgun| _reads
+
+    createtaxdb -->|db| taxprofiler
+    createtaxdb -->|db| metatdenovo
+
+    %% profiles and count tables
+    ampliseq -->|amplicon| differentialabundance
+    taxprofiler -->|shotgun| differentialabundance
+    funcprofiler -->|shotgun| differentialabundance
+    metatdenovo -->|mt| differentialabundance
+
+    %% magmap maps the reads back onto the MAGs (reads drawn as a local FASTQ icon: a line from _reads loops and breaks the bundle order)
+    mag -->|mags| magmap
+
+    mag -->|mags| metapep
+    mag -->|mags| phageannotator
+    mag -->|mags| funcscan
+    mag -->|mags| phyloplace
+    mag -->|mags| proteinfamilies
+    mag -->|mags| bacmodel
+    mag -->|mags| seqsubmit
+    metatdenovo -->|mt| proteinfamilies
+    metatdenovo -->|mt| seqsubmit
+    viralmetagenome -->|viral| phageannotator
+    viralmetagenome -->|viral| phyloplace
