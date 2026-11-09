@@ -27,6 +27,11 @@ The repository doubles as an Obsidian vault, which imposes one hard rule:
 - **Do not move or rename the canonical docs.** `docs/data.json`, `README.md` and
   `Home.md` all reference them by path, and `docs/index.html` builds links from
   `meta.plan` / `meta.datasets_doc` / `meta.runs_doc`.
+- **Branches:** work on a branch, PR it into `dev`, and PR `dev` into `main`. The Pages site
+  builds from `main` `/docs`, so a change is public only once `main` merges.
+- **The metro map** is text: `images/nf-core-meta-omics-metromap.mmd`, rendered with nf-metro.
+  Change it with the [update-metro-map](.claude/skills/update-metro-map/SKILL.md) skill, never
+  by editing the PNG/SVG.
 - After editing links, run `python3 scripts/check_links.py`. It fails on broken links,
   orphaned files, and wikilinks, and exits non-zero. A file with no inbound links is
   invisible in the vault — that is how `ACRONYMS.md` went unnoticed until
