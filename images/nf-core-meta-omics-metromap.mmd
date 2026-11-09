@@ -6,8 +6,9 @@
 %%metro style: nfcore
 %%metro mode: light
 %%metro line: amplicon | amplicon reads | #e8c547
-%%metro line: shotgun | shotgun reads | #24b064
+%% line order matters: amplicon, mt, shotgun keeps amplicon straight on top (other orders swap lines or crash the router)
 %%metro line: mt | metatranscriptome contigs | #7b4fa0
+%%metro line: shotgun | shotgun reads | #24b064
 %%metro line: mags | MAGs / genome bins | #3e2f2f
 %%metro line: viral | viral contigs | #d0453a
 %%metro line: db | reference database | #7a7a7a | dashed
@@ -35,6 +36,7 @@ graph LR
         mag[mag]
         metatdenovo[metatdenovo]
         viralmetagenome[viralmetagenome]
+        _prof
 
         _reads -->|amplicon| ampliseq
         _reads -->|shotgun| taxprofiler
@@ -73,8 +75,10 @@ graph LR
 
     %% profiles and count tables
     ampliseq -->|amplicon| differentialabundance
-    taxprofiler -->|shotgun| differentialabundance
-    funcprofiler -->|shotgun| differentialabundance
+    %% _prof merges the two profile lines inside primary: without it nf-metro bends the amplicon line and swaps it with shotgun at the secondary entry
+    taxprofiler -->|shotgun| _prof
+    funcprofiler -->|shotgun| _prof
+    _prof -->|shotgun| differentialabundance
     metatdenovo -->|mt| differentialabundance
 
     %% magmap maps the reads back onto the MAGs (reads drawn as a local FASTQ icon: a line from _reads loops and breaks the bundle order)
