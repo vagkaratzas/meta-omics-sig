@@ -136,7 +136,9 @@ error [java.lang.OutOfMemoryError]: Java heap space
 Workaround: `export NXF_OPTS="-Xms2g -Xmx16g"` and relaunch with `-resume`. Confirmed on
 codon (2026-09-21) for proteinfamilies 2.5.0 `MERGE_SEEDS` at ~2.4 M proteins (run 06). The
 real fix is upstream, staging fewer files per task:
-[nf-core/proteinfamilies#191](https://github.com/nf-core/proteinfamilies/issues/191).
+[nf-core/proteinfamilies#191](https://github.com/nf-core/proteinfamilies/issues/191),
+shipped in proteinfamilies 2.6.0: not needed for `MERGE_SEEDS` from 2.6.0 on. Keep it in
+mind for any other process that stages thousands of files.
 
 ### nf-core `interproscan` module ignores the staged database
 Any pipeline using `modules/nf-core/interproscan` (proteinannotator 1.1.0 confirmed) reads
@@ -158,6 +160,8 @@ process { withName: '.*:INTERPROSCAN' { containerOptions = '-B <interproscan-5.5
 
 Drop it once [nf-core/modules#13009](https://github.com/nf-core/modules/issues/13009) and
 [nf-core/proteinannotator#114](https://github.com/nf-core/proteinannotator/issues/114) ship.
+Both are closed (checked 2026-11-09), but the fix is only on proteinannotator `dev`: keep
+the bind mount until the release after 1.1.0.
 
 ### Legacy `containers.biocontainers.pro` `.img` images hang the Singularity pull
 A container URL of the form `https://containers.biocontainers.pro/s3/SingImgsRepo/...img`
@@ -182,8 +186,8 @@ process { withName: '.*:FORMAT_TAXONOMY' { ext.singularity_pull_docker_container
 ```
 
 Kill the stuck `singularity pull` and delete the `.pulling.*` files before relaunching with
-`-resume`. Confirmed working: run 08 completed with the override on 2026-09-24. Drop the override once
-[nf-core/ampliseq#1081](https://github.com/nf-core/ampliseq/issues/1081) ships. To check
+`-resume`. Confirmed working: run 08 completed with the override on 2026-09-24. Not needed from ampliseq 3.0.0:
+[nf-core/ampliseq#1081](https://github.com/nf-core/ampliseq/issues/1081) shipped there (PR #1086). To check
 another pipeline for the same problem:
 `grep -rn 'containers.biocontainers.pro' modules/`.
 

@@ -33,7 +33,7 @@ site-specific and go stale; the Seqera link preserves the full execution record.
 ## Upstream issues filed from this project
 
 Every bug report or feature request this project has sent upstream, with the run that
-surfaced it. Details are in the run sections below.
+surfaced it. Details are in the run sections below. States checked 2026-11-09: 10 of 12 closed, 8 of them in a pipeline release.
 
 | Issue | Filed | Found in | Status |
 |-------|-------|----------|--------|
@@ -41,14 +41,14 @@ surfaced it. Details are in the run sections below.
 | [nf-core/fetchngs#374](https://github.com/nf-core/fetchngs/issues/374) — `--ena_metadata_fields` interpolated unquoted | 2026-08-10 | run 01 | closed, shipped in 1.13.0 |
 | [nf-core/fetchngs#375](https://github.com/nf-core/fetchngs/issues/375) — `multiqc_mappings_config.py` stray quote, mangles commas | 2026-08-10 | run 01 | closed, shipped in 1.13.0 |
 | [nf-core/fetchngs#376](https://github.com/nf-core/fetchngs/issues/376) — `--nf_core_pipeline` lacks ampliseq, mag, metatdenovo | 2026-08-10 | run 01 | closed, shipped in 1.13.0 |
-| [nf-core/detaxizer#99](https://github.com/nf-core/detaxizer/issues/99) — `filter.nf` `$(COUNTER-1)` should be `$((COUNTER-1))` | 2026-08-11 | run 04 | open |
-| [nf-core/detaxizer#100](https://github.com/nf-core/detaxizer/issues/100) — generated mag samplesheet rejected by mag | 2026-08-11 | run 04 | open |
+| [nf-core/detaxizer#99](https://github.com/nf-core/detaxizer/issues/99) — `filter.nf` `$(COUNTER-1)` should be `$((COUNTER-1))` | 2026-08-11 | run 04 | closed, shipped in 1.4.0 (PR #107) |
+| [nf-core/detaxizer#100](https://github.com/nf-core/detaxizer/issues/100) — generated mag samplesheet rejected by mag | 2026-08-11 | run 04 | closed, shipped in 1.4.0 (PR #108) |
 | [nf-core/fetchngs#401](https://github.com/nf-core/fetchngs/issues/401) — 1.13.0 `--nf_core_pipeline mag` sheet rejected by mag | 2026-09-15 | 1.13.0 schema check | open |
 | [nf-core/mag#1115](https://github.com/nf-core/mag/issues/1115) — BUSCO batch mode leaks lineage state between bins, corrupting `bin_summary.tsv` | 2026-09-18 | run 05 | open |
-| [nf-core/proteinfamilies#191](https://github.com/nf-core/proteinfamilies/issues/191) — `MERGE_SEEDS` stages every seed MSA of the sample per task; head JVM `OutOfMemoryError` at scale | 2026-09-21 | run 06 | open |
-| [nf-core/proteinannotator#114](https://github.com/nf-core/proteinannotator/issues/114) — InterProScan fails with a real database: container 5.59 vs default database URL 5.72, and the untarred database is staged one directory too deep | 2026-09-22 | run 07 | open |
-| [nf-core/modules#13009](https://github.com/nf-core/modules/issues/13009) — `interproscan` module ignores the staged database: relative `INTERPROSCAN_CONF`, wrong `bin.directory`, `data.directory` never set | 2026-09-22 | run 07 | open |
-| [nf-core/ampliseq#1081](https://github.com/nf-core/ampliseq/issues/1081) — `FORMAT_TAXONOMY` Singularity image is a legacy biocontainers `.img`; pull hangs after download | 2026-09-24 | run 08 | open |
+| [nf-core/proteinfamilies#191](https://github.com/nf-core/proteinfamilies/issues/191) — `MERGE_SEEDS` stages every seed MSA of the sample per task; head JVM `OutOfMemoryError` at scale | 2026-09-21 | run 06 | closed, shipped in 2.6.0 (PR #193) |
+| [nf-core/proteinannotator#114](https://github.com/nf-core/proteinannotator/issues/114) — InterProScan fails with a real database: container 5.59 vs default database URL 5.72, and the untarred database is staged one directory too deep | 2026-09-22 | run 07 | closed, fixed on `dev` (PR #115); not released yet (latest 1.1.0) |
+| [nf-core/modules#13009](https://github.com/nf-core/modules/issues/13009) — `interproscan` module ignores the staged database: relative `INTERPROSCAN_CONF`, wrong `bin.directory`, `data.directory` never set | 2026-09-22 | run 07 | closed, fixed in nf-core/modules; reaches users with the next proteinannotator release |
+| [nf-core/ampliseq#1081](https://github.com/nf-core/ampliseq/issues/1081) — `FORMAT_TAXONOMY` Singularity image is a legacy biocontainers `.img`; pull hangs after download | 2026-09-24 | run 08 | closed, shipped in 3.0.0 (PR #1086) |
 
 ---
 
