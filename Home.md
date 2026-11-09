@@ -67,6 +67,8 @@ with the metatranscriptome-vs-metagenome family comparison (runs 03 and 06):
 representatives, and `summarise_family_hits.py` (assert-based `--selftest`) counts the
 matches at E-value and two-sided coverage thresholds.
 
+The metro map's source is [`images/nf-core-meta-omics-metromap.mmd`](images/nf-core-meta-omics-metromap.mmd), rendered with nf-metro. The [update-metro-map](.claude/skills/update-metro-map/SKILL.md) skill covers editing, checking and shipping it; `scripts/check_map.py` (assert-based `--selftest`) compares its edges with `docs/data.json`.
+
 `scripts/check_links.py` checks link hygiene for this vault — broken links, orphaned notes,
 and `[[wikilink]]` syntax that would not render on GitHub. Run it after editing links:
 
