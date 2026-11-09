@@ -34,6 +34,8 @@ The map is text: [`images/nf-core-meta-omics-metromap.mmd`](../../../images/nf-c
    - lines that swap where they enter a section: merge same-line feeders in a hidden junction inside the source section (`_prof` for taxprofiler and funcprofiler), so they join the bundle once;
    - line declaration order sets the bundle order: amplicon first keeps it straight on top; mt before shotgun because metatdenovo always sits between the two profilers;
    - some orders crash the router ("defective bundle curves", nf-metro 2.1.0): change the declaration order and re-render.
+
+   Both are upstream bugs, already reported: [nf-metro#2119](https://github.com/seqeralabs/nf-metro/issues/2119) (the lane swap) and [nf-metro#2069](https://github.com/seqeralabs/nf-metro/issues/2069) (the abort). Once they are fixed, try dropping `_prof` and the line-order comment in the `.mmd`.
    Zoom into a crop of the PNG at each section boundary: a swap is easy to miss at full size.
 5. Show the SIG a draft first: the PNG plus the edges added and removed.
 6. Ship after the SIG agrees:

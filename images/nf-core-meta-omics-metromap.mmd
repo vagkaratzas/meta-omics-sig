@@ -6,7 +6,7 @@
 %%metro style: nfcore
 %%metro mode: light
 %%metro line: amplicon | amplicon reads | #e8c547
-%% line order matters: amplicon, mt, shotgun keeps amplicon straight on top (other orders swap lines or crash the router)
+%% line order matters: amplicon, mt, shotgun keeps amplicon straight on top (other orders swap lines or crash the router: nf-metro#2119, #2069)
 %%metro line: mt | metatranscriptome contigs | #7b4fa0
 %%metro line: shotgun | shotgun reads | #24b064
 %%metro line: mags | MAGs / genome bins | #3e2f2f
@@ -75,7 +75,7 @@ graph LR
 
     %% profiles and count tables
     ampliseq -->|amplicon| differentialabundance
-    %% _prof merges the two profile lines inside primary: without it nf-metro bends the amplicon line and swaps it with shotgun at the secondary entry
+    %% _prof merges the two profile lines inside primary: without it nf-metro bends the amplicon line and swaps it with shotgun at the secondary entry (nf-metro#2119)
     taxprofiler -->|shotgun| _prof
     funcprofiler -->|shotgun| _prof
     _prof -->|shotgun| differentialabundance
