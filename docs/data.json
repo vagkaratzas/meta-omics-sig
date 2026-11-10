@@ -294,10 +294,11 @@
     {
       "id": "detaxizer__taxprofiler", "from": "detaxizer", "to": "taxprofiler",
       "source": "table", "kind": "reads",
-      "repoStatus": "NATIVE - emitted 2026-08-11, validates against taxprofiler 2.0.1, not yet exercised", "statusClass": "validated",
-      "routable": false, "unit": "runs", "carries": ["WGS"],
+      "repoStatus": "NATIVE - exercised 2026-11-10 (run 09): run 04's sheet consumed unmodified by taxprofiler 2.0.1, the second handoff with no conversion step; run 04's outdir had been renamed, so its absolute paths needed a symlink from the old name; taxprofiler additionally needs a --databases sheet detaxizer cannot produce", "statusClass": "validated",
+      "executed": true,
+      "routable": false, "unit": "runs", "carries": ["RNA-Seq"],
       "note": "--generate_downstream_samplesheets emits downstream_samplesheets/taxprofiler.csv natively - sample, run_accession, instrument_platform, fastq_1, fastq_2, fasta. Run 04 produced it on 2026-08-11 and it validates against taxprofiler 2.0.1 schema_input.json: instrument_platform is written as ILLUMINA, which is in the enum, and the paths match the gzipped-FASTQ pattern. detaxizer is one of two pipelines in this chain that ship a downstream samplesheet generator - proteinfamilies 2.5.0 is the other, via per-target skip_*_samplesheet flags rather than a pipeline-name enum.",
-      "caveat": "Valid but not sufficient on its own: taxprofiler also requires a --databases sheet, which detaxizer cannot produce. Run 04's sheet also points at metatranscriptome libraries, because that run used --strategy RNA-Seq; the chain intends taxprofiler for the metagenome layer, so driving it properly needs a second detaxizer run over the WGS libraries."
+      "caveat": "Valid but not sufficient on its own: taxprofiler also requires a --databases sheet, which detaxizer cannot produce. Run 09 profiled the metatranscriptome libraries, because run 04 used --strategy RNA-Seq; the chain intends taxprofiler for the metagenome layer, so a metagenome profile needs a second detaxizer run over the WGS libraries or a fetchngs sheet."
     },
     {
       "id": "detaxizer__mag", "from": "detaxizer", "to": "mag",
@@ -481,6 +482,10 @@
         "ampliseq": {
           "state": "run", "in": 3, "out": 1755, "version": "2.18.0",
           "note": "Run 2026-09-24 (run 08) on the three V3-V4 amplicon libraries, one per collection date, with 341F/805R primers confirmed by the data author and sbdi-gtdb R11-RS232-1 taxonomy. Out is 1,755 ASVs. 54-66% of raw read pairs survive to the final table (112,492-591,380 per sample): cutadapt kept over 99%, 92-94% of pairs merged, and chimera removal took 17-21%. Reads are at least 99.9% Bacteria in every sample; 9.3% of ASVs are unassigned at phylum. GTDB has no chloroplast or mitochondrial lineages, so the default filter for them removed nothing. The only workaround was pulling the FORMAT_TAXONOMY image from Docker (nf-core/ampliseq#1081). ampliseq -> differentialabundance stays blocked: one sample per date."
+        },
+        "taxprofiler": {
+          "state": "run", "in": 6, "out": "11-42 genomes", "version": "2.0.1",
+          "note": "Run 2026-11-10 (run 09) on run 04's emitted taxprofiler.csv, unmodified: the 6 phiX-filtered metatranscriptome libraries. kraken2 PlusPF-16 classified 27-57% of reads; sylph with GTDB r232 found 11-42 genomes per library, the same GTDB release as run 08's amplicon taxonomy. August is dominated by Cyanobacteriota in both profilers (18-19% of kraken2 reads, 39-54% of the sylph profile). kraken2 also reports eukaryotes such as diatoms, which sylph's GTDB database cannot. sylph abundances assume even genome coverage, which metatranscriptome reads do not have. The metagenome libraries are not profiled yet."
         },
         "differentialabundance": {
           "state": "unavailable", "in": null, "out": null, "version": null,

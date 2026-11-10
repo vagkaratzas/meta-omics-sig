@@ -11,9 +11,9 @@ metatranscriptome libraries.
 
 ## Which edge this exercises
 
-`detaxizer → taxprofiler` is **NATIVE**, and no run has exercised it yet. Run 04 emitted
-`taxprofiler.csv` on 2026-08-11 and it validated against taxprofiler 2.0.1, but no run has
-consumed it. This would be the second native handoff in the chain. The first was
+`detaxizer → taxprofiler` is **NATIVE**, exercised by this run on 2026-11-10. Run 04 emitted
+`taxprofiler.csv` on 2026-08-11 and it validated against taxprofiler 2.0.1; this run consumed
+it unmodified. It is the second native handoff in the chain. The first was
 proteinfamilies → proteinannotator in [run 07](../07_proteinannotator/README.md).
 **The sheet must go in exactly as emitted.** Editing it, even with a sed, turns the
 result into "conversion required".
@@ -44,11 +44,11 @@ would be a separate run from a converter or fetchngs sheet.
 
 | Item | Status | Size |
 |---|---|---|
-| Run 04 filtered reads still on disk | **check** (step 1) | — |
-| Kraken2 PlusPF-16 (2026-06-26) | **download** | 11.1 GB archive, 14.9 GB untarred |
-| sylph GTDB r232 `-c 200` database, `dbv1` | **download** | 24 GB |
-| sylph-tax GTDB r232 metadata | **download** | small |
-| `databases.csv` | **write** (step 3) | — |
+| Run 04 filtered reads still on disk | **done** (step 1, via symlink) | — |
+| Kraken2 PlusPF-16 (2026-06-26) | **done** | 11.1 GB archive, 14.9 GB untarred |
+| sylph GTDB r232 `-c 200` database, `dbv1` | **done** | 24 GB |
+| sylph-tax GTDB r232 metadata | **done** | small |
+| `databases.csv` | **done** (step 3) | — |
 
 ### Why these two databases
 
@@ -91,11 +91,11 @@ producer's outdir staying where it was written.
 
 ### 2. Get the databases
 
-The databases go in a `databases/` folder inside the launch dir for now. A shared database
-folder can replace it later.
+The databases go in a `databases/` folder inside this run folder for now (gitignored). A
+shared database folder can replace it later.
 
 ```bash
-DB=<launch-dir>/databases
+DB=runs/09_taxprofiler/databases
 mkdir -p $DB && cd $DB
 wget https://genome-idx.s3.amazonaws.com/kraken/k2_pluspf_16_GB_20260626.tar.gz
 mkdir k2_pluspf_16gb_20260626 && tar -xzf k2_pluspf_16_GB_20260626.tar.gz -C k2_pluspf_16gb_20260626
@@ -175,12 +175,47 @@ For each library, record the kraken2 classified share, the number of genomes syl
 detected, and the top phyla from each profiler. The comparison with run 08 is by name and
 per date. The `_a` and `_b` libraries give two MT profiles for each amplicon profile.
 
+## Results
+
+Run 2026-11-10, one launch, 5 min 14 s, no failed tasks
+([Seqera run](https://cloud.seqera.io/user/vangelis/watch/1mQj5DfrXs09hs)). Nextflow 26.04.6;
+fastp 0.24.0, kraken2 2.1.5, sylph 0.7.0, sylph-tax 1.2.0, taxpasta 0.7.0. The outdir is 67 MB.
+
+**The handoff worked as emitted.** taxprofiler took run 04's `taxprofiler.csv` unmodified.
+The only intervention was outside the sheet: the symlink from step 1.
+
+| Library | kraken2 classified | sylph genomes | sylph top phyla (taxonomic abundance) |
+|---|---|---|---|
+| LMO_20160315_MT_a | 26.9% | 11 | Pseudomonadota 48%, Bacteroidota 22%, Cyanobacteriota 16%, Thermoplasmatota 13% |
+| LMO_20160315_MT_b | 30.3% | 17 | Pseudomonadota 55%, Bacteroidota 20%, Cyanobacteriota 15%, Thermoplasmatota 8% |
+| LMO_20160803_MT_a | 56.9% | 25 | Cyanobacteriota 54%, Pseudomonadota 38%, Bacteroidota 4%, Verrucomicrobiota 2% |
+| LMO_20160803_MT_b | 55.5% | 31 | Pseudomonadota 40%, Cyanobacteriota 39%, Bacteroidota 11%, Verrucomicrobiota 4% |
+| LMO_20171031_MT_a | 39.0% | 27 | Pseudomonadota 65%, Verrucomicrobiota 10%, Actinomycetota 7%, Thermoproteota 6% |
+| LMO_20171031_MT_b | 38.2% | 42 | Pseudomonadota 55%, Actinomycetota 18%, Bacteroidota 10%, Verrucomicrobiota 8% |
+
+- **The `_a` and `_b` libraries agree** at phylum level in both profilers, so the two MT
+  profiles per date are consistent.
+- **August is a cyanobacteria sample.** Cyanobacteriota take 18–19% of all kraken2 reads
+  (2–5% on the other dates) and 39–54% of sylph's profile.
+- **kraken2 sees eukaryotes; sylph cannot.** Oomycota, Apicomplexa, Bacillariophyta and
+  Ascomycota are each 2–4% of reads. Diatoms are expected. Apicomplexa and Oomycota at that level
+  are more likely best matches for alveolates and stramenopiles that PlusPF lacks. Not checked.
+- **Half or more of most libraries is unclassified by kraken2** (43–73%), highest in March.
+- **sylph's abundances are not cell abundances.** They assume even genome coverage, and MT
+  coverage follows expression. Read them as "genomes detectably transcribing".
+- **taxpasta merged only kraken2.** sylph's merged table comes from sylph-tax
+  (`sylph_gtdb_r232_c200_combined_reports.tsv`), and its sample columns are not in sample
+  order, so read its header.
+
+Against run 08: the phylum names match GTDB r232 directly (Pseudomonadota, Bacteroidota,
+Actinomycetota lead the amplicon ASVs). A per-date comparison of abundances is not done yet.
+
 ## Status
 
 | Step | Status |
 |------|--------|
-| Input sheet | **Emitted** by run 04 (2026-08-11), not yet consumed |
-| Databases | **Not downloaded** |
-| taxprofiler run | **Not run** |
+| Input sheet | **Consumed unmodified** (2026-11-10) |
+| Databases | **Downloaded** — PlusPF-16 2026-06-26, sylph GTDB r232 `dbv1` |
+| taxprofiler run | **Success** (2026-11-10) |
 
-Full run record, once it runs: [RUNS.md](../../RUNS.md).
+Full run record: [RUNS.md](../../RUNS.md#09--taxprofiler-taxonomic-profiles-of-the-metatranscriptome).

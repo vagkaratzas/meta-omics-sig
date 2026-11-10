@@ -28,6 +28,7 @@ site-specific and go stale; the Seqera link preserves the full execution record.
 | 06 | nf-core/proteinfamilies | 2.5.0 | 2026-09-21 | protein families from the run-05 ORFs, pooled into one row | **SUCCESS** — 5,864 families | [Seqera run](https://cloud.seqera.io/user/vangelis/watch/4VgXDoIUSqHCpZ) |
 | 07 | nf-core/proteinannotator | 1.1.0 | 2026-09-22 | annotation of run 03's 405 family representatives, from the samplesheet run 03 emitted | **SUCCESS** — first handoff with no conversion step; InterProScan needed a container bind workaround ([proteinannotator#114](https://github.com/nf-core/proteinannotator/issues/114), [modules#13009](https://github.com/nf-core/modules/issues/13009)) | [Seqera run](https://cloud.seqera.io/user/vangelis/watch/24aruma1zIUWbf) |
 | 08 | nf-core/ampliseq | 2.18.0 | 2026-09-24 | 3 V3-V4 16S amplicon libraries, one per date | **SUCCESS** — 1,755 ASVs, 54–66% of reads retained; `FORMAT_TAXONOMY` needed a container override ([ampliseq#1081](https://github.com/nf-core/ampliseq/issues/1081)) | [Seqera run](https://cloud.seqera.io/user/vangelis/watch/4suWRAScaxYhzE) |
+| 09 | nf-core/taxprofiler | 2.0.1 | 2026-11-10 | taxonomic profiles of the 6 phiX-filtered MT libraries, from the sheet run 04 emitted | **SUCCESS** — second native handoff; kraken2 PlusPF-16 classified 27–57% of reads, sylph GTDB r232 found 11–42 genomes per library | [Seqera run](https://cloud.seqera.io/user/vangelis/watch/1mQj5DfrXs09hs) |
 
 
 ## Upstream issues filed from this project
@@ -885,6 +886,43 @@ The only environment workaround was the `FORMAT_TAXONOMY` Docker pull
 ([ampliseq#1081](https://github.com/nf-core/ampliseq/issues/1081)). The full results, the
 versions and the checks not yet done are in
 [`runs/08_ampliseq/README.md`](runs/08_ampliseq/README.md).
+
+---
+
+## 09 — taxprofiler, taxonomic profiles of the metatranscriptome
+
+**Status: SUCCESS, 2026-11-10.**
+
+**Provenance:** <https://cloud.seqera.io/user/vangelis/watch/1mQj5DfrXs09hs>
+
+| | |
+|---|---|
+| Pipeline | `nf-core/taxprofiler` `-r 2.0.1`, Nextflow 26.04.6 |
+| Input | `downstream_samplesheets/taxprofiler.csv` **as emitted by run 04**, unmodified: the 6 phiX-filtered MT libraries |
+| Databases | kraken2 PlusPF-16 (2026-06-26); sylph GTDB r232 `-c 200` `dbv1` with sylph-tax r232 metadata |
+| Params | [`runs/09_taxprofiler/params.yml`](runs/09_taxprofiler/params.yml): `run_kraken2`, `run_sylph`, `perform_shortread_qc`, `run_profile_standardisation` |
+| Date | 2026-11-10, one launch, 5 min 14 s, no failed tasks |
+| Outcome | Success. kraken2 classified **27–57%** of reads; sylph found **11–42 genomes** per library |
+
+This exercises the `detaxizer → taxprofiler` edge for the first time. It is the second native
+handoff in the chain, after proteinfamilies → proteinannotator in run 07: the sheet went in as
+emitted. One thing outside the sheet had to be fixed. Run 04's outdir had been renamed after
+that run, and the sheet's absolute paths pointed at the old name; a symlink from the old name
+restored them. An absolute-path sheet ties the consumer to the producer's outdir staying put.
+
+- **August is a cyanobacteria sample** in both profilers: 18–19% of kraken2 reads, 39–54% of
+  sylph's profile, against 2–5% of reads on the other dates.
+- **The `_a` and `_b` libraries agree** at phylum level.
+- **kraken2 reports eukaryotes** (Oomycota, Apicomplexa, Bacillariophyta, Ascomycota, 2–4% of
+  reads each), which sylph's GTDB database cannot. The Apicomplexa and Oomycota hits are more
+  likely best matches for lineages PlusPF lacks; not checked.
+- **sylph's abundances assume even genome coverage**, which MT reads do not have; they show
+  which genomes are detectably transcribed, not how abundant they are.
+- **taxpasta 0.7.0 merged the kraken2 profiles only**; sylph's merged table comes from sylph-tax.
+- The phylum names match run 08's GTDB r232 amplicon taxonomy directly. The per-date
+  comparison is not done yet.
+
+Per-library results: [`runs/09_taxprofiler/README.md`](runs/09_taxprofiler/README.md#results).
 
 ---
 
