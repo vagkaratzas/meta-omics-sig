@@ -83,6 +83,12 @@ Expect 6 rows and 12 existing files. If any file is missing, stop. Re-running de
 (run 04, `-resume`) regenerates both the reads and the sheet. Copying reads elsewhere and
 fixing the paths would not be a native test.
 
+**Checked 2026-11-10:** all 12 files were "missing". Run 04's outdir had been renamed after
+the run, and the sheet still pointed at the old name. A symlink from the old outdir name to
+the new one made all 12 files resolve, with the sheet left untouched, so the handoff stays
+native. The lesson for the emitter: an absolute-path sheet ties the consumer to the
+producer's outdir staying where it was written.
+
 ### 2. Get the databases
 
 The databases go in a `databases/` folder inside the launch dir for now. A shared database
