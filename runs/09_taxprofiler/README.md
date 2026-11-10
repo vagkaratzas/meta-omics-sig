@@ -85,9 +85,12 @@ fixing the paths would not be a native test.
 
 ### 2. Get the databases
 
+The databases go in a `databases/` folder inside the launch dir for now. A shared database
+folder can replace it later.
+
 ```bash
-DB=<shared-db-dir>
-cd $DB
+DB=<launch-dir>/databases
+mkdir -p $DB && cd $DB
 wget https://genome-idx.s3.amazonaws.com/kraken/k2_pluspf_16_GB_20260626.tar.gz
 mkdir k2_pluspf_16gb_20260626 && tar -xzf k2_pluspf_16_GB_20260626.tar.gz -C k2_pluspf_16gb_20260626
 ls k2_pluspf_16gb_20260626      # hash.k2d opts.k2d taxo.k2d must be present
@@ -126,13 +129,18 @@ Set `input` to `$SHEET`, `databases` to the file above, `sylph_taxonomy` to
 ### 5. Run
 
 ```bash
-nextflow run nf-core/taxprofiler \
+~/bin/nextflow-26.04.6 run nf-core/taxprofiler \
   -r 2.0.1 \
   -profile slurm,singularity \
   -c /path/to/your-site.config \
   -params-file params.yml \
-  -resume
+  -resume \
+  -with-tower
 ```
+
+Use a pinned Nextflow build of at least 25.10.4, the minimum taxprofiler 2.0.1 accepts.
+On a cluster whose default `nextflow` is older, call the newer build by its path, as
+above. `-with-tower` records the Seqera run link, which RUNS.md cites as provenance.
 
 No `NXF_SYNTAX_PARSER=v1`, because taxprofiler 2.0.1 has no `check_max`. No module in
 2.0.1 points at a legacy `containers.biocontainers.pro` image, so the
