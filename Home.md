@@ -53,6 +53,7 @@ with the Seqera Platform provenance link lives in [RUNS.md](RUNS.md).
 | 06 | proteinfamilies | [runs/06_proteinfamilies/README.md](runs/06_proteinfamilies/README.md) |
 | 07 | proteinannotator | [runs/07_proteinannotator/README.md](runs/07_proteinannotator/README.md) — run 2026-09-22 |
 | 08 | ampliseq | [runs/08_ampliseq/README.md](runs/08_ampliseq/README.md) — run 2026-09-24 |
+| 09 | taxprofiler | [runs/09_taxprofiler/README.md](runs/09_taxprofiler/README.md) — prepared, not run |
 
 ## Scripts
 
@@ -65,6 +66,8 @@ with the metatranscriptome-vs-metagenome family comparison (runs 03 and 06):
 `hmmsearch_families.sh` searches one run's family HMMs against the other's family
 representatives, and `summarise_family_hits.py` (assert-based `--selftest`) counts the
 matches at E-value and two-sided coverage thresholds.
+
+The metro map's source is [`images/nf-core-meta-omics-metromap.mmd`](images/nf-core-meta-omics-metromap.mmd), rendered with nf-metro. The [update-metro-map](.claude/skills/update-metro-map/SKILL.md) skill covers editing, checking and shipping it; `scripts/check_map.py` (assert-based `--selftest`) compares its edges with `docs/data.json`.
 
 `scripts/check_links.py` checks link hygiene for this vault — broken links, orphaned notes,
 and `[[wikilink]]` syntax that would not render on GitHub. Run it after editing links:

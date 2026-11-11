@@ -28,12 +28,13 @@ site-specific and go stale; the Seqera link preserves the full execution record.
 | 06 | nf-core/proteinfamilies | 2.5.0 | 2026-09-21 | protein families from the run-05 ORFs, pooled into one row | **SUCCESS** — 5,864 families | [Seqera run](https://cloud.seqera.io/user/vangelis/watch/4VgXDoIUSqHCpZ) |
 | 07 | nf-core/proteinannotator | 1.1.0 | 2026-09-22 | annotation of run 03's 405 family representatives, from the samplesheet run 03 emitted | **SUCCESS** — first handoff with no conversion step; InterProScan needed a container bind workaround ([proteinannotator#114](https://github.com/nf-core/proteinannotator/issues/114), [modules#13009](https://github.com/nf-core/modules/issues/13009)) | [Seqera run](https://cloud.seqera.io/user/vangelis/watch/24aruma1zIUWbf) |
 | 08 | nf-core/ampliseq | 2.18.0 | 2026-09-24 | 3 V3-V4 16S amplicon libraries, one per date | **SUCCESS** — 1,755 ASVs, 54–66% of reads retained; `FORMAT_TAXONOMY` needed a container override ([ampliseq#1081](https://github.com/nf-core/ampliseq/issues/1081)) | [Seqera run](https://cloud.seqera.io/user/vangelis/watch/4suWRAScaxYhzE) |
+| 09 | nf-core/taxprofiler | 2.0.1 | 2026-11-10 | taxonomic profiles of the 6 phiX-filtered MT libraries, from the sheet run 04 emitted | **SUCCESS** — second native handoff; kraken2 PlusPF-16 classified 27–57% of reads, sylph GTDB r232 found 11–42 genomes per library | [Seqera run](https://cloud.seqera.io/user/vangelis/watch/1mQj5DfrXs09hs) |
 
 
 ## Upstream issues filed from this project
 
 Every bug report or feature request this project has sent upstream, with the run that
-surfaced it. Details are in the run sections below.
+surfaced it. Details are in the run sections below. States checked 2026-11-09: 10 of 12 closed, 8 of them in a pipeline release.
 
 | Issue | Filed | Found in | Status |
 |-------|-------|----------|--------|
@@ -41,14 +42,14 @@ surfaced it. Details are in the run sections below.
 | [nf-core/fetchngs#374](https://github.com/nf-core/fetchngs/issues/374) — `--ena_metadata_fields` interpolated unquoted | 2026-08-10 | run 01 | closed, shipped in 1.13.0 |
 | [nf-core/fetchngs#375](https://github.com/nf-core/fetchngs/issues/375) — `multiqc_mappings_config.py` stray quote, mangles commas | 2026-08-10 | run 01 | closed, shipped in 1.13.0 |
 | [nf-core/fetchngs#376](https://github.com/nf-core/fetchngs/issues/376) — `--nf_core_pipeline` lacks ampliseq, mag, metatdenovo | 2026-08-10 | run 01 | closed, shipped in 1.13.0 |
-| [nf-core/detaxizer#99](https://github.com/nf-core/detaxizer/issues/99) — `filter.nf` `$(COUNTER-1)` should be `$((COUNTER-1))` | 2026-08-11 | run 04 | open |
-| [nf-core/detaxizer#100](https://github.com/nf-core/detaxizer/issues/100) — generated mag samplesheet rejected by mag | 2026-08-11 | run 04 | open |
+| [nf-core/detaxizer#99](https://github.com/nf-core/detaxizer/issues/99) — `filter.nf` `$(COUNTER-1)` should be `$((COUNTER-1))` | 2026-08-11 | run 04 | closed, shipped in 1.4.0 (PR #107) |
+| [nf-core/detaxizer#100](https://github.com/nf-core/detaxizer/issues/100) — generated mag samplesheet rejected by mag | 2026-08-11 | run 04 | closed, shipped in 1.4.0 (PR #108) |
 | [nf-core/fetchngs#401](https://github.com/nf-core/fetchngs/issues/401) — 1.13.0 `--nf_core_pipeline mag` sheet rejected by mag | 2026-09-15 | 1.13.0 schema check | open |
 | [nf-core/mag#1115](https://github.com/nf-core/mag/issues/1115) — BUSCO batch mode leaks lineage state between bins, corrupting `bin_summary.tsv` | 2026-09-18 | run 05 | open |
-| [nf-core/proteinfamilies#191](https://github.com/nf-core/proteinfamilies/issues/191) — `MERGE_SEEDS` stages every seed MSA of the sample per task; head JVM `OutOfMemoryError` at scale | 2026-09-21 | run 06 | open |
-| [nf-core/proteinannotator#114](https://github.com/nf-core/proteinannotator/issues/114) — InterProScan fails with a real database: container 5.59 vs default database URL 5.72, and the untarred database is staged one directory too deep | 2026-09-22 | run 07 | open |
-| [nf-core/modules#13009](https://github.com/nf-core/modules/issues/13009) — `interproscan` module ignores the staged database: relative `INTERPROSCAN_CONF`, wrong `bin.directory`, `data.directory` never set | 2026-09-22 | run 07 | open |
-| [nf-core/ampliseq#1081](https://github.com/nf-core/ampliseq/issues/1081) — `FORMAT_TAXONOMY` Singularity image is a legacy biocontainers `.img`; pull hangs after download | 2026-09-24 | run 08 | open |
+| [nf-core/proteinfamilies#191](https://github.com/nf-core/proteinfamilies/issues/191) — `MERGE_SEEDS` stages every seed MSA of the sample per task; head JVM `OutOfMemoryError` at scale | 2026-09-21 | run 06 | closed, shipped in 2.6.0 (PR #193) |
+| [nf-core/proteinannotator#114](https://github.com/nf-core/proteinannotator/issues/114) — InterProScan fails with a real database: container 5.59 vs default database URL 5.72, and the untarred database is staged one directory too deep | 2026-09-22 | run 07 | closed, fixed on `dev` (PR #115); not released yet (latest 1.1.0) |
+| [nf-core/modules#13009](https://github.com/nf-core/modules/issues/13009) — `interproscan` module ignores the staged database: relative `INTERPROSCAN_CONF`, wrong `bin.directory`, `data.directory` never set | 2026-09-22 | run 07 | closed, fixed in nf-core/modules; reaches users with the next proteinannotator release |
+| [nf-core/ampliseq#1081](https://github.com/nf-core/ampliseq/issues/1081) — `FORMAT_TAXONOMY` Singularity image is a legacy biocontainers `.img`; pull hangs after download | 2026-09-24 | run 08 | closed, shipped in 3.0.0 (PR #1086) |
 
 ---
 
@@ -885,6 +886,43 @@ The only environment workaround was the `FORMAT_TAXONOMY` Docker pull
 ([ampliseq#1081](https://github.com/nf-core/ampliseq/issues/1081)). The full results, the
 versions and the checks not yet done are in
 [`runs/08_ampliseq/README.md`](runs/08_ampliseq/README.md).
+
+---
+
+## 09 — taxprofiler, taxonomic profiles of the metatranscriptome
+
+**Status: SUCCESS, 2026-11-10.**
+
+**Provenance:** <https://cloud.seqera.io/user/vangelis/watch/1mQj5DfrXs09hs>
+
+| | |
+|---|---|
+| Pipeline | `nf-core/taxprofiler` `-r 2.0.1`, Nextflow 26.04.6 |
+| Input | `downstream_samplesheets/taxprofiler.csv` **as emitted by run 04**, unmodified: the 6 phiX-filtered MT libraries |
+| Databases | kraken2 PlusPF-16 (2026-06-26); sylph GTDB r232 `-c 200` `dbv1` with sylph-tax r232 metadata |
+| Params | [`runs/09_taxprofiler/params.yml`](runs/09_taxprofiler/params.yml): `run_kraken2`, `run_sylph`, `perform_shortread_qc`, `run_profile_standardisation` |
+| Date | 2026-11-10, one launch, 5 min 14 s, no failed tasks |
+| Outcome | Success. kraken2 classified **27–57%** of reads; sylph found **11–42 genomes** per library |
+
+This exercises the `detaxizer → taxprofiler` edge for the first time. It is the second native
+handoff in the chain, after proteinfamilies → proteinannotator in run 07: the sheet went in as
+emitted. One thing outside the sheet had to be fixed. Run 04's outdir had been renamed after
+that run, and the sheet's absolute paths pointed at the old name; a symlink from the old name
+restored them. An absolute-path sheet ties the consumer to the producer's outdir staying put.
+
+- **August is a cyanobacteria sample** in both profilers: 18–19% of kraken2 reads, 39–54% of
+  sylph's profile, against 2–5% of reads on the other dates.
+- **The `_a` and `_b` libraries agree** at phylum level.
+- **kraken2 reports eukaryotes** (Oomycota, Apicomplexa, Bacillariophyta, Ascomycota, 2–4% of
+  reads each), which sylph's GTDB database cannot. The Apicomplexa and Oomycota hits are more
+  likely best matches for lineages PlusPF lacks; not checked.
+- **sylph's abundances assume even genome coverage**, which MT reads do not have; they show
+  which genomes are detectably transcribed, not how abundant they are.
+- **taxpasta 0.7.0 merged the kraken2 profiles only**; sylph's merged table comes from sylph-tax.
+- The phylum names match run 08's GTDB r232 amplicon taxonomy directly. The per-date
+  comparison is not done yet.
+
+Per-library results: [`runs/09_taxprofiler/README.md`](runs/09_taxprofiler/README.md#results).
 
 ---
 

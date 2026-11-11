@@ -3,6 +3,7 @@ output/
 
 # Generated on the cluster from the previous pipeline's output — contains absolute paths.
 runs/*/samplesheet.csv
+runs/*/databases.csv
 # Pooled protein FASTAs written by the converters next to the samplesheet — hundreds of MB.
 runs/*/*.faa.gz
 
@@ -11,3 +12,5 @@ runs/*/*.faa.gz
 .obsidian/cache
 .obsidian/plugins/
 .obsidian/themes/
+# Reference databases downloaded on the cluster into a run folder — tens of GB.
+runs/*/databases/
