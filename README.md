@@ -21,8 +21,8 @@ chaining between pipelines. The use case will:
 
 ![The nf-core meta-omics pipeline chaining diagram: four stages left to right — data input
 (fetchngs, detaxizer, createtaxdb), primary analysis (ampliseq, taxprofiler, funcprofiler,
-metatdenovo, eager, mag, viralmetagenome), secondary analysis (magmap, differentialabundance,
-metapep, phageannotator, funcscan, phyloplace, proteinfamilies, bacmodel) and data upload
+metatdenovo, eager, mag, magmap, viralmetagenome), secondary analysis (differentialabundance,
+metapep, funcscan, proteinfamilies, bacmodel, phyloplace) and data upload
 (seqsubmit) — with one coloured line per data type: amplicon reads, shotgun reads,
 metatranscriptome contigs, MAGs, viral contigs and reference databases](images/nf-core-meta-omics-metromap_light.png)
 
