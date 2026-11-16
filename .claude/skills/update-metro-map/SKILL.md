@@ -8,7 +8,7 @@ description: Use when the nf-core meta-omics SIG metro map needs a change or a r
 The map is drawn in [draw.io](https://app.diagrams.net) and exported as light and dark PNG/SVG in [`images/`](../../../images/) (`nf-core-meta-omics-metromap_{light,dark}.{png,svg}`), also used on the [SIG page](https://nf-co.re/special-interest-groups/meta-omics). It replaced the hand-drawn Inkscape map and the nf-metro render in Nov 2026.
 
 - **The editable source is embedded in every PNG/SVG**: open `images/nf-core-meta-omics-metromap_light.svg` in draw.io (File > Open from > Device), then File > Save as to your own Drive.
-- **The edge list** is [`images/nf-core-meta-omics-metromap.mmd`](../../../images/nf-core-meta-omics-metromap.mmd). It is no longer rendered; `scripts/check_map.py` reads it to compare the map's edges with `docs/data.json`. An edge change goes in **both** the `.mmd` and the routes in [`scripts/sig_map.js`](scripts/sig_map.js).
+- **The script is the source of truth**: [`scripts/sig_map.js`](scripts/sig_map.js) holds the `EDGES` list (pipeline → pipeline; `scripts/check_map.py` compares it with `docs/data.json`) and the routes that draw them. An edge change goes in **both**, next to each other in that file.
 - The generic how-to (Claude in Chrome, export, install) is the `drawio-nf-core-metromaps` skill from [vagkaratzas/skills](https://github.com/vagkaratzas/skills). This skill needs only `scripts/sig_map.js`.
 
 ## What goes on the map
@@ -21,13 +21,13 @@ The map is drawn in [draw.io](https://app.diagrams.net) and exported as light an
 
 ## Steps
 
-1. **Edit the edge list**: add or remove the edge in the `.mmd` (declare each station once inside its section; cross-section edges go after all `subgraph` blocks). Check it against the validation table: `python3 scripts/check_map.py` (and `--selftest`). It lists edges only on the map and only in `docs/data.json`; each must be explained. A new SIG edge goes into `docs/data.json` and PLAN.md's validation table (same commit, see [AGENTS.md](../../../AGENTS.md)). Known differences: proteinfold and proteinannotator are table-only (off the map since Aug 2026); eager, the reads into viralmetagenome and metatdenovo → differentialabundance are on the map, untracked by the table.
+1. **Edit the edge list**: add or remove the edge in `EDGES` in `scripts/sig_map.js`. Check it against the validation table: `python3 scripts/check_map.py` (and `--selftest`). It lists edges only on the map and only in `docs/data.json`; each must be explained. A new SIG edge goes into `docs/data.json` and PLAN.md's validation table (same commit, see [AGENTS.md](../../../AGENTS.md)). Known differences: proteinfold and proteinannotator are table-only (off the map since Aug 2026); eager, the reads into viralmetagenome and magmap, createtaxdb → metatdenovo, funcprofiler and bacmodel, and metatdenovo → differentialabundance are on the map, untracked by the table (run the script to see the exact list).
 2. **Draw it** with Claude in Chrome (load the `chrome-browser` skill first):
    - open a blank draw.io diagram (or your Drive copy) in a new tab and `resize_window` to about 1600×1300;
    - paste `scripts/sig_map.js` into `javascript_tool` (again after every page reload);
    - `await MM.loadLogos()` (pulls each pipeline's logo from nf-core GitHub into the page; no upload), then `await MM.build()`, then `await MM.view(0.5)` and take a screenshot;
    - edit the routes (`E(...)` lines: change a row `y` or a channel `x`) and the station list `S` in a copy of the script, and rebuild until it reads well. **A rebuild wipes the page**: once someone has tweaked the diagram by hand, make only targeted edits (find cells by id or position) and never `MM.build()` again;
-   - optional: drag the FASTA/FASTQ asset from the draw.io `nf-core_components` library onto the page and `await MM.useAssetIcons('<its cell id>')` to replace the two plain stand-in icons.
+   - optional: drag the file-icon asset from the draw.io `nf-core_components` library onto the page, `await MM.useAssetIcon('<its cell id>')`, then `await MM.build()` again (it keeps that icon and uses it for the FASTA input instead of the plain stand-in).
 3. **Look at it** before exporting, zoomed in (`MM.view(1, dx, dy)` plus the `zoom` action):
    - every fork and corner is one continuous path: no gaps, no stubs sticking out of an arc;
    - lines cross only on straight segments. A corner within 40 px of another lane means a kink: move the row or channel;
@@ -42,13 +42,14 @@ The map is drawn in [draw.io](https://app.diagrams.net) and exported as light an
    ```
    Check `grep -o 'color-scheme: [a-z]*'` matches each SVG's theme, `grep -c @font-face` > 0 and `grep -a -c mxfile` on the PNGs is 1. Never strip the embedded diagram or fonts.
 7. **Ship** after the SIG agrees (show a draft first: the PNG plus the edges added and removed):
-   - here: the four images in `images/`, the `.mmd`, plus `docs/data.json` and PLAN.md for new edges; `python3 scripts/check_links.py` passes; README embeds the `_light.png`;
+   - here: the four images in `images/`, plus `docs/data.json` and PLAN.md for new edges; `python3 scripts/check_links.py` passes; README embeds the `_light.png`;
    - [nf-core/website](https://github.com/nf-core/website): the four files go to `sites/main-site/src/assets/images/special-interest-groups/meta-omics/`; the page's `index.mdx` imports the `_light.png`. Do it on a branch off `main` and open a PR.
 
 ## Gotchas
 
-- The PNG/SVG are about 2 MB each: the logos are embedded as images.
+- The logos are embedded three times (visible copy plus the editable diagram in both PNG and SVG), so they dominate the file size. `loadLogos` shrinks them to 8-bit palette PNGs (`MM.quant`), same pixels at a quarter of the bytes; don't swap in the raw logos.
 - `javascript_tool` output is cut at about 1.5k characters and a result that looks like `key=value` comes back as `[BLOCKED]`: return short summaries.
+- A line that has to cross others can hop over them: give that route `jumpStyle=arc;jumpSize=20` and draw it last (see the reads line into magmap in `sig_map.js`). Cross on straight segments only.
 - draw.io's `getChildCells` skips hidden cells: clear a page with `getChildren` (as `MM.build` does), or the hidden dark logos pile up on every rebuild.
 - A plain `#FFFFFF`/`#000000` is inverted in the dark export: pin it as `light-dark(X,X)`. Line colours too (yellow goes dim otherwise).
 - The Google Drive connector cannot read the file by its `#G<id>`; work in the open tab.
