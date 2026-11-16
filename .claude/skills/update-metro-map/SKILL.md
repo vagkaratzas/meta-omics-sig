@@ -43,7 +43,7 @@ The map is drawn in [draw.io](https://app.diagrams.net) and exported as light an
    Check `grep -o 'color-scheme: [a-z]*'` matches each SVG's theme, `grep -c @font-face` > 0 and `grep -a -c mxfile` on the PNGs is 1. Never strip the embedded diagram or fonts.
 7. **Ship** after the SIG agrees (show a draft first: the PNG plus the edges added and removed):
    - here: the four images in `images/`, plus `docs/data.json` and PLAN.md for new edges; `python3 scripts/check_links.py` passes; README embeds the `_light.png`;
-   - [nf-core/website](https://github.com/nf-core/website): the four files go to `sites/main-site/src/assets/images/special-interest-groups/meta-omics/`; the page's `index.mdx` imports the `_light.png`. Do it on a branch off `main` and open a PR.
+   - [nf-core/website](https://github.com/nf-core/website): only the two PNGs go to `sites/main-site/src/assets/images/special-interest-groups/meta-omics/` (a draw.io SVG there fails the Astro build: `NoImageMetadata`, its editable diagram sits in the root `<svg>` tag, past the 1000 bytes Astro probes); the page's `index.mdx` imports the `_light.png`. Run the build before pushing: Node 24 (`~/.nvm/versions/node/v24.14.1/bin`), `npm ci --allow-git=all --ignore-scripts`, then `GITHUB_TOKEN=$(gh auth token) node ../../node_modules/astro/bin/astro.mjs build` in `sites/main-site`. Do it on a branch off `main` and open a PR.
 
 ## Gotchas
 
