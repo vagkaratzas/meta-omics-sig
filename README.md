@@ -24,7 +24,7 @@ chaining between pipelines. The use case will:
 metatdenovo, eager, mag, viralmetagenome), secondary analysis (magmap, differentialabundance,
 metapep, phageannotator, funcscan, phyloplace, proteinfamilies, bacmodel) and data upload
 (seqsubmit) — with one coloured line per data type: amplicon reads, shotgun reads,
-metatranscriptome contigs, MAGs, viral contigs and reference databases](images/nf-core-meta-omics-metromap.png)
+metatranscriptome contigs, MAGs, viral contigs and reference databases](images/nf-core-meta-omics-metromap_light.png)
 
 The SIG's chaining diagram, and the starting point for this project. It sets out how these
 pipelines **could** chain together — a roadmap of intended synergy, where each track marks a
