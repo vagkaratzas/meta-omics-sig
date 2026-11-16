@@ -138,14 +138,14 @@
       e.geometry.points = pts.slice(1, -1).map(p => new mxPoint(p[0], p[1]));
     };
     const TXT = 'text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;fontColor=light-dark(#000000,#FFFFFF);' + FONT;
-    const XD = 2130, XR = 1760, XM = 980, XG = 1150, XT = 1620, YP = 495, YS = 1235; // x of differentialabundance, the secondary stations, mag, magmap, the metatdenovo -> seqsubmit channel; y of metapep (the secondary rows follow, 125 apart), seqsubmit
+    const XD = 1760, XR = 1760, XM = 980, XG = 1150, XT = 1620, YP = 495, YS = 1235; // x of differentialabundance (same column as the secondary stations), the secondary stations, mag, magmap, the metatdenovo -> seqsubmit channel; y of metapep (the secondary rows follow, 125 apart), seqsubmit
     M.beginUpdate();
     try {
       // getChildCells skips hidden cells (the dark logos), so clear with getChildren
       const icon = M.getChildren(P).find(c => c.style === 'group');
       g.clearSelection(); g.removeCells(M.getChildren(P).filter(c => c !== icon), true);
-      const BOX = 'rounded=1;arcSize=4;whiteSpace=wrap;html=1;strokeWidth=2;strokeColor=#E6E6E6;fillColor=#BDBDBD;align=left;verticalAlign=top;fontSize=38;spacing=0;fillStyle=solid;spacingTop=8;spacingLeft=16;fontStyle=1;fontColor=light-dark(#333333,#CCCCCC);' + FONT;
-      [['1. Data input', 20, 110, 580, 590], ['2. Primary analysis', 830, 110, 500, 1270], ['3. Secondary analysis', 1440, 110, 900, 940], ['4. Data upload', 1710, 1080, 340, 270]].forEach(b => V(b[0], b[1], b[2], b[3], b[4], BOX));
+      const BOX = 'rounded=1;absoluteArcSize=1;arcSize=20;whiteSpace=wrap;html=1;strokeWidth=2;strokeColor=#E6E6E6;fillColor=#BDBDBD;align=left;verticalAlign=top;fontSize=38;spacing=0;fillStyle=solid;spacingTop=8;spacingLeft=16;fontStyle=1;fontColor=light-dark(#333333,#CCCCCC);' + FONT;
+      [['1. Data input', 20, 110, 580, 590], ['2. Primary analysis', 830, 110, 500, 1270], ['3. Secondary analysis', 1440, 110, 700, 940], ['4. Data upload', 1710, 1080, 340, 270]].forEach(b => V(b[0], b[1], b[2], b[3], b[4], BOX));
 
       // routes. Rows (y): 300 amplicon/entry, 450 taxprofiler, 600 funcprofiler, 750 metatdenovo,
       // 900 eager, 1050 mag, 1150 magmap, 1290 viralmetagenome; secondary 495 metapep, 620 funcscan, 745 proteinfamilies,
@@ -184,7 +184,7 @@
       // or 60 px tall where two or four lanes arrive together
       const LW = { differentialabundance: 320, viralmetagenome: 380, proteinfamilies: 240, metatdenovo: 220, createtaxdb: 290, taxprofiler: 270, eager: 175, magmap: 170, mag: 212, funcscan: 250, funcprofiler: 220, bacmodel: 230, seqsubmit: 230 }; // default 200
       const S = [['fetchngs', 150, 300, 30, 'a'], ['detaxizer', 420, 300, 30, 'a'], ['createtaxdb', 420, 600, 30, 'a'], ['ampliseq', 1050, 300, 30, 'a'], ['taxprofiler', 1050, 455, 40, 'a'], ['funcprofiler', 1050, 600, 30, 'a'], ['metatdenovo', 1050, 755, 40, 'a'], ['eager', 1050, 900, 30, 'a'], ['mag', XM, 1050, 30, 'a'], ['magmap', XG, 1150, 40, 'a'], ['viralmetagenome', 1050, 1290, 30, 'a'],
-        ['differentialabundance', XD, 310, 60, 'a'], ['metapep', XR, YP, 30, 'r'], ['funcscan', XR, YP + 125, 30, 'r'], ['proteinfamilies', XR, YP + 250, 40, 'r'], ['bacmodel', XR, YP + 375, 30, 'r'], ['phyloplace', XR, YP + 500, 40, 'r'], ['seqsubmit', XR, YS, 40, 'r']];
+        ['differentialabundance', XD, 310, 50, 'r'], ['metapep', XR, YP, 30, 'r'], ['funcscan', XR, YP + 125, 30, 'r'], ['proteinfamilies', XR, YP + 250, 40, 'r'], ['bacmodel', XR, YP + 375, 30, 'r'], ['phyloplace', XR, YP + 500, 40, 'r'], ['seqsubmit', XR, YS, 40, 'r']];
       // light logo visible, dark copy hidden: exportAll() swaps them per theme (in memory only)
       const IMG = (uri, x, y, w, h, theme) => {
         const c = V('', x, y, w, h, `shape=image;aspect=fixed;imageAspect=0;image=${uri.replace(';base64,', ',')};metromapTheme=${theme};`);
