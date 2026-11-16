@@ -29,9 +29,11 @@ The repository doubles as an Obsidian vault, which imposes one hard rule:
   `meta.plan` / `meta.datasets_doc` / `meta.runs_doc`.
 - **Branches:** work on a branch, PR it into `dev`, and PR `dev` into `main`. The Pages site
   builds from `main` `/docs`, so a change is public only once `main` merges.
-- **The metro map** is text: `images/nf-core-meta-omics-metromap.mmd`, rendered with nf-metro.
-  Change it with the [update-metro-map](.claude/skills/update-metro-map/SKILL.md) skill, never
-  by editing the PNG/SVG.
+- **The metro map** is a draw.io diagram (its source is embedded in the PNG/SVG in `images/`);
+  the edges it must show are listed in `images/nf-core-meta-omics-metromap.mmd`, which
+  `scripts/check_map.py` compares with `docs/data.json`. Change both with the
+  [update-metro-map](.claude/skills/update-metro-map/SKILL.md) skill, never by hand-editing the
+  exported PNG/SVG.
 - After editing links, run `python3 scripts/check_links.py`. It fails on broken links,
   orphaned files, and wikilinks, and exits non-zero. A file with no inbound links is
   invisible in the vault — that is how `ACRONYMS.md` went unnoticed until

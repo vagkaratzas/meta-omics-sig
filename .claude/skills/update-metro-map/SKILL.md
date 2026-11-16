@@ -5,39 +5,50 @@ description: Use when the nf-core meta-omics SIG metro map needs a change or a r
 
 # Update the meta-omics metro map
 
-The map is text: [`images/nf-core-meta-omics-metromap.mmd`](../../../images/nf-core-meta-omics-metromap.mmd), rendered with [nf-metro](https://github.com/seqeralabs/nf-metro) (syntax: its [guide](https://seqeralabs.github.io/nf-metro/latest/)). It replaced the hand-drawn Inkscape map in Nov 2026. The rendered PNG/SVG sit next to it and on the [SIG page](https://nf-co.re/special-interest-groups/meta-omics).
+The map is drawn in [draw.io](https://app.diagrams.net) and exported as light and dark PNG/SVG in [`images/`](../../../images/) (`nf-core-meta-omics-metromap_{light,dark}.{png,svg}`), also used on the [SIG page](https://nf-co.re/special-interest-groups/meta-omics). It replaced the hand-drawn Inkscape map and the nf-metro render in Nov 2026.
+
+- **The editable source is embedded in every PNG/SVG**: open `images/nf-core-meta-omics-metromap_light.svg` in draw.io (File > Open from > Device), then File > Save as to your own Drive.
+- **The edge list** is [`images/nf-core-meta-omics-metromap.mmd`](../../../images/nf-core-meta-omics-metromap.mmd). It is no longer rendered; `scripts/check_map.py` reads it to compare the map's edges with `docs/data.json`. An edge change goes in **both** the `.mmd` and the routes in [`scripts/sig_map.js`](scripts/sig_map.js).
+- The generic how-to (Claude in Chrome, export, install) is the `drawio-nf-core-metromaps` skill from [vagkaratzas/skills](https://github.com/vagkaratzas/skills). This skill needs only `scripts/sig_map.js`.
 
 ## What goes on the map
 
 - **The SIG decides** which stations and edges are drawn (an action point in the [meeting notes](https://hackmd.io/@nf-core/SyCCVMkT0)). A pipeline goes on after its first release (SIG, 17 Sep 2026). Don't add one on your own judgement.
 - **Every edge must make sense in/out.** Before drawing A → B, read B's input contract at its latest release tag and A's output docs, e.g.
   `gh api "repos/nf-core/<B>/contents/assets/schema_input.json?ref=<tag>" --jq .content | base64 -d`, plus B's `nextflow_schema.json` (database or extra sheet params) and A's `docs/output.md`. Record the reasoning (native, needs a converter, which columns) in the commit message.
-- **Lines are data types**, not pipelines: amplicon reads, shotgun reads, metatranscriptome contigs, MAGs, viral contigs, reference database. A new data type gets its own line, so a reader can trace which pipeline feeds which.
-- A hidden junction (`_reads`) carries an optional step (detaxizer) without a fake station. A file icon (`magmap_reads`) stands in for an input whose line would have to loop across the map.
+- **Lines are data types**, not pipelines: amplicon reads, shotgun reads, metatranscriptome contigs, MAGs, viral contigs, reference database. A new data type gets its own colour and a legend row, so a reader can trace which pipeline feeds which.
+- A station is a pipeline (its nf-core logo is the label). A file icon (FASTQ in secondary analysis) stands in for an input whose line would have to loop across the map.
 
 ## Steps
 
-1. Edit the `.mmd`. Declare each station once inside its section; cross-section edges go after all `subgraph` blocks.
-2. Check connections against the validation table: `python3 scripts/check_map.py` (and `--selftest`). It lists edges only on the map and only in `docs/data.json`; each must be explained. A new SIG edge goes into `docs/data.json` and PLAN.md's validation table (same commit, see [AGENTS.md](../../../AGENTS.md)). Known differences: proteinfold and proteinannotator are table-only (off the map since Aug 2026); eager, the reads into viralmetagenome and metatdenovo → differentialabundance are on the map, untracked by the table.
-3. Render. nf-metro needs Python ≥ 3.11 (`pip install nf-metro`, or a venv: `uv venv -p 3.12 && uv pip install nf-metro`):
+1. **Edit the edge list**: add or remove the edge in the `.mmd` (declare each station once inside its section; cross-section edges go after all `subgraph` blocks). Check it against the validation table: `python3 scripts/check_map.py` (and `--selftest`). It lists edges only on the map and only in `docs/data.json`; each must be explained. A new SIG edge goes into `docs/data.json` and PLAN.md's validation table (same commit, see [AGENTS.md](../../../AGENTS.md)). Known differences: proteinfold and proteinannotator are table-only (off the map since Aug 2026); eager, the reads into viralmetagenome and metatdenovo → differentialabundance are on the map, untracked by the table.
+2. **Draw it** with Claude in Chrome (load the `chrome-browser` skill first):
+   - open a blank draw.io diagram (or your Drive copy) in a new tab and `resize_window` to about 1600×1300;
+   - paste `scripts/sig_map.js` into `javascript_tool` (again after every page reload);
+   - `await MM.loadLogos()` (pulls each pipeline's logo from nf-core GitHub into the page; no upload), then `await MM.build()`, then `await MM.view(0.5)` and take a screenshot;
+   - edit the routes (`E(...)` lines: change a row `y` or a channel `x`) and the station list `S` in a copy of the script, and rebuild until it reads well. **A rebuild wipes the page**: once someone has tweaked the diagram by hand, make only targeted edits (find cells by id or position) and never `MM.build()` again;
+   - optional: drag the FASTA/FASTQ asset from the draw.io `nf-core_components` library onto the page and `await MM.useAssetIcons('<its cell id>')` to replace the two plain stand-in icons.
+3. **Look at it** before exporting, zoomed in (`MM.view(1, dx, dy)` plus the `zoom` action):
+   - every fork and corner is one continuous path: no gaps, no stubs sticking out of an arc;
+   - lines cross only on straight segments. A corner within 40 px of another lane means a kink: move the row or channel;
+   - a station sitting on another pipeline's track reads as a false edge;
+   - labels do not touch lines or each other (the proteinfamilies logo hangs low: it needs extra gap).
+4. **Export**: `await MM.exportAll('nf-core-meta-omics-metromap')` (light and dark PNG + SVG), then `MM.preview('nf-core-meta-omics-metromap_dark.png')` and screenshot it: logos swap to their dark versions, and the yellow line must stay bright. `MM.preview(null)` closes it. Then `await MM.waitSaved()`.
+5. **Download**: `await MM.downloadButton('meta_omics_metromaps.zip')`, find the "Download metro maps" link and click it. Chrome may ask where to save: the person at the keyboard presses Save.
+6. **Install** into `images/` here and into the website branch (every SVG needs a final newline for the nf-core `end-of-file-fixer` hook):
    ```bash
-   nf-metro validate images/nf-core-meta-omics-metromap.mmd
-   nf-metro render images/nf-core-meta-omics-metromap.mmd -o images/nf-core-meta-omics-metromap.svg -o images/nf-core-meta-omics-metromap.png
+   unzip -o ~/Downloads/meta_omics_metromaps.zip -d <dest>
+   for f in <dest>/*.svg; do [[ -z "$(tail -c 1 "$f")" ]] || echo >> "$f"; done
    ```
-4. **Look at the PNG** before committing:
-   - a station sitting on another pipeline's track reads as a false edge (why magmap is in secondary analysis, not after eager);
-   - lines swapping order where they enter a section (amplicon and shotgun into secondary analysis);
-   - lines the theme hides (keep `%%metro mode: light`: the nf-core page is light);
-   - overlapping labels.
+   Check `grep -o 'color-scheme: [a-z]*'` matches each SVG's theme, `grep -c @font-face` > 0 and `grep -a -c mxfile` on the PNGs is 1. Never strip the embedded diagram or fonts.
+7. **Ship** after the SIG agrees (show a draft first: the PNG plus the edges added and removed):
+   - here: the four images in `images/`, the `.mmd`, plus `docs/data.json` and PLAN.md for new edges; `python3 scripts/check_links.py` passes; README embeds the `_light.png`;
+   - [nf-core/website](https://github.com/nf-core/website): the four files go to `sites/main-site/src/assets/images/special-interest-groups/meta-omics/`; the page's `index.mdx` imports the `_light.png`. Do it on a branch off `main` and open a PR.
 
-   `nf-metro explain` says why a layout decision was made. Fixes that worked:
-   - lines that swap where they enter a section: merge same-line feeders in a hidden junction inside the source section (`_prof` for taxprofiler and funcprofiler), so they join the bundle once;
-   - line declaration order sets the bundle order: amplicon first keeps it straight on top; mt before shotgun because metatdenovo always sits between the two profilers;
-   - some orders crash the router ("defective bundle curves", nf-metro 2.1.0): change the declaration order and re-render.
+## Gotchas
 
-   Both are upstream bugs, already reported: [nf-metro#2119](https://github.com/seqeralabs/nf-metro/issues/2119) (the lane swap) and [nf-metro#2069](https://github.com/seqeralabs/nf-metro/issues/2069) (the abort). Once they are fixed, try dropping `_prof` and the line-order comment in the `.mmd`.
-   Zoom into a crop of the PNG at each section boundary: a swap is easy to miss at full size.
-5. Show the SIG a draft first: the PNG plus the edges added and removed.
-6. Ship after the SIG agrees:
-   - here: `.mmd`, PNG and SVG in `images/`, plus `docs/data.json` and PLAN.md for new edges; `python3 scripts/check_links.py` passes;
-   - [nf-core/website](https://github.com/nf-core/website): replace `sites/main-site/src/assets/images/special-interest-groups/meta-omics/nf-core-meta-omics-metromap.{png,svg}` (same names; the page's `index.mdx` imports the PNG) on a branch off `main`, and open a PR.
+- The PNG/SVG are about 2 MB each: the logos are embedded as images.
+- `javascript_tool` output is cut at about 1.5k characters and a result that looks like `key=value` comes back as `[BLOCKED]`: return short summaries.
+- draw.io's `getChildCells` skips hidden cells: clear a page with `getChildren` (as `MM.build` does), or the hidden dark logos pile up on every rebuild.
+- A plain `#FFFFFF`/`#000000` is inverted in the dark export: pin it as `light-dark(X,X)`. Line colours too (yellow goes dim otherwise).
+- The Google Drive connector cannot read the file by its `#G<id>`; work in the open tab.
