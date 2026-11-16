@@ -17,11 +17,11 @@ The map is drawn in [draw.io](https://app.diagrams.net) and exported as light an
 - **Every edge must make sense in/out.** Before drawing A → B, read B's input contract at its latest release tag and A's output docs, e.g.
   `gh api "repos/nf-core/<B>/contents/assets/schema_input.json?ref=<tag>" --jq .content | base64 -d`, plus B's `nextflow_schema.json` (database or extra sheet params) and A's `docs/output.md`. Record the reasoning (native, needs a converter, which columns) in the commit message.
 - **Lines are data types**, not pipelines: amplicon reads, shotgun reads, metatranscriptome contigs, MAGs, viral contigs, reference database. A new data type gets its own colour and a legend row, so a reader can trace which pipeline feeds which.
-- A station is a pipeline (its nf-core logo is the label). A file icon (FASTQ in secondary analysis) stands in for an input whose line would have to loop across the map.
+- A station is a pipeline (its nf-core logo is the label). A file icon (the FASTA reference genomes in data input) stands in for an input that is not a pipeline. A dashed line is an input that is optional or a database (magmap's MAGs from mag: it also runs on public or the user's own genomes, per the magmap maintainer, 16 Nov).
 
 ## Steps
 
-1. **Edit the edge list**: add or remove the edge in `EDGES` in `scripts/sig_map.js`. Check it against the validation table: `python3 scripts/check_map.py` (and `--selftest`). It lists edges only on the map and only in `docs/data.json`; each must be explained. A new SIG edge goes into `docs/data.json` and PLAN.md's validation table (same commit, see [AGENTS.md](../../../AGENTS.md)). Known differences: proteinfold and proteinannotator are table-only (off the map since Aug 2026); eager, the reads into viralmetagenome and magmap, createtaxdb → metatdenovo, funcprofiler and bacmodel, and metatdenovo → differentialabundance are on the map, untracked by the table (run the script to see the exact list).
+1. **Edit the edge list**: add or remove the edge in `EDGES` in `scripts/sig_map.js`. Check it against the validation table: `python3 scripts/check_map.py` (and `--selftest`). It lists edges only on the map and only in `docs/data.json`; each must be explained. A new SIG edge goes into `docs/data.json` and PLAN.md's validation table (same commit, see [AGENTS.md](../../../AGENTS.md)). Known differences: proteinfold and proteinannotator are table-only (off the map since Aug 2026), and so is phageannotator (no release yet: only released pipelines are drawn, SIG 16 Nov); eager, the reads into viralmetagenome and magmap, createtaxdb → metatdenovo, funcprofiler and bacmodel, and metatdenovo → differentialabundance are on the map, untracked by the table (run the script to see the exact list).
 2. **Draw it** with Claude in Chrome (load the `chrome-browser` skill first):
    - open a blank draw.io diagram (or your Drive copy) in a new tab and `resize_window` to about 1600×1300;
    - paste `scripts/sig_map.js` into `javascript_tool` (again after every page reload);
@@ -31,8 +31,8 @@ The map is drawn in [draw.io](https://app.diagrams.net) and exported as light an
 3. **Look at it** before exporting, zoomed in (`MM.view(1, dx, dy)` plus the `zoom` action):
    - every fork and corner is one continuous path: no gaps, no stubs sticking out of an arc;
    - lines cross only on straight segments. A corner within 40 px of another lane means a kink: move the row or channel;
-   - a station sitting on another pipeline's track reads as a false edge;
-   - labels do not touch lines or each other (the proteinfamilies logo hangs low: it needs extra gap).
+   - a station sitting on another pipeline's track reads as a false edge (seqsubmit once sat on the metatdenovo and mag lanes behind proteinfamilies: those lanes now run down their own channel to seqsubmit);
+   - labels do not touch lines or each other.
 4. **Export**: `await MM.exportAll('nf-core-meta-omics-metromap')` (light and dark PNG + SVG), then `MM.preview('nf-core-meta-omics-metromap_dark.png')` and screenshot it: logos swap to their dark versions, and the yellow line must stay bright. `MM.preview(null)` closes it. Then `await MM.waitSaved()`.
 5. **Download**: `await MM.downloadButton('meta_omics_metromaps.zip')`, find the "Download metro maps" link and click it. Chrome may ask where to save: the person at the keyboard presses Save.
 6. **Install** into `images/` here and into the website branch (every SVG needs a final newline for the nf-core `end-of-file-fixer` hook):
@@ -49,7 +49,7 @@ The map is drawn in [draw.io](https://app.diagrams.net) and exported as light an
 
 - The logos are embedded three times (visible copy plus the editable diagram in both PNG and SVG), so they dominate the file size. `loadLogos` shrinks them to 8-bit palette PNGs (`MM.quant`), same pixels at a quarter of the bytes; don't swap in the raw logos.
 - `javascript_tool` output is cut at about 1.5k characters and a result that looks like `key=value` comes back as `[BLOCKED]`: return short summaries.
-- A line that has to cross others can hop over them: give that route `jumpStyle=arc;jumpSize=20` and draw it last (see the reads line into magmap in `sig_map.js`). Cross on straight segments only.
+- Lines cross straight through each other at junctions, as the SIG preferred (16 Nov: the hop on magmap's reads line was removed, then magmap moved into the primary box). `E(..., true)` in `sig_map.js` would draw a hop (`jumpStyle=arc;jumpSize=20`, route drawn last) if it is ever wanted again. Cross on straight segments only.
 - draw.io's `getChildCells` skips hidden cells: clear a page with `getChildren` (as `MM.build` does), or the hidden dark logos pile up on every rebuild.
 - A plain `#FFFFFF`/`#000000` is inverted in the dark export: pin it as `light-dark(X,X)`. Line colours too (yellow goes dim otherwise).
 - The Google Drive connector cannot read the file by its `#G<id>`; work in the open tab.

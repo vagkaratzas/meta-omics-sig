@@ -22,10 +22,10 @@
     ["fetchngs", "ampliseq"], ["fetchngs", "detaxizer"], ["fetchngs", "eager"], ["fetchngs", "funcprofiler"],
     ["fetchngs", "mag"], ["fetchngs", "magmap"], ["fetchngs", "metatdenovo"], ["fetchngs", "taxprofiler"], ["fetchngs", "viralmetagenome"],
     ["funcprofiler", "differentialabundance"], ["mag", "bacmodel"], ["mag", "funcscan"], ["mag", "magmap"],
-    ["mag", "metapep"], ["mag", "phageannotator"], ["mag", "phyloplace"], ["mag", "proteinfamilies"], ["mag", "seqsubmit"],
+    ["mag", "metapep"], ["mag", "phyloplace"], ["mag", "proteinfamilies"], ["mag", "seqsubmit"],
     ["magmap", "differentialabundance"], ["metatdenovo", "differentialabundance"], ["metatdenovo", "proteinfamilies"],
     ["metatdenovo", "seqsubmit"], ["reference-genomes", "createtaxdb"], ["taxprofiler", "differentialabundance"],
-    ["viralmetagenome", "phageannotator"], ["viralmetagenome", "phyloplace"]
+    ["viralmetagenome", "phyloplace"]
   ];
   // edges:end
 
@@ -90,7 +90,7 @@
   }
 
   // ---- logos: loaded from nf-core GitHub inside the page (crossOrigin lets the canvas read them) ----
-  const PIPELINES = 'fetchngs detaxizer createtaxdb ampliseq taxprofiler funcprofiler eager mag metatdenovo viralmetagenome magmap differentialabundance metapep phageannotator funcscan phyloplace proteinfamilies bacmodel seqsubmit'.split(' ');
+  const PIPELINES = 'fetchngs detaxizer createtaxdb ampliseq taxprofiler funcprofiler eager mag metatdenovo viralmetagenome magmap differentialabundance metapep funcscan phyloplace proteinfamilies bacmodel seqsubmit'.split(' ');
   const D = 'HEAD/docs/images/';
   // pipelines whose repo has a custom-art logo: [light file, dark file] (names are not uniform:
   // eager's "flat_black" is the one for LIGHT backgrounds and "flat_light" is for dark ones)
@@ -100,7 +100,6 @@
     eager: ['eager/' + D + 'nf-core_eager_logo_flat_black.png', 'eager/' + D + 'nf-core_eager_logo_flat_light.png'],
     mag: ['mag/' + D + 'mag_logo_mascot_light.png', 'mag/' + D + 'mag_logo_mascot_dark.png'],
     viralmetagenome: ['viralmetagenome/' + D + 'nf-core-viralmetagenome_logo_custom_light.png', 'viralmetagenome/' + D + 'nf-core-viralmetagenome_logo_custom_dark.png'],
-    funcscan: ['funcscan/' + D + 'nf-core-funcscan_logo_flat_light.png', 'funcscan/' + D + 'nf-core-funcscan_logo_flat_dark.png'],
   };
   // Fills MM.logos[name] = {light:{uri,w,h}, dark:{uri,w,h}} (PNG data URIs (palette PNGs where that is lossless enough), 360 px wide).
   async function loadLogos(W = 360) {
@@ -115,6 +114,11 @@
     // bacmodel ships a mascot logo for light only: keep the mascot, recolour the text white
     const bl = await load('bacmodel/' + D + 'nf-core-bacmodel_logo_light.png');
     const whiten = (x, w, h) => { const im = x.getImageData(0, 0, w, h), a = im.data; for (let y = 0; y < h; y++) for (let xx = Math.round(w * 0.31); xx < w; xx++) { const k = (y * w + xx) * 4; if (Math.max(a[k], a[k + 1], a[k + 2]) - Math.min(a[k], a[k + 1], a[k + 2]) < 50) a[k] = a[k + 1] = a[k + 2] = 255; } x.putImageData(im, 0, 0); };
+    // funcscan: its flat logo carries the mascot (a dotted disc) as a tiny corner, which reads blurry. Draw the
+    // disc big beside the plain logo instead, from the full-size icon (the repo's funcscan_icon.png)
+    const disc = await load('funcscan/' + D + 'funcscan_icon.png');
+    const withDisc = (lg, dark) => { const dh = 250, dw = Math.round(disc.naturalWidth * dh / disc.naturalHeight), c = document.createElement('canvas'); c.width = dw + 12 + lg.naturalWidth; c.height = lg.naturalHeight; const x = c.getContext('2d'); x.imageSmoothingQuality = 'high'; if (dark) x.filter = 'brightness(1.7)'; x.drawImage(disc, 0, (c.height - dh) / 2, dw, dh); x.filter = 'none'; x.drawImage(lg, dw + 12, 0); return { uri: quant(c).uri, w: c.width, h: c.height }; };
+    MM.logos.funcscan = { light: withDisc(await load('funcscan/' + D + 'nf-core-funcscan_logo_light.png')), dark: withDisc(await load('funcscan/' + D + 'nf-core-funcscan_logo_dark.png'), true) };
     MM.logos.bacmodel = { light: shrink(bl), dark: shrink(bl, whiten) };
     return Object.keys(MM.logos).length;
   }
@@ -134,47 +138,53 @@
       e.geometry.points = pts.slice(1, -1).map(p => new mxPoint(p[0], p[1]));
     };
     const TXT = 'text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;fontColor=light-dark(#000000,#FFFFFF);' + FONT;
-    const XD = 2330, XS = 2760; // x of differentialabundance and seqsubmit
+    const XD = 2130, XR = 1760, XM = 980, XG = 1150, XT = 1620, YP = 495, YS = 1235; // x of differentialabundance, the secondary stations, mag, magmap, the metatdenovo -> seqsubmit channel; y of metapep (the secondary rows follow, 125 apart), seqsubmit
     M.beginUpdate();
     try {
       // getChildCells skips hidden cells (the dark logos), so clear with getChildren
       const icon = M.getChildren(P).find(c => c.style === 'group');
       g.clearSelection(); g.removeCells(M.getChildren(P).filter(c => c !== icon), true);
       const BOX = 'rounded=1;arcSize=4;whiteSpace=wrap;html=1;strokeWidth=2;strokeColor=#E6E6E6;fillColor=#BDBDBD;align=left;verticalAlign=top;fontSize=38;spacing=0;fillStyle=solid;spacingTop=8;spacingLeft=16;fontStyle=1;fontColor=light-dark(#333333,#CCCCCC);' + FONT;
-      [['1. Data input', 20, 110, 580, 590], ['2. Primary analysis', 830, 110, 500, 1270], ['3. Secondary analysis', 1440, 110, 1100, 1230], ['4. Data upload', 2600, 640, 320, 260]].forEach(b => V(b[0], b[1], b[2], b[3], b[4], BOX));
+      [['1. Data input', 20, 110, 580, 590], ['2. Primary analysis', 830, 110, 500, 1270], ['3. Secondary analysis', 1440, 110, 900, 940], ['4. Data upload', 1710, 1080, 340, 270]].forEach(b => V(b[0], b[1], b[2], b[3], b[4], BOX));
 
       // routes. Rows (y): 300 amplicon/entry, 450 taxprofiler, 600 funcprofiler, 750 metatdenovo,
-      // 900 eager, 1050 mag, 1290 viralmetagenome; secondary 520 magmap. Channels (x): 680 db,
-      // 760 shotgun fan, 1200 shotgun profiles, 1250 mt, 1390 MAG trunk, 1500 viral, 1700 reads -> magmap, 2160 magmap -> diffabund.
+      // 900 eager, 1050 mag, 1150 magmap, 1290 viralmetagenome; secondary 495 metapep, 620 funcscan, 745 proteinfamilies,
+      // 870 bacmodel, 995 phyloplace, 1235 seqsubmit. Channels (x): 680 db, 760 shotgun fan, 1200 shotgun profiles, 1250 mt,
+      // 1300 magmap -> diffabund, 1390 MAG trunk, 1500 viral, 1620 mt -> seqsubmit.
       const br = (xc, y, x2) => [[xc, y - 90], [xc, y], [x2, y]]; // branch off a vertical trunk
       E('amp', 0, [[150, 295], [XD, 295]]);
       E('shot', 0, [[150, 305], [760, 305], [760, 1290], [1050, 1290]]);
-      [450, 600, 750, 900, 1050].forEach(y => E('shot', 0, br(760, y, 1050)));
+      [450, 600, 750, 900].forEach(y => E('shot', 0, br(760, y, 1050)));
+      E('shot', 0, br(760, 1050, XM));
       E('shot', 0, [[1050, 450], [1200, 450], [1200, 305], [XD, 305]]);
       E('shot', 0, [[1050, 600], [1200, 600], [1200, 380]]);
-      E('mt', 0, [[1050, 750], [XS, 750]]);
+      E('mt', 0, [[1050, 750], [XR, 750]]);                  // metatdenovo -> proteinfamilies, ends at its pill
       E('mt', 0, [[1050, 750], [1250, 750], [1250, 315], [XD, 315]]);
       E('db', 1, [[190, 600], [680, 600], [680, 460], [1050, 460]]);
       E('db', 1, [[190, 600], [680, 600], [680, 760], [1050, 760]]);
-      E('mag', 0, [[1050, 1050], [1960, 1050]]);
-      E('mag', 0, [[1050, 1050], [1390, 1050], [1390, 525], [2160, 525], [2160, 325], [XD, 325]]); // trunk north, through magmap, on to differentialabundance
-      [[590, 1960], [760, XS], [830, 1960], [950, 1960]].forEach(([y, x2]) => E('mag', 0, [[1390, Math.min(y + 90, 1005)], [1390, y], [x2, y]]));
-      E('mag', 0, [[1050, 1050], [1390, 1050], [1390, 1190], [1960, 1190]]);
-      E('viral', 0, [[1050, 1290], [1500, 1290], [1500, 1060], [1960, 1060]]);
-      E('viral', 0, [[1500, 1245], [1500, 1200], [1960, 1200]]);
-      // reads for magmap: off the shotgun fan, east along the free band y=640 (between funcprofiler and
-      // metatdenovo), then up and into magmap just below its MAG lane; hops over the lines it crosses
-      E('shot', 0, [[760, 550], [760, 640], [1700, 640], [1700, 535], [1960, 535]], true);
-      [['viral', 0, 'viral contigs'], ['shot', 0, 'shotgun reads'], ['mag', 0, 'MAGs / genome bins'], ['mt', 0, 'metatranscriptome contigs'], ['amp', 0, 'amplicon reads'], ['db', 1, 'reference database']].forEach(([c, d, t], i) => {
+      E('mag', 0, [[XM, 1050], [1390, 1050], [1390, YP + 50]]); // MAG trunk north; its branches (below) start inside it, and the top one turns at YP
+      [YP, YP + 125, YP + 375].forEach(y => E('mag', 0, [[1390, y + 90], [1390, y], [XR, y]])); // branches that leave the trunk going up
+      [YP + 250, YP + 500].forEach(y => E('mag', 0, [[1390, y - 90], [1390, y - 5], [XR, y - 5]])); // proteinfamilies and phyloplace: from above, so the lane under them (metatdenovo, viral) never crosses them
+      E('mag', 0, [[XM, 1050], [1390, 1050], [1390, YS + 5], [XR, YS + 5]]); // mag -> seqsubmit, directly
+      E('mt', 0, [[1050, 750], [XT, 750], [XT, YS - 5], [XR, YS - 5]]);      // metatdenovo -> seqsubmit, directly: down channel XT, right of the MAG branches
+      E('viral', 0, [[1050, 1290], [1500, 1290], [1500, YP + 505], [XR, YP + 505]]);
+      // magmap (an alternative to metatdenovo, so in the primary box), a little right of mag: reads off the
+      // shotgun fan (lower lane), MAGs from mag as an optional dashed input (upper lane; it also runs on public
+      // or the user's own genomes), abundances north to differentialabundance on channel 1300, nested after the
+      // shotgun (1200) and metatranscriptome (1250) lanes
+      E('shot', 0, br(760, 1155, XG));
+      E('mag', 1, [[XM, 1050], [XM, 1145], [XG, 1145]]);
+      E('mag', 0, [[XG, 1150], [1300, 1150], [1300, 325], [XD, 325]]);
+      [['viral', 0, 'viral contigs'], ['shot', 0, 'shotgun reads'], ['mag', 0, 'MAGs / genome bins'], ['mt', 0, 'metatranscriptome contigs'], ['amp', 0, 'amplicon reads'], ['db', 1, 'reference database'], ['mag', 1, 'optional MAGs']].forEach(([c, d, t], i) => {
         const y = 800 + i * 50; E(c, d, [[50, y], [130, y]]);
         V(t, 150, y - 18, 400, 36, TXT + 'align=left;verticalAlign=middle;fontSize=24;');
       });
 
       // stations [pipeline, x, y, pill height, label side a=above r=right b=below]; a pill is 40
       // or 60 px tall where two or four lanes arrive together
-      const LW = { differentialabundance: 320, viralmetagenome: 380, phageannotator: 240, proteinfamilies: 240, metatdenovo: 220, createtaxdb: 290, taxprofiler: 270, eager: 175, mag: 212, funcscan: 180, funcprofiler: 220, bacmodel: 230, seqsubmit: 230 }; // default 200
-      const S = [['fetchngs', 150, 300, 30, 'a'], ['detaxizer', 420, 300, 30, 'a'], ['createtaxdb', 420, 600, 30, 'a'], ['ampliseq', 1050, 300, 30, 'a'], ['taxprofiler', 1050, 455, 40, 'a'], ['funcprofiler', 1050, 600, 30, 'a'], ['metatdenovo', 1050, 755, 40, 'a'], ['eager', 1050, 900, 30, 'a'], ['mag', 1050, 1050, 30, 'a'], ['viralmetagenome', 1050, 1290, 30, 'a'],
-        ['differentialabundance', XD, 310, 60, 'a'], ['magmap', 1960, 520, 40, 'a'], ['metapep', 1960, 590, 30, 'r'], ['proteinfamilies', 1960, 755, 40, 'a'], ['funcscan', 1960, 830, 30, 'r'], ['bacmodel', 1960, 950, 30, 'r'], ['phageannotator', 1960, 1055, 40, 'r'], ['phyloplace', 1960, 1195, 40, 'r'], ['seqsubmit', XS, 755, 40, 'b']];
+      const LW = { differentialabundance: 320, viralmetagenome: 380, proteinfamilies: 240, metatdenovo: 220, createtaxdb: 290, taxprofiler: 270, eager: 175, magmap: 170, mag: 212, funcscan: 250, funcprofiler: 220, bacmodel: 230, seqsubmit: 230 }; // default 200
+      const S = [['fetchngs', 150, 300, 30, 'a'], ['detaxizer', 420, 300, 30, 'a'], ['createtaxdb', 420, 600, 30, 'a'], ['ampliseq', 1050, 300, 30, 'a'], ['taxprofiler', 1050, 455, 40, 'a'], ['funcprofiler', 1050, 600, 30, 'a'], ['metatdenovo', 1050, 755, 40, 'a'], ['eager', 1050, 900, 30, 'a'], ['mag', XM, 1050, 30, 'a'], ['magmap', XG, 1150, 40, 'a'], ['viralmetagenome', 1050, 1290, 30, 'a'],
+        ['differentialabundance', XD, 310, 60, 'a'], ['metapep', XR, YP, 30, 'r'], ['funcscan', XR, YP + 125, 30, 'r'], ['proteinfamilies', XR, YP + 250, 40, 'r'], ['bacmodel', XR, YP + 375, 30, 'r'], ['phyloplace', XR, YP + 500, 40, 'r'], ['seqsubmit', XR, YS, 40, 'r']];
       // light logo visible, dark copy hidden: exportAll() swaps them per theme (in memory only)
       const IMG = (uri, x, y, w, h, theme) => {
         const c = V('', x, y, w, h, `shape=image;aspect=fixed;imageAspect=0;image=${uri.replace(';base64,', ',')};metromapTheme=${theme};`);
@@ -183,7 +193,8 @@
       for (const [n, x, y, h, pos] of S) {
         V('', x - 15, y - h / 2, 30, h, `rounded=1;arcSize=50;whiteSpace=wrap;html=1;fillColor=${PIN('#FFFFFF')};strokeColor=${PIN('#000000')};strokeWidth=4;`);
         const L = MM.logos[n], lw = LW[n] || 200, lh = Math.round(lw * L.light.h / L.light.w);
-        const lx = pos === 'r' ? x + 27 : x - lw / 2, ly = pos === 'a' ? y - h / 2 - (n === 'proteinfamilies' ? 38 : 8) - lh : pos === 'b' ? y + h / 2 + 8 : y - lh / 2;
+        const lx = pos === 'r' ? x + 27 : x - lw / 2,
+           ly = pos === 'a' ? y - h / 2 - 8 - lh : pos === 'b' ? y + h / 2 + 8 : y - lh / 2;
         IMG(L.light.uri, lx, ly, lw, lh, 'light'); IMG(L.dark.uri, lx, ly, lw, lh, 'dark');
       }
 
