@@ -1,0 +1,55 @@
+# nf-core/taxprofiler 2.0.1 — LMO pilot, taxonomic profiles of the phiX-filtered MT reads
+#
+# Input is run 04's detaxizer-generated sheet, used AS EMITTED. Do not copy, edit or
+# regenerate it: consuming a native downstream samplesheet unmodified is what this run
+# tests (detaxizer -> taxprofiler, NATIVE, never exercised).
+#
+# The database sheet has absolute cluster paths, so it is not committed. Build it with the
+# heredoc in README.md, "Build the database sheet".
+#
+# taxprofiler 2.0.1 has no check_max, so NXF_SYNTAX_PARSER=v1 is NOT needed. Requires
+# Nextflow >= 25.10.4.
+
+input: "/path/to/results/04_detaxizer/downstream_samplesheets/taxprofiler.csv"
+databases: "/path/to/runs/09_taxprofiler/databases.csv"
+outdir: "/path/to/results/09_taxprofiler"
+
+# --- Profilers ------------------------------------------------------------------------
+#
+# A profiler runs only when this flag is on AND the database sheet has a row for it.
+#
+# sylph + GTDB r232: the same GTDB release as run 08's amplicon taxonomy (sbdi-gtdb
+# R11-RS232-1), so MT and amplicon profiles can be matched by name. Caveat: sylph infers
+# abundance from k-mer coverage across whole genomes and assumes it is roughly even.
+# Metatranscriptome coverage follows expression, not genome copy number, so expect fewer
+# genomes detected and ANI underestimated. Read it as a detection list, not abundances.
+run_sylph: true
+sylph_taxonomy: "/path/to/gtdb_r232_metadata.tsv.gz"
+
+# kraken2 + PlusPF-16: classifies each read, so it does not depend on even coverage.
+# It is the MT-robust profiler here. PlusPF adds protozoa and fungi to Standard at the
+# same 16 GB cap, which matters because the run 03 / run 06 family comparison found
+# eukaryotic ribosomal proteins in 27% of MT-only families. Uses NCBI taxonomy, not GTDB.
+run_kraken2: true
+
+# --- Preprocessing --------------------------------------------------------------------
+#
+# fastp adapter and quality trimming. detaxizer (run 04) filtered phiX only and did not
+# trim, so these reads are raw apart from phiX removal. Trimming is taxprofiler's own
+# recommended default for profiling, and it does not touch the samplesheet.
+perform_shortread_qc: true
+
+# --- Output ---------------------------------------------------------------------------
+#
+# taxpasta tables, one per profiler/database: the format any later
+# taxprofiler -> differentialabundance edge would start from. sylph is excluded from
+# taxpasta in 2.0.1 and gets sylph-tax merge output instead.
+run_profile_standardisation: true
+
+# Everything else at default:
+# - perform_runmerging false: the _a/_b libraries per date stay separate, so there are six
+#   profiles, one per library, matching runs 02 and 04 sample for sample
+# - no host removal: Baltic seawater, no host (the 2026-08-10 scope decision)
+# - no complexity filter, no bracken: bracken needs a read-length-matched distribution
+#   and adds an abundance re-estimate, not a new detection
+# - no krona: needs a separate krona taxonomy download
