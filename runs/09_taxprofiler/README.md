@@ -257,6 +257,54 @@ metatdenovo is not in this comparison: run 02 skipped EUKulele (`skip_eukulele: 
 has no taxonomy. taxprofiler on the same phiX-filtered metatranscriptome reads is the
 read-based view here.
 
+#### Per-library values behind the table
+
+Extracted from the run 09 outdir on 2026-11-17. The table above shows the mean of each
+date's `_a` and `_b` values.
+
+```bash
+OUT=<taxprofiler-outdir>
+# kraken2: phylum share of all reads (>= 0.5%)
+for f in $OUT/kraken2/k2_pluspf_16gb_20260626/*report.txt; do
+  echo "# $(basename $f)"
+  awk -F'\t' '$4=="P" && $1>=0.5 {gsub(/^ +/,"",$6); printf "%s\t%s\n",$6,$1}' "$f" | sort -t$'\t' -k2,2gr
+done
+# sylph: phylum rows of the sylph-tax combined report
+grep -P '\|p__[^|]+\t' $OUT/sylph/sylph_gtdb_r232_c200_combined_reports.tsv
+```
+
+kraken2, % of all reads:
+
+| Phylum | 0315_a | 0315_b | 0803_a | 0803_b | 1031_a | 1031_b |
+|---|---|---|---|---|---|---|
+| Cyanobacteriota | 2.14 | 3.68 | 19.24 | 17.61 | 4.75 | 4.20 |
+| Pseudomonadota | 1.91 | 2.18 | 2.96 | 3.11 | 2.96 | 2.75 |
+| Bacteroidota | – | – | 1.66 | 1.68 | 1.02 | 0.96 |
+| Planctomycetota | – | – | 0.96 | 0.96 | 0.68 | 0.59 |
+| Bacillota | – | – | 0.50 | 0.53 | – | – |
+| Bacillariophyta | 2.71 | 2.84 | 4.75 | 4.89 | 2.19 | 2.08 |
+| Oomycota | 3.76 | 3.01 | 1.20 | 1.22 | 0.65 | 0.74 |
+| Apicomplexa | 2.83 | 3.40 | 2.86 | 2.81 | 2.59 | 2.76 |
+| Ascomycota | 0.76 | 0.87 | 1.32 | 1.45 | 2.15 | 1.97 |
+| Basidiomycota | – | – | 1.07 | 1.05 | 1.25 | 1.24 |
+| Euglenozoa | – | – | 1.27 | 1.08 | – | – |
+| Glomeromycota | – | – | 0.97 | 0.97 | – | – |
+| Sum of listed phyla | 14.1 | 16.0 | 38.8 | 37.4 | 18.2 | 17.3 |
+
+sylph, taxonomic abundance (%):
+
+| Phylum | 0315_a | 0315_b | 0803_a | 0803_b | 1031_a | 1031_b |
+|---|---|---|---|---|---|---|
+| Pseudomonadota | 48.25 | 54.94 | 38.10 | 40.37 | 65.35 | 54.79 |
+| Cyanobacteriota | 15.90 | 14.82 | 54.00 | 39.41 | 5.27 | 4.93 |
+| Bacteroidota | 22.42 | 19.62 | 3.57 | 11.02 | 6.20 | 10.04 |
+| Actinomycetota | – | – | 1.84 | 2.86 | 7.34 | 18.24 |
+| Verrucomicrobiota | – | – | 2.49 | 4.14 | 9.62 | 8.26 |
+| Thermoplasmatota | 13.43 | 8.40 | – | – | – | – |
+| Thermoproteota | – | – | – | – | 6.21 | 3.74 |
+| Chloroflexota | – | 2.22 | – | – | – | – |
+| Bacillota_I | – | – | – | 2.19 | – | – |
+
 ## Status
 
 | Step | Status |
