@@ -143,7 +143,7 @@
       e.geometry.points = pts.slice(1, -1).map(p => new mxPoint(p[0], p[1]));
     };
     const TXT = 'text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;fontColor=light-dark(#000000,#FFFFFF);' + FONT;
-    const XD = 1570, XR = 1570, XS = 1230, XM = 980, XG = 1150, YG = 1165, XT = 1290, XV = 1440, YP = 455, ST = 145, YS = 1340; // x of differentialabundance (same column as the secondary stations), the secondary stations (100 px into box 3), the first of the three touching lanes up to differentialabundance (shotgun XS, mt XS+10, magmap XS+20: clear of the magmap label), mag, magmap; y of magmap (its label must clear the MAG row 1050 above and the viralmetagenome label below); y of metapep, the step between secondary rows (differentialabundance 310 and proteinfamilies 745 are fixed by their lanes, so 145), y of seqsubmit (its MAG lane corner must stay >= 40 px below the viral row 1290); XT: right of the touching lanes, its 30 px top corner >= 30 px past the magmap lane it crosses, and left of the MAG row's corner at 1350; XV: the viral channel, as close to the MAG trunk as its corner allows (>= 40 px right of it)
+    const XD = 1570, XR = 1570, XS = 1230, XM = 980, XG = 1150, YG = 1165, XT = 1350, XK = 1400, XV = 1450, YP = 455, ST = 145, YS = 1340; // x of differentialabundance (same column as the secondary stations), the secondary stations (100 px into box 3), the first of the three touching lanes up to differentialabundance (shotgun XS, mt XS+10, magmap XS+20: clear of the magmap label), mag, magmap; y of magmap (its label must clear the MAG row 1050 above and the viralmetagenome label below); y of metapep, the step between secondary rows (differentialabundance 310 and proteinfamilies 745 are fixed by their lanes, so 145), y of seqsubmit (its MAG lane corner must stay >= 40 px below the viral row 1290); XT, XK, XV: the mt -> seqsubmit, MAG trunk and viral verticals, 50 apart and centred in the gap between boxes 2 and 3. They cannot touch: purple crosses the MAG row just before its corner into the trunk (so XT <= XK - 50), and red crosses purple and the trunk just before its own corner up (so XV >= XK + 50)
     M.beginUpdate();
     try {
       // getChildCells skips hidden cells (the dark logos), so clear with getChildren
@@ -154,9 +154,9 @@
       // routes. Rows (y): 300 amplicon/entry, 450 taxprofiler, 600 funcprofiler, 740/750 metatdenovo (mt out / reads in),
       // 900 eager, 1050 mag, 1165 magmap, 1290 viralmetagenome; secondary 310 differentialabundance, then every 145:
       // 455 metapep, 600 funcscan, 745 proteinfamilies, 890 bacmodel, 1035 phyloplace; 1340 seqsubmit. Channels (x): 680 db, 760 shotgun fan, 1230/1240/1250 shotgun profiles,
-      // mt and magmap -> diffabund (touching, concentric corners 50/40/30), 1290 mt -> seqsubmit, 1390 MAG trunk, 1440 viral.
+      // mt and magmap -> diffabund (touching, concentric corners 50/40/30), 1350 mt -> seqsubmit, 1400 MAG trunk, 1450 viral.
       // A vertical lane can touch its neighbour only if neither crosses the other's lanes inside a corner: so mt -> seqsubmit
-      // (crosses the magmap lane at 740) and viral (crosses the MAG trunk at 1290) keep a corner's width of space.
+      // (crosses the MAG row by the trunk) and viral (crosses mt and the trunk at 1290) keep a corner's width of space.
       // Every MAG branch leaves the trunk the same way (up, then right); so at proteinfamilies the mt lane runs above it (740)
       const br = (xc, y, x2) => [[xc, y - 90], [xc, y], [x2, y]]; // branch off a vertical trunk
       E('amp', 0, [[150, 295], [XD, 295]]);
@@ -169,11 +169,11 @@
       E('mt', 0, [[1050, 740], [XS + 10, 740], [XS + 10, 315], [XD, 315]]);
       E('db', 1, [[190, 600], [680, 600], [680, 460], [1050, 460]]);
       E('db', 1, [[190, 600], [680, 600], [680, 760], [1050, 760]]);
-      E('mag', 0, [[XM, 1050], [1390, 1050], [1390, YP + 50]]); // MAG trunk north; its branches (below) start inside it, and the top one turns at YP
+      E('mag', 0, [[XM, 1050], [XK, 1050], [XK, YP + 50]]); // MAG trunk north; its branches (below) start inside it, and the top one turns at YP
       // branches all leave the trunk going up, then right (lane y = row, or row + 5 / - 5 where a second lane shares the pill);
       // phyloplace's starts inside the mag -> seqsubmit line, which runs down the trunk below 1050
-      [[YP, 0], [YP + ST, 0], [YP + 2 * ST, 5], [YP + 3 * ST, 0], [YP + 4 * ST, -5]].forEach(([y, o]) => E('mag', 0, [[1390, y + o + 90], [1390, y + o], [XR, y + o]]));
-      E('mag', 0, [[XM, 1050], [1390, 1050], [1390, YS - 5], [XR, YS - 5]]); // mag -> seqsubmit, directly
+      [[YP, 0], [YP + ST, 0], [YP + 2 * ST, 5], [YP + 3 * ST, 0], [YP + 4 * ST, -5]].forEach(([y, o]) => E('mag', 0, [[XK, y + o + 90], [XK, y + o], [XR, y + o]]));
+      E('mag', 0, [[XM, 1050], [XK, 1050], [XK, YS - 5], [XR, YS - 5]]); // mag -> seqsubmit, directly
       E('mt', 0, [[1050, 740], [XT, 740], [XT, YS + 5], [XR, YS + 5]], false, 60); // metatdenovo -> seqsubmit: down channel XT, under the MAG lane at the end (30 px corners)
       E('viral', 0, [[1050, 1290], [XV, 1290], [XV, YP + 4 * ST + 5], [XR, YP + 4 * ST + 5]]);
       // magmap (an alternative to metatdenovo, so in the primary box), a little right of mag: reads off the
