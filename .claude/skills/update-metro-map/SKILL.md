@@ -32,10 +32,12 @@ The map is drawn in [draw.io](https://app.diagrams.net) and exported as light an
 4. **Look at it** before exporting, zoomed in (`MM.view(1, dx, dy)` plus the `zoom` action):
    - every fork and corner is one continuous path: no gaps, no stubs sticking out of an arc;
    - lines cross only on straight segments. A corner within 40 px of another lane means a kink: move the row or channel;
+   - a line that zigzags or hairpins to reach its station: swap station rows first so it runs straight (#4561: viralmetagenome sits above mag/magmap, its row right above phyloplace's MAG branch, so the red line runs straight into phyloplace);
+   - boxes 3 and 4 share both edges (same x and width, `W34` in the script);
    - a station sitting on another pipeline's track reads as a false edge (seqsubmit once sat on the metatdenovo and mag lanes behind proteinfamilies: those lanes now run down their own channel to seqsubmit);
    - labels do not touch lines or each other.
 5. **Export**: `await MM.exportAll('nf-core-meta-omics-metromap')` (light and dark PNG + SVG), then `MM.preview('nf-core-meta-omics-metromap_dark.png')` and screenshot it: logos swap to their dark versions, and the yellow line must stay bright. `MM.preview(null)` closes it. Then `await MM.waitSaved()`.
-6. **Download**: `await MM.downloadButton('meta_omics_metromaps.zip')`, find the "Download metro maps" link and click it. Chrome may ask where to save: the person at the keyboard presses Save.
+6. **Download**: `await MM.downloadButton('meta_omics_metromaps.zip')`, find the "Download metro maps" link and click it. Chrome may ask where to save: the person at the keyboard presses Save. The zip holds the **last** export: after any change, run step 5 again before this, or the old layout is downloaded. Open the downloaded PNG and check it shows the change before installing.
 7. **Install** into `images/` here and into the website branch (every SVG needs a final newline for the nf-core `end-of-file-fixer` hook):
    ```bash
    unzip -o ~/Downloads/meta_omics_metromaps.zip -d <dest>
