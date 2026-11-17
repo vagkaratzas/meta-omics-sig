@@ -919,8 +919,13 @@ restored them. An absolute-path sheet ties the consumer to the producer's outdir
 - **sylph's abundances assume even genome coverage**, which MT reads do not have; they show
   which genomes are detectably transcribed, not how abundant they are.
 - **taxpasta 0.7.0 merged the kraken2 profiles only**; sylph's merged table comes from sylph-tax.
-- The phylum names match run 08's GTDB r232 amplicon taxonomy directly. The per-date
-  comparison is not done yet.
+- **Against run 08, per date (2026-11-17):** the August cyanobacteria peak is in the
+  amplicon (36%), in sylph (47%) and in kraken2 (18% of reads). Pseudomonadota lead sylph on
+  every date (39–60%) but are a flat 13–16% in the amplicon, so they are the most transcribed
+  group rather than the most abundant one. October's Actinomycetota lead the amplicon (37%)
+  but come second in sylph (13%). Archaea appear only in sylph, because the primers are
+  bacteria-biased. metatdenovo has no taxonomy to compare, since run 02 skipped EUKulele.
+  [Table](runs/09_taxprofiler/README.md#against-run-08-per-date-at-phylum-level).
 
 Per-library results: [`runs/09_taxprofiler/README.md`](runs/09_taxprofiler/README.md#results).
 

@@ -207,8 +207,103 @@ The only intervention was outside the sheet: the symlink from step 1.
   (`sylph_gtdb_r232_c200_combined_reports.tsv`), and its sample columns are not in sample
   order, so read its header.
 
-Against run 08: the phylum names match GTDB r232 directly (Pseudomonadota, Bacteroidota,
-Actinomycetota lead the amplicon ASVs). A per-date comparison of abundances is not done yet.
+### Against run 08, per date at phylum level
+
+All three profiles use GTDB r232 phylum names, apart from kraken2's eukaryotes. They are not
+on one scale:
+
+- **Amplicon** is the share of final 16S reads (run 08, `rel-table-3.tsv`).
+- **sylph** is the taxonomic abundance of the detected genomes, the mean of `_a` and `_b`.
+- **kraken2** is the share of *all* reads, the mean of `_a` and `_b`. Its listed phyla sum to
+  only 14–39% of reads, so it is used here for ranks and for eukaryotes, not for abundance.
+
+"–" means absent (amplicon, sylph) or under 0.5% of reads (kraken2).
+
+| Phylum | Mar amplicon | Mar sylph | Mar kraken2 | Aug amplicon | Aug sylph | Aug kraken2 | Oct amplicon | Oct sylph | Oct kraken2 |
+|---|---|---|---|---|---|---|---|---|---|
+| Cyanobacteriota | 22.0 | 15.4 | 2.9 | **36.0** | **46.7** | **18.4** | 8.1 | 5.1 | **4.5** |
+| Pseudomonadota | 15.5 | **51.6** | 2.0 | 13.0 | 39.2 | 3.0 | 14.3 | **60.1** | 2.9 |
+| Bacteroidota | **30.5** | 21.0 | – | 10.7 | 7.3 | 1.7 | 18.9 | 8.1 | 1.0 |
+| Actinomycetota | 12.1 | – | – | 10.5 | 2.4 | – | **36.8** | 12.8 | – |
+| Verrucomicrobiota | 1.6 | – | – | 4.6 | 3.3 | – | 3.6 | 8.9 | – |
+| Planctomycetota | 4.5 | – | – | 5.8 | – | 1.0 | 5.9 | – | 0.6 |
+| Thermoplasmatota (archaea) | – | 10.9 | – | – | – | – | – | – | – |
+| Thermoproteota (archaea) | – | – | – | – | – | – | – | 5.0 | – |
+| Bacillariophyta (diatoms) | | | 2.8 | | | 4.8 | | | 2.1 |
+| Oomycota | | | **3.4** | | | 1.2 | | | 0.7 |
+| Apicomplexa | | | 3.1 | | | 2.8 | | | 2.7 |
+| Ascomycota | | | 0.8 | | | 1.4 | | | 2.1 |
+
+- **August's cyanobacteria peak is in all three.** It is the top phylum in the amplicon (36%),
+  in sylph (47%) and in kraken2 (18% of reads, against 3–4% on the other dates). This is the one
+  signal the DNA and RNA layers agree on, across all three methods.
+- **Pseudomonadota lead the metatranscriptome but not the amplicon.** In sylph they lead on
+  every date (39–60%), against a flat 13–16% in the amplicon. sylph's abundance follows
+  transcript coverage, so this reads as Pseudomonadota being the most transcriptionally active
+  group, not the most abundant one. Not checked against a DNA-based sylph profile.
+- **October's Actinomycetota are weaker in the transcripts.** They are the amplicon's top phylum
+  (37%), second in sylph (13%), and under 0.5% of reads in kraken2. A RefSeq-based database such
+  as PlusPF may lack the freshwater-type actinobacteria common in the Baltic, which would explain
+  the kraken2 gap; not checked.
+- **March's Bacteroidota lead the amplicon (31%) and come second in sylph (21%)**; kraken2
+  places them under 0.5%.
+- **Archaea show up only in sylph**: Thermoplasmatota at 11% in March and Thermoproteota at 5%
+  in October. The 341F/805R primers are bacteria-biased (archaea ≤0.014% of amplicon reads),
+  so the amplicon layer cannot see them.
+- **Eukaryotes show up only in kraken2.** Diatoms (Bacillariophyta) peak in August at 4.8% of
+  reads. The Oomycota and Apicomplexa caveat above applies.
+
+metatdenovo is not in this comparison: run 02 skipped EUKulele (`skip_eukulele: true`), so it
+has no taxonomy. taxprofiler on the same phiX-filtered metatranscriptome reads is the
+read-based view here.
+
+#### Per-library values behind the table
+
+Extracted from the run 09 outdir on 2026-11-17. The table above shows the mean of each
+date's `_a` and `_b` values.
+
+```bash
+OUT=<taxprofiler-outdir>
+# kraken2: phylum share of all reads (>= 0.5%)
+for f in $OUT/kraken2/k2_pluspf_16gb_20260626/*report.txt; do
+  echo "# $(basename $f)"
+  awk -F'\t' '$4=="P" && $1>=0.5 {gsub(/^ +/,"",$6); printf "%s\t%s\n",$6,$1}' "$f" | sort -t$'\t' -k2,2gr
+done
+# sylph: phylum rows of the sylph-tax combined report
+grep -P '\|p__[^|]+\t' $OUT/sylph/sylph_gtdb_r232_c200_combined_reports.tsv
+```
+
+kraken2, % of all reads:
+
+| Phylum | 0315_a | 0315_b | 0803_a | 0803_b | 1031_a | 1031_b |
+|---|---|---|---|---|---|---|
+| Cyanobacteriota | 2.14 | 3.68 | 19.24 | 17.61 | 4.75 | 4.20 |
+| Pseudomonadota | 1.91 | 2.18 | 2.96 | 3.11 | 2.96 | 2.75 |
+| Bacteroidota | – | – | 1.66 | 1.68 | 1.02 | 0.96 |
+| Planctomycetota | – | – | 0.96 | 0.96 | 0.68 | 0.59 |
+| Bacillota | – | – | 0.50 | 0.53 | – | – |
+| Bacillariophyta | 2.71 | 2.84 | 4.75 | 4.89 | 2.19 | 2.08 |
+| Oomycota | 3.76 | 3.01 | 1.20 | 1.22 | 0.65 | 0.74 |
+| Apicomplexa | 2.83 | 3.40 | 2.86 | 2.81 | 2.59 | 2.76 |
+| Ascomycota | 0.76 | 0.87 | 1.32 | 1.45 | 2.15 | 1.97 |
+| Basidiomycota | – | – | 1.07 | 1.05 | 1.25 | 1.24 |
+| Euglenozoa | – | – | 1.27 | 1.08 | – | – |
+| Glomeromycota | – | – | 0.97 | 0.97 | – | – |
+| Sum of listed phyla | 14.1 | 16.0 | 38.8 | 37.4 | 18.2 | 17.3 |
+
+sylph, taxonomic abundance (%):
+
+| Phylum | 0315_a | 0315_b | 0803_a | 0803_b | 1031_a | 1031_b |
+|---|---|---|---|---|---|---|
+| Pseudomonadota | 48.25 | 54.94 | 38.10 | 40.37 | 65.35 | 54.79 |
+| Cyanobacteriota | 15.90 | 14.82 | 54.00 | 39.41 | 5.27 | 4.93 |
+| Bacteroidota | 22.42 | 19.62 | 3.57 | 11.02 | 6.20 | 10.04 |
+| Actinomycetota | – | – | 1.84 | 2.86 | 7.34 | 18.24 |
+| Verrucomicrobiota | – | – | 2.49 | 4.14 | 9.62 | 8.26 |
+| Thermoplasmatota | 13.43 | 8.40 | – | – | – | – |
+| Thermoproteota | – | – | – | – | 6.21 | 3.74 |
+| Chloroflexota | – | 2.22 | – | – | – | – |
+| Bacillota_I | – | – | – | 2.19 | – | – |
 
 ## Status
 
