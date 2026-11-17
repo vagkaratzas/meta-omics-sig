@@ -143,7 +143,7 @@
       e.geometry.points = pts.slice(1, -1).map(p => new mxPoint(p[0], p[1]));
     };
     const TXT = 'text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;fontColor=light-dark(#000000,#FFFFFF);' + FONT;
-    const XD = 1570, XR = 1570, XS = 1230, XM = 980, XG = 1150, YG = 1165, XT = 1350, XK = 1400, XV = 1450, YP = 455, ST = 145, YS = 1340; // x of differentialabundance (same column as the secondary stations), the secondary stations (100 px into box 3), the first of the three touching lanes up to differentialabundance (shotgun XS, mt XS+10, magmap XS+20: clear of the magmap label), mag, magmap; y of magmap (its label must clear the MAG row 1050 above and the viralmetagenome label below); y of metapep, the step between secondary rows (differentialabundance 310 and proteinfamilies 745 are fixed by their lanes, so 145), y of seqsubmit (its MAG lane corner must stay >= 40 px below the viral row 1290); XT, XK, XV: the mt -> seqsubmit, MAG trunk and viral verticals, 50 apart and centred in the gap between boxes 2 and 3. They cannot touch: purple crosses the MAG row just before its corner into the trunk (so XT <= XK - 50), and red crosses purple and the trunk just before its own corner up (so XV >= XK + 50)
+    const XD = 1570, XR = 1570, XS = 1230, XM = 980, XG = 1150, XT = 1350, XK = 1400, YP = 455, ST = 145, YV = YP + 4 * ST - 5, YM = 1180, YG = YM + 115, YS = 1340; // x of differentialabundance (same column as the secondary stations), the secondary stations (100 px into box 3), the first of the three touching lanes up to differentialabundance (shotgun XS, mt XS+10, magmap XS+20: clear of the magmap label), mag, magmap, the mt -> seqsubmit vertical, the MAG trunk (purple crosses the MAG row just before its corner into the trunk, so XT <= XK - 50); y of metapep, the step between secondary rows (differentialabundance 310 and proteinfamilies 745 are fixed by their lanes, so 145), viralmetagenome (the upper lane into phyloplace, so the red line is straight; above the MAG branch, which turns just below it), mag (150 below viral, like eager -> viral, so its label clears the viral row), magmap (its label must clear the MAG row above), seqsubmit
     M.beginUpdate();
     try {
       // getChildCells skips hidden cells (the dark logos), so clear with getChildren
@@ -152,36 +152,35 @@
       const BOX = 'rounded=1;absoluteArcSize=1;arcSize=20;whiteSpace=wrap;html=1;strokeWidth=2;strokeColor=#E6E6E6;fillColor=#BDBDBD;align=left;verticalAlign=top;fontSize=38;spacing=0;fillStyle=solid;spacingTop=8;spacingLeft=16;fontStyle=1;fontColor=light-dark(#333333,#CCCCCC);' + FONT;
 
       // routes. Rows (y): 300 amplicon/entry, 450 taxprofiler, 600 funcprofiler, 740/750 metatdenovo (mt out / reads in),
-      // 900 eager, 1050 mag, 1165 magmap, 1290 viralmetagenome; secondary 310 differentialabundance, then every 145:
+      // 900 eager, 1030 viralmetagenome (straight into phyloplace), 1180 mag, 1295 magmap; secondary 310 differentialabundance, then every 145:
       // 455 metapep, 600 funcscan, 745 proteinfamilies, 890 bacmodel, 1035 phyloplace; 1340 seqsubmit. Channels (x): 680 db, 760 shotgun fan, 1230/1240/1250 shotgun profiles,
-      // mt and magmap -> diffabund (touching, concentric corners 50/40/30), 1350 mt -> seqsubmit, 1400 MAG trunk, 1450 viral.
+      // mt and magmap -> diffabund (touching, concentric corners 50/40/30), 1350 mt -> seqsubmit, 1400 MAG trunk.
       // A vertical lane can touch its neighbour only if neither crosses the other's lanes inside a corner: so mt -> seqsubmit
-      // (crosses the MAG row by the trunk) and viral (crosses mt and the trunk at 1290) keep a corner's width of space.
+      // (crosses the MAG row by the trunk) keeps a corner's width of space.
       // Every MAG branch leaves the trunk the same way (up, then right); so at proteinfamilies the mt lane runs above it (740)
       const br = (xc, y, x2) => [[xc, y - 90], [xc, y], [x2, y]]; // branch off a vertical trunk
       E('amp', 0, [[150, 295], [XD, 295]]);
-      E('shot', 0, [[150, 305], [760, 305], [760, 1290], [1050, 1290]]);
-      [450, 600, 750, 900].forEach(y => E('shot', 0, br(760, y, 1050)));
-      E('shot', 0, br(760, 1050, XM));
+      E('shot', 0, [[150, 305], [760, 305], [760, YG + 5], [XG, YG + 5]]); // ends at magmap, the lowest station
+      [450, 600, 750, 900, YV].forEach(y => E('shot', 0, br(760, y, 1050)));
+      E('shot', 0, br(760, YM, XM));
       E('shot', 0, [[1050, 450], [XS, 450], [XS, 305], [XD, 305]], false, 100);
       E('shot', 0, [[1050, 600], [XS, 600], [XS, 380]], false, 100);
       E('mt', 0, [[1050, 740], [XR, 740]]);                  // metatdenovo -> proteinfamilies, ends at its pill
       E('mt', 0, [[1050, 740], [XS + 10, 740], [XS + 10, 315], [XD, 315]]);
       E('db', 1, [[190, 600], [680, 600], [680, 460], [1050, 460]]);
       E('db', 1, [[190, 600], [680, 600], [680, 760], [1050, 760]]);
-      E('mag', 0, [[XM, 1050], [XK, 1050], [XK, YP + 50]]); // MAG trunk north; its branches (below) start inside it, and the top one turns at YP
-      // branches all leave the trunk going up, then right (lane y = row, or row + 5 / - 5 where a second lane shares the pill);
-      // phyloplace's starts inside the mag -> seqsubmit line, which runs down the trunk below 1050
-      [[YP, 0], [YP + ST, 0], [YP + 2 * ST, 5], [YP + 3 * ST, 0], [YP + 4 * ST, -5]].forEach(([y, o]) => E('mag', 0, [[XK, y + o + 90], [XK, y + o], [XR, y + o]]));
-      E('mag', 0, [[XM, 1050], [XK, 1050], [XK, YS - 5], [XR, YS - 5]]); // mag -> seqsubmit, directly
+      E('mag', 0, [[XM, YM], [XK, YM], [XK, YP + 50]]); // MAG trunk north; its branches (below) start inside it, and the top one turns at YP
+      // branches all leave the trunk going up, then right (lane y = row, or row + 5 where a second lane shares the pill above it)
+      [[YP, 0], [YP + ST, 0], [YP + 2 * ST, 5], [YP + 3 * ST, 0], [YP + 4 * ST, 5]].forEach(([y, o]) => E('mag', 0, [[XK, y + o + 90], [XK, y + o], [XR, y + o]]));
+      E('mag', 0, [[XM, YM], [XK, YM], [XK, YS - 5], [XR, YS - 5]]); // mag -> seqsubmit, directly
       E('mt', 0, [[1050, 740], [XT, 740], [XT, YS + 5], [XR, YS + 5]], false, 60); // metatdenovo -> seqsubmit: down channel XT, under the MAG lane at the end (30 px corners)
-      E('viral', 0, [[1050, 1290], [XV, 1290], [XV, YP + 4 * ST + 5], [XR, YP + 4 * ST + 5]]);
+      E('viral', 0, [[1050, YV], [XR, YV]]);
       // magmap (an alternative to metatdenovo, so in the primary box), a little right of mag: reads off the
       // shotgun fan (lower lane), MAGs from mag as an optional dashed input (upper lane; it also runs on public
       // or the user's own genomes), abundances north to differentialabundance on channel XS + 20, touching the
       // shotgun (XS) and metatranscriptome (XS + 10) lanes
       E('shot', 0, br(760, YG + 5, XG));
-      E('mag', 1, [[XM, 1050], [XM, YG - 5], [XG, YG - 5]]);
+      E('mag', 1, [[XM, YM], [XM, YG - 5], [XG, YG - 5]]);
       E('mag', 0, [[XG, YG], [XS + 20, YG], [XS + 20, 325], [XD, 325]], false, 60);
       [['viral', 0, 'viral contigs'], ['shot', 0, 'shotgun reads'], ['mag', 0, 'MAGs / genome bins'], ['mt', 0, 'metatranscriptome contigs'], ['amp', 0, 'amplicon reads'], ['db', 1, 'reference database'], ['mag', 1, 'optional MAGs']].forEach(([c, d, t], i) => {
         const y = 800 + i * 50; E(c, d, [[50, y], [130, y]]);
@@ -190,7 +189,7 @@
 
       // stations [pipeline, x, y, pill height, label side a=above r=right b=below]; a pill is 40
       // or 60 px tall where two or four lanes arrive together
-      const S = [['fetchngs', 150, 300, 30, 'a'], ['detaxizer', 420, 300, 30, 'a'], ['createtaxdb', 420, 600, 30, 'a'], ['ampliseq', 1050, 300, 30, 'a'], ['taxprofiler', 1050, 455, 40, 'a'], ['funcprofiler', 1050, 600, 30, 'a'], ['metatdenovo', 1050, 750, 40, 'a'], ['eager', 1050, 900, 30, 'a'], ['mag', XM, 1050, 30, 'a'], ['magmap', XG, YG, 40, 'a'], ['viralmetagenome', 1050, 1290, 30, 'a'],
+      const S = [['fetchngs', 150, 300, 30, 'a'], ['detaxizer', 420, 300, 30, 'a'], ['createtaxdb', 420, 600, 30, 'a'], ['ampliseq', 1050, 300, 30, 'a'], ['taxprofiler', 1050, 455, 40, 'a'], ['funcprofiler', 1050, 600, 30, 'a'], ['metatdenovo', 1050, 750, 40, 'a'], ['eager', 1050, 900, 30, 'a'], ['viralmetagenome', 1050, YV, 30, 'a'], ['mag', XM, YM, 30, 'a'], ['magmap', XG, YG, 40, 'a'],
         ['differentialabundance', XD, 310, 50, 'r'], ['metapep', XR, YP, 30, 'r'], ['funcscan', XR, YP + ST, 30, 'r'], ['proteinfamilies', XR, YP + 2 * ST, 40, 'r'], ['bacmodel', XR, YP + 3 * ST, 30, 'r'], ['phyloplace', XR, YP + 4 * ST, 40, 'r'], ['seqsubmit', XR, YS, 40, 'r']];
       // light logo visible, dark copy hidden: exportAll() swaps them per theme (in memory only)
       const IMG = (uri, x, y, w, h, theme) => {
@@ -208,10 +207,11 @@
         bottom[BOXOF(n)] = Math.max(bottom[BOXOF(n)], y + h / 2, ly + lh); right[BOXOF(n)] = Math.max(right[BOXOF(n)], lx + lw);
       }
       // boxes: equal gaps (GAP) side by side, each PAD below its lowest content
-      // box 2 is centred on its station column (1050); box 4's top sits HEAD above seqsubmit's logo, so the box is no taller than it needs
-      const PAD = 40, GAP = 140, HEAD = 75, sq = MM.logos.seqsubmit.light, top4 = YS - Math.round(lwOf('seqsubmit') * sq.h / sq.w / 2) - HEAD;
+      // box 2 is centred on its station column (1050); box 4's top sits HEAD above seqsubmit's logo, so the box is no taller than it needs;
+      // boxes 3 and 4 share left and right edges (W34: the wider content of the two)
+      const PAD = 40, GAP = 140, HEAD = 75, W34 = Math.max(right[2], right[3]) + PAD - 1330 - GAP, sq = MM.logos.seqsubmit.light, top4 = YS - Math.round(lwOf('seqsubmit') * sq.h / sq.w / 2) - HEAD;
       if (top4 < bottom[2] + PAD + 30) throw new Error('box 4 overlaps box 3: lower YS');
-      const boxes = [['1. Data input', 20, 110, 610], ['2. Primary analysis', 630 + GAP, 110, 560], ['3. Secondary analysis', 1330 + GAP, 110, right[2] + PAD - 1330 - GAP], ['4. Data upload', XR - 50, top4, right[3] + PAD - XR + 50]]
+      const boxes = [['1. Data input', 20, 110, 610], ['2. Primary analysis', 630 + GAP, 110, 560], ['3. Secondary analysis', 1330 + GAP, 110, W34], ['4. Data upload', 1330 + GAP, top4, W34]]
         .map((b, i) => V(b[0], b[1], b[2], b[3], bottom[i] + PAD - b[2], BOX));
       g.orderCells(true, boxes);
 
