@@ -215,7 +215,7 @@ on one scale:
 - **Amplicon** is the share of final 16S reads (run 08, `rel-table-3.tsv`).
 - **sylph** is the taxonomic abundance of the detected genomes, the mean of `_a` and `_b`.
 - **kraken2** is the share of *all* reads, the mean of `_a` and `_b`. Its listed phyla sum to
-  only 15–42% of reads, so it is used here for ranks and for eukaryotes, not for abundance.
+  only 14–39% of reads, so it is used here for ranks and for eukaryotes, not for abundance.
 
 "–" means absent (amplicon, sylph) or under 0.5% of reads (kraken2).
 
