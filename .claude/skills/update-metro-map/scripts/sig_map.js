@@ -93,7 +93,7 @@
   const PIPELINES = 'fetchngs detaxizer createtaxdb ampliseq taxprofiler funcprofiler eager mag metatdenovo viralmetagenome magmap differentialabundance metapep funcscan phyloplace proteinfamilies bacmodel seqsubmit'.split(' ');
   const D = 'HEAD/docs/images/';
   // logo width on the map (default 200); each logo is stored at 2x that width, so all are equally sharp
-  const LW = { differentialabundance: 320, viralmetagenome: 380, proteinfamilies: 240, metatdenovo: 220, createtaxdb: 290, taxprofiler: 270, eager: 175, magmap: 170, mag: 212, funcscan: 250, funcprofiler: 220, bacmodel: 230, seqsubmit: 230 };
+  const LW = { differentialabundance: 320, viralmetagenome: 380, proteinfamilies: 240, metatdenovo: 220, createtaxdb: 290, taxprofiler: 270, eager: 175, magmap: 160, mag: 212, funcscan: 250, funcprofiler: 220, bacmodel: 230, seqsubmit: 230 };
   const lwOf = p => LW[p] || 200;
   // pipelines whose repo has a custom-art logo: [light file, dark file] (names are not uniform:
   // eager's "flat_black" is the one for LIGHT backgrounds and "flat_light" is for dark ones)
@@ -143,7 +143,7 @@
       e.geometry.points = pts.slice(1, -1).map(p => new mxPoint(p[0], p[1]));
     };
     const TXT = 'text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;fontColor=light-dark(#000000,#FFFFFF);' + FONT;
-    const XD = 1760, XR = 1760, XM = 980, XG = 1150, XT = 1345, XV = 1440, YP = 455, ST = 145, YS = 1340; // x of differentialabundance (same column as the secondary stations), the secondary stations, mag, magmap, the metatdenovo -> seqsubmit channel; y of metapep, the step between secondary rows (differentialabundance 310 and proteinfamilies 745 are fixed by their lanes, so 145), y of seqsubmit (its MAG lane corner must stay >= 40 px below the viral row 1290); XT: between the magmap channel 1300 and the MAG trunk 1390 (its 30 px corners clear both); XV: the viral channel, as close to the MAG trunk as its corner allows (>= 40 px right of it)
+    const XD = 1760, XR = 1760, XM = 980, XG = 1150, YG = 1165, XT = 1345, XV = 1440, YP = 455, ST = 145, YS = 1340; // x of differentialabundance (same column as the secondary stations), the secondary stations, mag, magmap; y of magmap (its label must clear the MAG row 1050 above and the viralmetagenome label below); y of metapep, the step between secondary rows (differentialabundance 310 and proteinfamilies 745 are fixed by their lanes, so 145), y of seqsubmit (its MAG lane corner must stay >= 40 px below the viral row 1290); XT: between the magmap channel 1300 and the MAG trunk 1390 (its 30 px corners clear both); XV: the viral channel, as close to the MAG trunk as its corner allows (>= 40 px right of it)
     M.beginUpdate();
     try {
       // getChildCells skips hidden cells (the dark logos), so clear with getChildren
@@ -152,7 +152,7 @@
       const BOX = 'rounded=1;absoluteArcSize=1;arcSize=20;whiteSpace=wrap;html=1;strokeWidth=2;strokeColor=#E6E6E6;fillColor=#BDBDBD;align=left;verticalAlign=top;fontSize=38;spacing=0;fillStyle=solid;spacingTop=8;spacingLeft=16;fontStyle=1;fontColor=light-dark(#333333,#CCCCCC);' + FONT;
 
       // routes. Rows (y): 300 amplicon/entry, 450 taxprofiler, 600 funcprofiler, 740/750 metatdenovo (mt out / reads in),
-      // 900 eager, 1050 mag, 1150 magmap, 1290 viralmetagenome; secondary 310 differentialabundance, then every 145:
+      // 900 eager, 1050 mag, 1165 magmap, 1290 viralmetagenome; secondary 310 differentialabundance, then every 145:
       // 455 metapep, 600 funcscan, 745 proteinfamilies, 890 bacmodel, 1035 phyloplace; 1340 seqsubmit. Channels (x): 680 db, 760 shotgun fan, 1200 shotgun profiles, 1250 mt,
       // 1300 magmap -> diffabund, 1345 mt -> seqsubmit, 1390 MAG trunk, 1440 viral.
       // Every MAG branch leaves the trunk the same way (up, then right); so at proteinfamilies the mt lane runs above it (740)
@@ -178,9 +178,9 @@
       // shotgun fan (lower lane), MAGs from mag as an optional dashed input (upper lane; it also runs on public
       // or the user's own genomes), abundances north to differentialabundance on channel 1300, nested after the
       // shotgun (1200) and metatranscriptome (1250) lanes
-      E('shot', 0, br(760, 1155, XG));
-      E('mag', 1, [[XM, 1050], [XM, 1145], [XG, 1145]]);
-      E('mag', 0, [[XG, 1150], [1300, 1150], [1300, 325], [XD, 325]]);
+      E('shot', 0, br(760, YG + 5, XG));
+      E('mag', 1, [[XM, 1050], [XM, YG - 5], [XG, YG - 5]]);
+      E('mag', 0, [[XG, YG], [1300, YG], [1300, 325], [XD, 325]]);
       [['viral', 0, 'viral contigs'], ['shot', 0, 'shotgun reads'], ['mag', 0, 'MAGs / genome bins'], ['mt', 0, 'metatranscriptome contigs'], ['amp', 0, 'amplicon reads'], ['db', 1, 'reference database'], ['mag', 1, 'optional MAGs']].forEach(([c, d, t], i) => {
         const y = 800 + i * 50; E(c, d, [[50, y], [130, y]]);
         V(t, 150, y - 18, 400, 36, TXT + 'align=left;verticalAlign=middle;fontSize=24;');
@@ -188,7 +188,7 @@
 
       // stations [pipeline, x, y, pill height, label side a=above r=right b=below]; a pill is 40
       // or 60 px tall where two or four lanes arrive together
-      const S = [['fetchngs', 150, 300, 30, 'a'], ['detaxizer', 420, 300, 30, 'a'], ['createtaxdb', 420, 600, 30, 'a'], ['ampliseq', 1050, 300, 30, 'a'], ['taxprofiler', 1050, 455, 40, 'a'], ['funcprofiler', 1050, 600, 30, 'a'], ['metatdenovo', 1050, 750, 40, 'a'], ['eager', 1050, 900, 30, 'a'], ['mag', XM, 1050, 30, 'a'], ['magmap', XG, 1150, 40, 'a'], ['viralmetagenome', 1050, 1290, 30, 'a'],
+      const S = [['fetchngs', 150, 300, 30, 'a'], ['detaxizer', 420, 300, 30, 'a'], ['createtaxdb', 420, 600, 30, 'a'], ['ampliseq', 1050, 300, 30, 'a'], ['taxprofiler', 1050, 455, 40, 'a'], ['funcprofiler', 1050, 600, 30, 'a'], ['metatdenovo', 1050, 750, 40, 'a'], ['eager', 1050, 900, 30, 'a'], ['mag', XM, 1050, 30, 'a'], ['magmap', XG, YG, 40, 'a'], ['viralmetagenome', 1050, 1290, 30, 'a'],
         ['differentialabundance', XD, 310, 50, 'r'], ['metapep', XR, YP, 30, 'r'], ['funcscan', XR, YP + ST, 30, 'r'], ['proteinfamilies', XR, YP + 2 * ST, 40, 'r'], ['bacmodel', XR, YP + 3 * ST, 30, 'r'], ['phyloplace', XR, YP + 4 * ST, 40, 'r'], ['seqsubmit', XR, YS, 40, 'r']];
       // light logo visible, dark copy hidden: exportAll() swaps them per theme (in memory only)
       const IMG = (uri, x, y, w, h, theme) => {
@@ -225,7 +225,7 @@
 
   // Layout check, run before every export (also after hand edits): returns 'ok' or the problems found.
   // Each rule is a review comment the map once got: equal gaps between the boxes, equal bottom padding,
-  // one corner radius, evenly spaced stations in a single-column box, a station column centred in its box, white logo text in dark mode,
+  // one corner radius, evenly spaced stations in a single-column box, a station column centred in its box, logos clear of lines, white logo text in dark mode,
   // every logo stored at >= 1.9x its drawn width (else it looks blurry next to the others).
   async function check(tol = 2) {
     const g = (await getUi()).editor.graph, M = g.model, P = g.getDefaultParent(), cells = M.getChildren(P).filter(c => c.vertex), out = [];
@@ -246,6 +246,12 @@
       xs.forEach(x => { cnt[x] = (cnt[x] || 0) + 1; });
       const col = Object.keys(cnt).map(Number).find(x => cnt[x] >= 3), logos = cells.filter(c => /metromapTheme=light/.test(c.style || '') && Math.abs(G(c).x + G(c).width / 2 - col) < 1);
       if (col !== undefined && logos.length >= 3 && Math.abs(G(b).x + G(b).width / 2 - col) > tol) out.push(`box ${name(b)}: station column ${col} not centred (box centre ${G(b).x + G(b).width / 2})`);
+    }
+    // every logo clears every line by >= 8 px (lines are 10 px wide, segments axis-aligned)
+    const segs = M.getChildren(P).filter(e => e.edge).flatMap(e => { const g0 = e.geometry, p = [g0.sourcePoint, ...(g0.points || []), g0.targetPoint]; return p.slice(1).map((q, i) => [Math.min(p[i].x, q.x) - 5, Math.min(p[i].y, q.y) - 5, Math.max(p[i].x, q.x) + 5, Math.max(p[i].y, q.y) + 5]); });
+    for (const c of cells.filter(c => /metromapTheme=light/.test(c.style || ''))) {
+      const r = G(c), hit = segs.find(([x0, y0, x1, y1]) => x0 < r.x + r.width + 8 && x1 > r.x - 8 && y0 < r.y + r.height + 8 && y1 > r.y - 8);
+      if (hit) out.push(`logo at ${Math.round(r.x)},${Math.round(r.y)} within 8 px of a line`);
     }
     for (const c of cells.filter(c => /metromapTheme=/.test(c.style || ''))) {
       const uri = /image=([^;]+)/.exec(c.style)[1].replace(/^data:image\/png,/, 'data:image/png;base64,'), im = new Image();
