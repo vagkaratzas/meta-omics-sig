@@ -108,19 +108,21 @@
   async function loadLogos() {
     const B = 'https://raw.githubusercontent.com/nf-core/';
     const load = u => new Promise((res, rej) => { const i = new Image(); i.crossOrigin = 'anonymous'; i.onload = () => res(i); i.onerror = () => rej(new Error('cannot load ' + u)); i.src = B + u; });
+    // crop transparent margins (logos ship with uneven padding, so the label-to-pill gaps varied 8-21 px)
+    const trim = i => { const w = i.naturalWidth || i.width, h = i.naturalHeight || i.height, c = Object.assign(document.createElement('canvas'), { width: w, height: h }), x = c.getContext('2d'); x.drawImage(i, 0, 0); const a = x.getImageData(0, 0, w, h).data; let x0 = w, y0 = h, x1 = -1, y1 = -1; for (let y = 0; y < h; y++) for (let k = 0; k < w; k++) if (a[4 * (y * w + k) + 3] > 8) { if (k < x0) x0 = k; if (k > x1) x1 = k; if (y < y0) y0 = y; if (y > y1) y1 = y; } const o = Object.assign(document.createElement('canvas'), { width: x1 - x0 + 1, height: y1 - y0 + 1 }); o.getContext('2d').drawImage(c, -x0, -y0); o.x0 = x0; return o; };
     const shrink = (i, fix, W) => { const h = Math.round((i.naturalHeight || i.height) * W / (i.naturalWidth || i.width)), c = document.createElement('canvas'); c.width = W; c.height = h; const x = c.getContext('2d'); x.imageSmoothingQuality = 'high'; x.drawImage(i, 0, 0, W, h); if (fix) fix(x, W, h); return { uri: quant(c).uri, w: W, h }; };
     MM.logos = {};
     for (const p of PIPELINES) {
       const [l, d] = CUSTOM[p] || ['light', 'dark'].map(t => `${p}/${p === 'eager' ? 'dev' : 'HEAD'}/docs/images/nf-core-${p}_logo_${t}.png`);
-      MM.logos[p] = { light: shrink(await load(l), null, 2 * lwOf(p)), dark: shrink(await load(d), null, 2 * lwOf(p)) };
+      MM.logos[p] = { light: shrink(trim(await load(l)), null, 2 * lwOf(p)), dark: shrink(trim(await load(d)), null, 2 * lwOf(p)) };
     }
     // bacmodel ships a mascot logo for light only: keep the mascot, recolour the text white
-    const bl = await load('bacmodel/' + D + 'nf-core-bacmodel_logo_light.png'); // light logo only: its black text is whitened right of the mascot, below
+    const bl = trim(await load('bacmodel/' + D + 'nf-core-bacmodel_logo_light.png')); // light logo only: its black text is whitened right of the mascot, below
     // funcscan: its flat logo carries the mascot (a dotted disc) as a tiny corner, which reads blurry. Draw the
     // disc big beside the plain logo instead, from the full-size icon (the repo's funcscan_icon.png)
     const whitenFrom = (f, lo = 120) => (x, w, h) => { const x0 = Math.round(w * f), im = x.getImageData(x0, 0, w - x0, h), a = im.data; for (let k = 0; k < a.length; k += 4) if (a[k + 3] > 0 && Math.max(a[k], a[k + 1], a[k + 2]) - Math.min(a[k], a[k + 1], a[k + 2]) < 50 && a[k] > lo) a[k] = a[k + 1] = a[k + 2] = 255; x.putImageData(im, x0, 0); }; // neutral text brighter than lo (right of fraction f) to white
     const disc = await load('funcscan/' + D + 'funcscan_icon.png');
-    const withDisc = (lg, dark) => { const dh = 250, dw = Math.round(disc.naturalWidth * dh / disc.naturalHeight), c = document.createElement('canvas'); c.width = dw + 12 + lg.naturalWidth; c.height = lg.naturalHeight; const x = c.getContext('2d'); x.imageSmoothingQuality = 'high'; if (dark) x.filter = 'brightness(1.7)'; x.drawImage(disc, 0, (c.height - dh) / 2, dw, dh); x.filter = 'none'; x.drawImage(lg, dw + 12, 0); return shrink(c, dark ? whitenFrom((dw + 12) / c.width) : null, 2 * lwOf('funcscan')); }; // composed at full size, then shrunk like the others; dark text whitened after the shrink
+    const withDisc = (lg, dark) => { const dh = 250, dw = Math.round(disc.naturalWidth * dh / disc.naturalHeight), c = document.createElement('canvas'); c.width = dw + 12 + lg.naturalWidth; c.height = lg.naturalHeight; const x = c.getContext('2d'); x.imageSmoothingQuality = 'high'; if (dark) x.filter = 'brightness(1.7)'; x.drawImage(disc, 0, (c.height - dh) / 2, dw, dh); x.filter = 'none'; x.drawImage(lg, dw + 12, 0); const t = trim(c); return shrink(t, dark ? whitenFrom((dw + 12 - t.x0) / t.width) : null, 2 * lwOf('funcscan')); }; // composed at full size, then shrunk like the others; dark text whitened after the shrink
     MM.logos.funcscan = { light: withDisc(await load('funcscan/' + D + 'nf-core-funcscan_logo_light.png')), dark: withDisc(await load('funcscan/' + D + 'nf-core-funcscan_logo_dark.png'), true) };
     MM.logos.bacmodel = { light: shrink(bl, null, 2 * lwOf('bacmodel')), dark: shrink(bl, whitenFrom(0.31, -1), 2 * lwOf('bacmodel')) };
     return Object.keys(MM.logos).length;
@@ -134,14 +136,14 @@
     if (!MM.logos) throw new Error('run await MM.loadLogos() first');
     const C = { viral: PIN('#d0453a'), shot: PIN('#24b064'), mag: 'light-dark(#3e2f2f,#d6c7bd)', mt: PIN('#7b4fa0'), amp: PIN('#e8c547'), db: PIN('#7a7a7a') };
     const V = (val, x, y, w, h, st) => g.insertVertex(P, null, val, x, y, w, h, st);
-    const E = (c, dash, pts, jump) => { // jump: hop (arc) over every line this one crosses; draw such a route last
-      const e = g.insertEdge(P, null, '', null, null, `endArrow=none;startArrow=none;html=1;rounded=1;arcSize=80;strokeWidth=10;strokeColor=${C[c]};` + (dash ? 'dashed=1;dashPattern=1 1;' : '') + (jump ? 'jumpStyle=arc;jumpSize=20;' : ''));
+    const E = (c, dash, pts, jump, arc = 80) => { // jump: hop (arc) over every line this one crosses; draw such a route last
+      const e = g.insertEdge(P, null, '', null, null, `endArrow=none;startArrow=none;html=1;rounded=1;arcSize=${arc};strokeWidth=10;strokeColor=${C[c]};` + (dash ? 'dashed=1;dashPattern=1 1;' : '') + (jump ? 'jumpStyle=arc;jumpSize=20;' : ''));
       e.geometry.setTerminalPoint(new mxPoint(pts[0][0], pts[0][1]), true);
       e.geometry.setTerminalPoint(new mxPoint(pts[pts.length - 1][0], pts[pts.length - 1][1]), false);
       e.geometry.points = pts.slice(1, -1).map(p => new mxPoint(p[0], p[1]));
     };
     const TXT = 'text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;fontColor=light-dark(#000000,#FFFFFF);' + FONT;
-    const XD = 1760, XR = 1760, XM = 980, XG = 1150, XT = 1620, YP = 455, ST = 145, YS = 1330; // x of differentialabundance (same column as the secondary stations), the secondary stations, mag, magmap, the metatdenovo -> seqsubmit channel; y of metapep, the step between secondary rows (differentialabundance 310 and proteinfamilies 745 are fixed by their lanes, so 145), y of seqsubmit (its MAG lane corner must stay >= 40 px below the viral row 1290)
+    const XD = 1760, XR = 1760, XM = 980, XG = 1150, XT = 1345, XV = 1440, YP = 455, ST = 145, YS = 1340; // x of differentialabundance (same column as the secondary stations), the secondary stations, mag, magmap, the metatdenovo -> seqsubmit channel; y of metapep, the step between secondary rows (differentialabundance 310 and proteinfamilies 745 are fixed by their lanes, so 145), y of seqsubmit (its MAG lane corner must stay >= 40 px below the viral row 1290); XT: between the magmap channel 1300 and the MAG trunk 1390 (its 30 px corners clear both); XV: the viral channel, as close to the MAG trunk as its corner allows (>= 40 px right of it)
     M.beginUpdate();
     try {
       // getChildCells skips hidden cells (the dark logos), so clear with getChildren
@@ -149,10 +151,11 @@
       g.clearSelection(); g.removeCells(M.getChildren(P).filter(c => c !== icon), true);
       const BOX = 'rounded=1;absoluteArcSize=1;arcSize=20;whiteSpace=wrap;html=1;strokeWidth=2;strokeColor=#E6E6E6;fillColor=#BDBDBD;align=left;verticalAlign=top;fontSize=38;spacing=0;fillStyle=solid;spacingTop=8;spacingLeft=16;fontStyle=1;fontColor=light-dark(#333333,#CCCCCC);' + FONT;
 
-      // routes. Rows (y): 300 amplicon/entry, 450 taxprofiler, 600 funcprofiler, 750 metatdenovo,
+      // routes. Rows (y): 300 amplicon/entry, 450 taxprofiler, 600 funcprofiler, 740/750 metatdenovo (mt out / reads in),
       // 900 eager, 1050 mag, 1150 magmap, 1290 viralmetagenome; secondary 310 differentialabundance, then every 145:
-      // 455 metapep, 600 funcscan, 745 proteinfamilies, 890 bacmodel, 1035 phyloplace; 1330 seqsubmit. Channels (x): 680 db, 760 shotgun fan, 1200 shotgun profiles, 1250 mt,
-      // 1300 magmap -> diffabund, 1390 MAG trunk, 1500 viral, 1620 mt -> seqsubmit.
+      // 455 metapep, 600 funcscan, 745 proteinfamilies, 890 bacmodel, 1035 phyloplace; 1340 seqsubmit. Channels (x): 680 db, 760 shotgun fan, 1200 shotgun profiles, 1250 mt,
+      // 1300 magmap -> diffabund, 1345 mt -> seqsubmit, 1390 MAG trunk, 1440 viral.
+      // Every MAG branch leaves the trunk the same way (up, then right); so at proteinfamilies the mt lane runs above it (740)
       const br = (xc, y, x2) => [[xc, y - 90], [xc, y], [x2, y]]; // branch off a vertical trunk
       E('amp', 0, [[150, 295], [XD, 295]]);
       E('shot', 0, [[150, 305], [760, 305], [760, 1290], [1050, 1290]]);
@@ -160,16 +163,17 @@
       E('shot', 0, br(760, 1050, XM));
       E('shot', 0, [[1050, 450], [1200, 450], [1200, 305], [XD, 305]]);
       E('shot', 0, [[1050, 600], [1200, 600], [1200, 380]]);
-      E('mt', 0, [[1050, 750], [XR, 750]]);                  // metatdenovo -> proteinfamilies, ends at its pill
-      E('mt', 0, [[1050, 750], [1250, 750], [1250, 315], [XD, 315]]);
+      E('mt', 0, [[1050, 740], [XR, 740]]);                  // metatdenovo -> proteinfamilies, ends at its pill
+      E('mt', 0, [[1050, 740], [1250, 740], [1250, 315], [XD, 315]]);
       E('db', 1, [[190, 600], [680, 600], [680, 460], [1050, 460]]);
       E('db', 1, [[190, 600], [680, 600], [680, 760], [1050, 760]]);
       E('mag', 0, [[XM, 1050], [1390, 1050], [1390, YP + 50]]); // MAG trunk north; its branches (below) start inside it, and the top one turns at YP
-      [YP, YP + ST, YP + 3 * ST].forEach(y => E('mag', 0, [[1390, y + 90], [1390, y], [XR, y]])); // branches that leave the trunk going up
-      [YP + 2 * ST, YP + 4 * ST].forEach(y => E('mag', 0, [[1390, y - 90], [1390, y - 5], [XR, y - 5]])); // proteinfamilies and phyloplace: from above, so the lane under them (metatdenovo, viral) never crosses them
-      E('mag', 0, [[XM, 1050], [1390, 1050], [1390, YS + 5], [XR, YS + 5]]); // mag -> seqsubmit, directly
-      E('mt', 0, [[1050, 750], [XT, 750], [XT, YS - 5], [XR, YS - 5]]);      // metatdenovo -> seqsubmit, directly: down channel XT, right of the MAG branches
-      E('viral', 0, [[1050, 1290], [1500, 1290], [1500, YP + 4 * ST + 5], [XR, YP + 4 * ST + 5]]);
+      // branches all leave the trunk going up, then right (lane y = row, or row + 5 / - 5 where a second lane shares the pill);
+      // phyloplace's starts inside the mag -> seqsubmit line, which runs down the trunk below 1050
+      [[YP, 0], [YP + ST, 0], [YP + 2 * ST, 5], [YP + 3 * ST, 0], [YP + 4 * ST, -5]].forEach(([y, o]) => E('mag', 0, [[1390, y + o + 90], [1390, y + o], [XR, y + o]]));
+      E('mag', 0, [[XM, 1050], [1390, 1050], [1390, YS - 5], [XR, YS - 5]]); // mag -> seqsubmit, directly
+      E('mt', 0, [[1050, 740], [XT, 740], [XT, YS + 5], [XR, YS + 5]], false, 60); // metatdenovo -> seqsubmit: down channel XT, under the MAG lane at the end (30 px corners)
+      E('viral', 0, [[1050, 1290], [XV, 1290], [XV, YP + 4 * ST + 5], [XR, YP + 4 * ST + 5]]);
       // magmap (an alternative to metatdenovo, so in the primary box), a little right of mag: reads off the
       // shotgun fan (lower lane), MAGs from mag as an optional dashed input (upper lane; it also runs on public
       // or the user's own genomes), abundances north to differentialabundance on channel 1300, nested after the
@@ -184,7 +188,7 @@
 
       // stations [pipeline, x, y, pill height, label side a=above r=right b=below]; a pill is 40
       // or 60 px tall where two or four lanes arrive together
-      const S = [['fetchngs', 150, 300, 30, 'a'], ['detaxizer', 420, 300, 30, 'a'], ['createtaxdb', 420, 600, 30, 'a'], ['ampliseq', 1050, 300, 30, 'a'], ['taxprofiler', 1050, 455, 40, 'a'], ['funcprofiler', 1050, 600, 30, 'a'], ['metatdenovo', 1050, 755, 40, 'a'], ['eager', 1050, 900, 30, 'a'], ['mag', XM, 1050, 30, 'a'], ['magmap', XG, 1150, 40, 'a'], ['viralmetagenome', 1050, 1290, 30, 'a'],
+      const S = [['fetchngs', 150, 300, 30, 'a'], ['detaxizer', 420, 300, 30, 'a'], ['createtaxdb', 420, 600, 30, 'a'], ['ampliseq', 1050, 300, 30, 'a'], ['taxprofiler', 1050, 455, 40, 'a'], ['funcprofiler', 1050, 600, 30, 'a'], ['metatdenovo', 1050, 750, 40, 'a'], ['eager', 1050, 900, 30, 'a'], ['mag', XM, 1050, 30, 'a'], ['magmap', XG, 1150, 40, 'a'], ['viralmetagenome', 1050, 1290, 30, 'a'],
         ['differentialabundance', XD, 310, 50, 'r'], ['metapep', XR, YP, 30, 'r'], ['funcscan', XR, YP + ST, 30, 'r'], ['proteinfamilies', XR, YP + 2 * ST, 40, 'r'], ['bacmodel', XR, YP + 3 * ST, 30, 'r'], ['phyloplace', XR, YP + 4 * ST, 40, 'r'], ['seqsubmit', XR, YS, 40, 'r']];
       // light logo visible, dark copy hidden: exportAll() swaps them per theme (in memory only)
       const IMG = (uri, x, y, w, h, theme) => {
@@ -201,10 +205,11 @@
         IMG(L.light.uri, lx, ly, lw, lh, 'light'); IMG(L.dark.uri, lx, ly, lw, lh, 'dark');
         bottom[BOXOF(n)] = Math.max(bottom[BOXOF(n)], y + h / 2, ly + lh);
       }
-      // boxes: equal gaps (GAP) side by side, each PAD below its lowest content; box 4 sits GAP4 under box 3
-      const PAD = 40, GAP = 140, GAP4 = 30, top4 = bottom[2] + PAD + GAP4;
-      if (YS - top4 < 150) throw new Error('seqsubmit too close to the top of box 4: raise YS');
-      const boxes = [['1. Data input', 20, 110, 630], ['2. Primary analysis', 650 + GAP, 110, 540], ['3. Secondary analysis', 1330 + GAP, 110, 670], ['4. Data upload', 1710, top4, 340]]
+      // boxes: equal gaps (GAP) side by side, each PAD below its lowest content
+      // box 2 is centred on its station column (1050); box 4's top sits HEAD above seqsubmit's logo, so the box is no taller than it needs
+      const PAD = 40, GAP = 140, HEAD = 75, sq = MM.logos.seqsubmit.light, top4 = YS - Math.round(lwOf('seqsubmit') * sq.h / sq.w / 2) - HEAD;
+      if (top4 < bottom[2] + PAD + 30) throw new Error('box 4 overlaps box 3: lower YS');
+      const boxes = [['1. Data input', 20, 110, 610], ['2. Primary analysis', 630 + GAP, 110, 560], ['3. Secondary analysis', 1330 + GAP, 110, 670], ['4. Data upload', 1710, top4, 340]]
         .map((b, i) => V(b[0], b[1], b[2], b[3], bottom[i] + PAD - b[2], BOX));
       g.orderCells(true, boxes);
 
@@ -220,7 +225,7 @@
 
   // Layout check, run before every export (also after hand edits): returns 'ok' or the problems found.
   // Each rule is a review comment the map once got: equal gaps between the boxes, equal bottom padding,
-  // one corner radius, evenly spaced stations in a single-column box, white logo text in dark mode,
+  // one corner radius, evenly spaced stations in a single-column box, a station column centred in its box, white logo text in dark mode,
   // every logo stored at >= 1.9x its drawn width (else it looks blurry next to the others).
   async function check(tol = 2) {
     const g = (await getUi()).editor.graph, M = g.model, P = g.getDefaultParent(), cells = M.getChildren(P).filter(c => c.vertex), out = [];
@@ -235,6 +240,12 @@
       const st = cells.filter(c => /arcSize=50/.test(c.style || '') && inside(c, b)).map(c => [G(c).x, G(c).y + G(c).height / 2]).sort((u, v) => u[1] - v[1]);
       if (st.length < 3 || new Set(st.map(s => s[0])).size > 1) continue;
       const d = st.slice(1).map((s, i) => Math.round(s[1] - st[i][1])); if (Math.max(...d) - Math.min(...d) > tol) out.push(`box ${name(b)} stations unevenly spaced: ` + d);
+    }
+    for (const b of boxes) { // a column of >= 3 stations with their logos centred above them is centred in its box
+      const xs = cells.filter(c => /arcSize=50/.test(c.style || '') && inside(c, b)).map(c => G(c).x + G(c).width / 2), cnt = {};
+      xs.forEach(x => { cnt[x] = (cnt[x] || 0) + 1; });
+      const col = Object.keys(cnt).map(Number).find(x => cnt[x] >= 3), logos = cells.filter(c => /metromapTheme=light/.test(c.style || '') && Math.abs(G(c).x + G(c).width / 2 - col) < 1);
+      if (col !== undefined && logos.length >= 3 && Math.abs(G(b).x + G(b).width / 2 - col) > tol) out.push(`box ${name(b)}: station column ${col} not centred (box centre ${G(b).x + G(b).width / 2})`);
     }
     for (const c of cells.filter(c => /metromapTheme=/.test(c.style || ''))) {
       const uri = /image=([^;]+)/.exec(c.style)[1].replace(/^data:image\/png,/, 'data:image/png;base64,'), im = new Image();
